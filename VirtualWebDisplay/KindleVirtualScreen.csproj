@@ -8,6 +8,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon />
     <OutputType>WinExe</OutputType>
+    <AssemblyName>VirtualWebDisplay</AssemblyName>
+    <RootNamespace>VirtualWebDisplay</RootNamespace>
   </PropertyGroup>
 
 </Project>

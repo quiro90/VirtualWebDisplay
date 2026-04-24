@@ -1,4 +1,4 @@
-namespace KindleVirtualScreen
+namespace VirtualWebDisplay
 {
     public class WeatherForecast
     {

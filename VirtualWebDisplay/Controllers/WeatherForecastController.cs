@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace KindleVirtualScreen.Controllers
+namespace VirtualWebDisplay.Controllers
 {
     [ApiController]
     [Route("[controller]")]

@@ -172,7 +172,7 @@ var (ok, vddStatus) = vdd.TryCreate(config);
 if (!ok)
 {
     ShowInstallDialog(
-        "Kindle Virtual Screen — Falta Parsec VDD",
+        "VirtualWebDisplay — Falta Parsec VDD",
         vddStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
         VirtualDisplayManager.InstallUrl);
     return;
@@ -184,7 +184,7 @@ else if (config.MonitorIndex < 0)
 {
     MessageBox.Show(
         vddStatus + "\n\nNo se pudo identificar el monitor virtual de Windows para capturarlo automáticamente.",
-        "Kindle Virtual Screen — Monitor virtual no detectado",
+        "VirtualWebDisplay — Monitor virtual no detectado",
         MessageBoxButtons.OK,
         MessageBoxIcon.Warning);
     return;
@@ -221,7 +221,7 @@ if (config.MonitorIndex >= 0 && config.MonitorIndex >= Screen.AllScreens.Length)
         $"MonitorIndex = {config.MonitorIndex} pero solo hay {Screen.AllScreens.Length} monitor(es).\n\n" +
         $"Monitores disponibles:\n{monitorInfo.Replace("  |  ", "\n")}\n\n" +
         "Corregí MonitorIndex en appsettings.json.",
-        "Kindle Virtual Screen — Monitor no encontrado",
+        "VirtualWebDisplay — Monitor no encontrado",
         MessageBoxButtons.OK,
         MessageBoxIcon.Warning);
     return;
@@ -241,7 +241,7 @@ app.MapGet("/", () => Results.Content($$"""
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0,
               maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-        <title>Kindle Mirror</title>
+        <title>VirtualWebDisplay</title>
         <style>
             *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -335,7 +335,7 @@ app.MapGet("/config", () => Results.Json(config));
 // ── Run ──────────────────────────────────────────────────────────────────────
 
 Console.WriteLine("┌─────────────────────────────────────────┐");
-Console.WriteLine($"│  📺  Kindle Virtual Screen               │");
+Console.WriteLine($"│  📺  VirtualWebDisplay                   │");
 Console.WriteLine($"│  Abrí en tu Kindle:                     │");
 Console.WriteLine($"│  ➜  {kindleUrl,-36}│");
 Console.WriteLine("└─────────────────────────────────────────┘");
