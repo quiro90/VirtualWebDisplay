@@ -7,11 +7,28 @@ using System.Windows.Forms;
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
+using var singleInstance = SingleInstanceManager.CreateForCurrentExecutable();
+if (!singleInstance.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
+{
+    MessageBox.Show(
+        "No se pudo cerrar la instancia anterior de VirtualWebDisplay para relanzarla.",
+        "VirtualWebDisplay — Relanzamiento fallido",
+        MessageBoxButtons.OK,
+        MessageBoxIcon.Warning);
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile(VirtualScreenSettingsStore.FileName, optional: true, reloadOnChange: false);
 
 var config = builder.Configuration
     .GetSection("VirtualScreen")
     .Get<VirtualScreenConfig>() ?? new VirtualScreenConfig();
+
+VirtualDisplayProfiles.EnsureValidSelection(config);
+
+var settingsStore = new VirtualScreenSettingsStore();
+using var tray = new VirtualDisplayTrayController(config, settingsStore);
 
 builder.Services.AddSingleton(config);
 builder.Services.AddSingleton<CaptureService>();
@@ -21,6 +38,8 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{config.Port}");
 
 var app = builder.Build();
 var capture = app.Services.GetRequiredService<CaptureService>();
+
+singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
 
 // ── Detect local IP ───────────────────────────────────────────────────────────
 
@@ -166,6 +185,19 @@ static void ShowInstallDialog(string title, string message, string installUrl)
 
 // ── Virtual display (parsec-vdd required) ─────────────────────────────────────
 
+var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
+if (!driverReady)
+{
+    ShowInstallDialog(
+        "VirtualWebDisplay — Falta Parsec VDD",
+        driverStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+        VirtualDisplayManager.InstallUrl);
+    return;
+}
+
+if (!tray.ShowStartupConfiguration())
+    return;
+
 using var vdd = new VirtualDisplayManager();
 var (ok, vddStatus) = vdd.TryCreate(config);
 
@@ -191,6 +223,10 @@ else if (config.MonitorIndex < 0)
 }
 
 app.Lifetime.ApplicationStopping.Register(vdd.Dispose);
+tray.ConfigureRuntimeActions(
+    updatedConfig => vdd.TryReconfigure(updatedConfig),
+    () => app.Lifetime.StopApplication(),
+    kindleUrl);
 
 // ── Build monitor summary ─────────────────────────────────────────────────────
 
@@ -339,5 +375,7 @@ Console.WriteLine($"│  📺  VirtualWebDisplay                   │");
 Console.WriteLine($"│  Abrí en tu Kindle:                     │");
 Console.WriteLine($"│  ➜  {kindleUrl,-36}│");
 Console.WriteLine("└─────────────────────────────────────────┘");
+
+tray.UpdateStatus($"Transmitiendo en {kindleUrl}");
 
 app.Run();

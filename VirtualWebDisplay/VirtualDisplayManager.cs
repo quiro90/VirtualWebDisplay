@@ -68,11 +68,15 @@ public sealed class VirtualDisplayManager : IDisposable
 
     private const int ENUM_CURRENT_SETTINGS = -1;
     private const int DM_POSITION = 0x00000020;
+    private const int DM_DISPLAYORIENTATION = 0x00000080;
     private const int DM_PELSWIDTH = 0x00080000;
     private const int DM_PELSHEIGHT = 0x00100000;
     private const uint CDS_UPDATEREGISTRY = 0x00000001;
     private const uint CDS_NORESET = 0x10000000;
     private const int DISP_CHANGE_SUCCESSFUL = 0;
+    private const int DISP_CHANGE_BADMODE = -2;
+    private const int DMDO_DEFAULT = 0;
+    private const int DMDO_90 = 1;
 
     private IntPtr _handle = IntPtr.Zero;
     private int _displayIdx = -1;
@@ -82,6 +86,21 @@ public sealed class VirtualDisplayManager : IDisposable
     public bool IsActive { get; private set; }
     public int? WindowsMonitorIndex { get; private set; }
     public string? WindowsDeviceName { get; private set; }
+
+    public static (bool ok, string message) VerifyDriverAvailability()
+    {
+        if (!DriverApi.OpenHandle(AdapterGuid, out var handle))
+        {
+            return (false,
+                "No se encontró el adaptador de Parsec Virtual Display instalado o accesible.\n" +
+                "Instalá Parsec VDD con alguno de estos paquetes oficiales:\n" +
+                $"• Setup: {InstallUrl}\n" +
+                $"• Portable: {PortableUrl}");
+        }
+
+        DriverApi.CloseHandle(handle);
+        return (true, "Parsec VDD detectado correctamente.");
+    }
 
     public (bool ok, string message) TryCreate(VirtualScreenConfig config)
     {
@@ -93,13 +112,7 @@ public sealed class VirtualDisplayManager : IDisposable
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             if (!DriverApi.OpenHandle(AdapterGuid, out _handle))
-            {
-                return (false,
-                    "No se encontró el adaptador de Parsec Virtual Display instalado o accesible.\n" +
-                    "Instalá Parsec VDD con alguno de estos paquetes oficiales:\n" +
-                    $"• Setup: {InstallUrl}\n" +
-                    $"• Portable: {PortableUrl}");
-            }
+                return VerifyDriverAvailability();
 
             if (!DriverApi.AddDisplay(_handle, out _displayIdx))
             {
@@ -128,13 +141,15 @@ public sealed class VirtualDisplayManager : IDisposable
             if (virtualScreen is not null)
             {
                 WindowsDeviceName = virtualScreen.DeviceName;
-                arrangeStatus = ArrangeVirtualDisplay(virtualScreen.DeviceName, config);
+                var arrangeResult = ArrangeVirtualDisplay(virtualScreen.DeviceName, config);
+                if (!arrangeResult.ok)
+                    return (false, arrangeResult.message);
+
+                arrangeStatus = arrangeResult.message;
 
                 Thread.Sleep(250);
                 var screensNow = Screen.AllScreens;
-                var index = Array.FindIndex(screensNow, s =>
-                    string.Equals(s.DeviceName, virtualScreen.DeviceName, StringComparison.OrdinalIgnoreCase));
-                WindowsMonitorIndex = index >= 0 ? index : null;
+                UpdateAppliedDisplayMetrics(config, screensNow);
             }
             else
             {
@@ -217,30 +232,134 @@ public sealed class VirtualDisplayManager : IDisposable
         IsActive = false;
     }
 
-    private static string ArrangeVirtualDisplay(string deviceName, VirtualScreenConfig config)
+    public (bool ok, string message) TryReconfigure(VirtualScreenConfig config)
     {
-        var mode = CreateDevMode();
-        if (!EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref mode))
-            return "No se pudo leer la configuración actual del monitor virtual; queda con la disposición que asigne Windows.";
+        if (!IsActive || string.IsNullOrWhiteSpace(WindowsDeviceName))
+            return (false, "El monitor virtual todavía no está listo para reconfigurarse.");
+
+        try
+        {
+            var result = ArrangeVirtualDisplay(WindowsDeviceName, config);
+            Thread.Sleep(250);
+
+            var screensNow = Screen.AllScreens;
+            UpdateAppliedDisplayMetrics(config, screensNow);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return (false, $"No se pudo reconfigurar el monitor virtual: {ex.Message}");
+        }
+    }
+
+    private static (bool ok, string message) ArrangeVirtualDisplay(string deviceName, VirtualScreenConfig config)
+    {
+        var currentMode = CreateDevMode();
+        if (!EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref currentMode))
+            return (false, "No se pudo leer la configuración actual del monitor virtual; queda con la disposición que asigne Windows.");
+
+        var requestedWidth = config.Width;
+        var requestedHeight = config.Height;
+        var requestedLandscape = requestedWidth >= requestedHeight;
+        var baseModeWidth = requestedLandscape ? requestedWidth : requestedHeight;
+        var baseModeHeight = requestedLandscape ? requestedHeight : requestedWidth;
+        var mode = TryGetBestSupportedMode(deviceName, baseModeWidth, baseModeHeight)
+            ?? currentMode;
 
         var primaryBounds = Screen.PrimaryScreen?.Bounds
             ?? Screen.AllScreens.FirstOrDefault(s => s.Primary)?.Bounds
-            ?? new Rectangle(0, 0, mode.dmPelsWidth, mode.dmPelsHeight);
+            ?? new Rectangle(0, 0, currentMode.dmPelsWidth, currentMode.dmPelsHeight);
 
-        mode.dmPelsWidth = config.Width;
-        mode.dmPelsHeight = config.Height;
+        var supportedWidth = mode.dmPelsWidth;
+        var supportedHeight = mode.dmPelsHeight;
+        var appliedWidth = requestedLandscape ? supportedWidth : supportedHeight;
+        var appliedHeight = requestedLandscape ? supportedHeight : supportedWidth;
+
+        mode.dmDisplayOrientation = requestedLandscape ? DMDO_DEFAULT : DMDO_90;
+        mode.dmPelsWidth = appliedWidth;
+        mode.dmPelsHeight = appliedHeight;
+        config.Width = appliedWidth;
+        config.Height = appliedHeight;
         mode.dmPosition = GetVirtualDisplayPosition(primaryBounds, config.VirtualDisplayPlacement, config.Width, config.Height);
-        mode.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
+        mode.dmFields = DM_POSITION | DM_DISPLAYORIENTATION | DM_PELSWIDTH | DM_PELSHEIGHT;
 
         var result = ChangeDisplaySettingsEx(deviceName, ref mode, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero);
         if (result != DISP_CHANGE_SUCCESSFUL)
-            return $"Windows creó el monitor virtual pero no permitió aplicarle posición/resolución (código {result}).";
+        {
+            var supportedModes = GetSupportedModes(deviceName);
+            var supportedText = supportedModes.Count == 0
+                ? string.Empty
+                : $" Modos soportados: {string.Join(", ", supportedModes.Select(m => $"{m.dmPelsWidth}×{m.dmPelsHeight}").Distinct())}.";
+            var reason = result == DISP_CHANGE_BADMODE
+                ? "La resolución pedida no está soportada por el driver del monitor virtual."
+                : $"Windows creó el monitor virtual pero no permitió aplicarle posición/resolución (código {result}).";
+            return (false, reason + supportedText);
+        }
 
         result = ChangeDisplaySettingsEx(null, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero);
         if (result != DISP_CHANGE_SUCCESSFUL)
-            return $"Windows guardó cambios parciales del monitor virtual, pero no pudo refrescar la topología (código {result}).";
+            return (false, $"Windows guardó cambios parciales del monitor virtual, pero no pudo refrescar la topología (código {result}).");
 
-        return $"Ubicado a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal con resolución {config.Width}×{config.Height}.";
+        if (config.Width != requestedWidth || config.Height != requestedHeight)
+        {
+            return (true,
+                $"La resolución solicitada {requestedWidth}×{requestedHeight} no estaba disponible. " +
+                $"Se aplicó la más cercana soportada: {config.Width}×{config.Height}, ubicada a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal.");
+        }
+
+        return (true, $"Ubicado a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal con resolución {config.Width}×{config.Height}.");
+    }
+
+    private static List<DEVMODE> GetSupportedModes(string deviceName)
+    {
+        var modes = new List<DEVMODE>();
+
+        for (var modeIndex = 0; ; modeIndex++)
+        {
+            var mode = CreateDevMode();
+            if (!EnumDisplaySettings(deviceName, modeIndex, ref mode))
+                break;
+
+            if (modes.Any(existing => existing.dmPelsWidth == mode.dmPelsWidth && existing.dmPelsHeight == mode.dmPelsHeight))
+                continue;
+
+            modes.Add(mode);
+        }
+
+        return modes;
+    }
+
+    private static DEVMODE? TryGetBestSupportedMode(string deviceName, int requestedWidth, int requestedHeight)
+    {
+        var supportedModes = GetSupportedModes(deviceName);
+        if (supportedModes.Count == 0)
+            return null;
+
+        var exactMode = supportedModes.FirstOrDefault(mode => mode.dmPelsWidth == requestedWidth && mode.dmPelsHeight == requestedHeight);
+        if (exactMode.dmPelsWidth == requestedWidth && exactMode.dmPelsHeight == requestedHeight)
+            return exactMode;
+
+        return supportedModes
+            .OrderBy(mode => Math.Abs(mode.dmPelsWidth - requestedWidth) + Math.Abs(mode.dmPelsHeight - requestedHeight))
+            .ThenBy(mode => Math.Abs((mode.dmPelsWidth / (double)mode.dmPelsHeight) - (requestedWidth / (double)requestedHeight)))
+            .First();
+    }
+
+    private void UpdateAppliedDisplayMetrics(VirtualScreenConfig config, Screen[] screensNow)
+    {
+        if (string.IsNullOrWhiteSpace(WindowsDeviceName))
+            return;
+
+        var index = Array.FindIndex(screensNow, s =>
+            string.Equals(s.DeviceName, WindowsDeviceName, StringComparison.OrdinalIgnoreCase));
+        WindowsMonitorIndex = index >= 0 ? index : null;
+        if (WindowsMonitorIndex is int monitorIndex)
+        {
+            config.MonitorIndex = monitorIndex;
+            config.Width = screensNow[monitorIndex].Bounds.Width;
+            config.Height = screensNow[monitorIndex].Bounds.Height;
+        }
     }
 
     private static POINTL GetVirtualDisplayPosition(Rectangle primaryBounds, string? placement, int width, int height)

@@ -3,6 +3,11 @@ public sealed class VirtualScreenConfig
     public int Width { get; set; } = 900;
     public int Height { get; set; } = 790;
 
+    public string Profile { get; set; } = string.Empty;
+    public bool Landscape { get; set; }
+    public int CustomWidth { get; set; } = 790;
+    public int CustomHeight { get; set; } = 900;
+
     /// <summary>Capture interval in seconds. E.g. 0.1, 0.15, 0.2</summary>
     public double CaptureIntervalSeconds { get; set; } = 0.25;
 
