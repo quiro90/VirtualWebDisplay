@@ -1,0 +1,6 @@
+@KindleVirtualScreen_HostAddress = http://localhost:5148
+
+GET {{KindleVirtualScreen_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

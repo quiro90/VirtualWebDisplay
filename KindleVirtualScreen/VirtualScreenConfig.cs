@@ -1,0 +1,41 @@
+public sealed class VirtualScreenConfig
+{
+    public int Width { get; set; } = 900;
+    public int Height { get; set; } = 790;
+
+    /// <summary>Capture interval in seconds. E.g. 0.1, 0.15, 0.2</summary>
+    public double CaptureIntervalSeconds { get; set; } = 0.25;
+
+    /// <summary>JPEG quality 1-100. Lower = faster transfer (better for e-ink).</summary>
+    public int JpegQuality { get; set; } = 40;
+
+    public int Port { get; set; } = 8000;
+
+    /// <summary>Rotate the captured frame 90° so a landscape region is served as portrait (ideal for Kindle).</summary>
+    public bool RotateForPortrait { get; set; } = true;
+
+    /// <summary>
+    /// Index of the monitor to capture from Screen.AllScreens.
+    /// -1 = auto: use the created Parsec virtual display.
+    ///  0 = primary monitor.
+    ///  1 = second monitor (physical or virtual).
+    /// Normalmente conviene dejar -1 para capturar automáticamente el monitor virtual creado por la app.
+    /// </summary>
+    public int MonitorIndex { get; set; } = -1;
+
+    /// <summary>
+    /// Side of the primary monitor where the virtual display should be attached.
+    /// Values accepted: right, left, top, bottom.
+    /// También acepta: derecha, izquierda, arriba, abajo.
+    /// </summary>
+    public string VirtualDisplayPlacement { get; set; } = "right";
+
+    /// <summary>
+    /// How the Kindle page should fit the incoming image into the visible browser area.
+    /// contain = mantiene toda la imagen y puede dejar franjas negras.
+    /// cover   = llena toda el área visible recortando sobrantes.
+    /// fill    = llena toda el área visible deformando la imagen si hace falta.
+    /// Para Kindle Paperwhite 12 en navegador, "contain" es el valor recomendado.
+    /// </summary>
+    public string BrowserImageFit { get; set; } = "contain";
+}

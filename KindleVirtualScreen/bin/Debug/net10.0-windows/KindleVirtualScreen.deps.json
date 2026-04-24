@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "KindleVirtualScreen/1.0.0": {
+        "runtime": {
+          "KindleVirtualScreen.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "KindleVirtualScreen/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
