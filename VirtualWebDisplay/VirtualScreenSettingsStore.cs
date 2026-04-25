@@ -4,7 +4,7 @@ public sealed class VirtualScreenSettingsStore
 {
     public const string DirectoryName = ".virtualwebdisplay";
     public const string FileName = "virtualscreen.user.json";
-    private const string SectionName = "VirtualScreen";
+    private const string LegacySectionName = "VirtualScreen";
 
     private readonly string _filePath;
 
@@ -18,46 +18,70 @@ public sealed class VirtualScreenSettingsStore
             FileName);
     }
 
-    public VirtualScreenConfig Load()
+    public VirtualWebDisplaySettings Load()
     {
         if (!File.Exists(_filePath))
-            return new VirtualScreenConfig();
+        {
+            var defaults = new VirtualWebDisplaySettings();
+            defaults.EnsureValid();
+            return defaults;
+        }
 
         try
         {
             var json = File.ReadAllText(_filePath);
-            var payload = JsonSerializer.Deserialize<Dictionary<string, VirtualScreenConfig>>(json);
+            var settings = JsonSerializer.Deserialize<VirtualWebDisplaySettings>(json);
+            if (settings is not null)
+            {
+                settings.EnsureValid();
+                return settings;
+            }
 
-            return payload is not null && payload.TryGetValue(SectionName, out var config) && config is not null
-                ? config
-                : new VirtualScreenConfig();
+            var payload = JsonSerializer.Deserialize<Dictionary<string, VirtualScreenConfig>>(json);
+            if (payload is not null && payload.TryGetValue(LegacySectionName, out var legacyConfig) && legacyConfig is not null)
+            {
+                var migrated = new VirtualWebDisplaySettings
+                {
+                    Screen1 = legacyConfig,
+                    Screen2 = VirtualWebDisplaySettings.CreateScreen2Defaults(),
+                };
+                migrated.EnsureValid();
+                return migrated;
+            }
+
+            var defaults = new VirtualWebDisplaySettings();
+            defaults.EnsureValid();
+            return defaults;
         }
         catch (IOException)
         {
-            return new VirtualScreenConfig();
+            var defaults = new VirtualWebDisplaySettings();
+            defaults.EnsureValid();
+            return defaults;
         }
         catch (UnauthorizedAccessException)
         {
-            return new VirtualScreenConfig();
+            var defaults = new VirtualWebDisplaySettings();
+            defaults.EnsureValid();
+            return defaults;
         }
         catch (JsonException)
         {
-            return new VirtualScreenConfig();
+            var defaults = new VirtualWebDisplaySettings();
+            defaults.EnsureValid();
+            return defaults;
         }
     }
 
-    public void Save(VirtualScreenConfig config)
+    public void Save(VirtualWebDisplaySettings settings)
     {
         var directory = Path.GetDirectoryName(_filePath);
         if (!string.IsNullOrWhiteSpace(directory))
             EnsureHiddenDirectory(directory);
 
-        var payload = new Dictionary<string, VirtualScreenConfig>
-        {
-            [SectionName] = config,
-        };
+        settings.EnsureValid();
 
-        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions
         {
             WriteIndented = true,
         });

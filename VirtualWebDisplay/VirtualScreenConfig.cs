@@ -1,5 +1,7 @@
 public sealed class VirtualScreenConfig
 {
+    public bool Enabled { get; set; } = true;
+
     public int Width { get; set; } = 800;
     public int Height { get; set; } = 1280;
 
