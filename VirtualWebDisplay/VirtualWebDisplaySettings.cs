@@ -47,5 +47,6 @@ public sealed class VirtualWebDisplaySettings
     {
         if (config.StreamRotationDegrees == 0 && config.RotateForPortrait)
             config.StreamRotationDegrees = 90;
+        config.RotateForPortrait = false;
     }
 }

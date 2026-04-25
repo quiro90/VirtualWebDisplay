@@ -34,6 +34,10 @@ El campo `BrowserImageFit` ya existía en `VirtualScreenConfig` pero no tenía c
 - `_portInput.Enabled` como estado implícito reemplazado por campo explícito `_portEditable` en `ScreenTabControls`.
 - Fallbacks muertos en `Initialize` eliminados: `config.Width > 0 ? config.Width : config.CustomWidth` y `w > 0 ? w : 1080` — `EnsureValid` ya garantiza `Width > 0` antes de construir el form.
 
+### 8. Limpieza del campo legacy `RotateForPortrait` tras migración
+`MigrateRotation` en `VirtualWebDisplaySettings` migraba el valor a `StreamRotationDegrees` pero nunca reseteaba `RotateForPortrait`. Esto provocaba que el campo legacy persistiera como `true` en el JSON en cada save posterior, aunque ya no tuviese efecto.
+Fix: `config.RotateForPortrait = false` se ejecuta siempre al final de `MigrateRotation`, limpiando el campo en el próximo guardado.
+
 ---
 
 ## Deuda técnica vigente, ordenada por prioridad
@@ -55,13 +59,11 @@ Mover las plantillas a una clase generadora dedicada o archivos estáticos embeb
 
 ## Prioridad media
 
-### B. Consistencia en `VirtualScreenConfig.Clone()` y `CopyTo()`
-Los métodos `Clone()` y `CopyTo()` en `VirtualScreenConfig` son manuales campo a campo. Si se agrega una propiedad nueva, es fácil olvidar actualizarlos.
-
-Además, `RotateForPortrait` (legacy) sigue siendo clonado/copiado aunque su único uso sea la migración en `EnsureValid`. Podría eliminarse del modelo una vez que se considere el ciclo de vida de configs antiguas cerrado.
+### B. `VirtualScreenConfig.Clone()` y `CopyTo()` manuales campo a campo
+Ambos métodos enumeran todas las propiedades a mano. Si se agrega un campo nuevo a `VirtualScreenConfig`, es fácil olvidar actualizarlos — especialmente `Clone()`, que no genera error de compilación si falta un campo.
 
 #### Limpieza futura sugerida
-Marca `RotateForPortrait` con `[JsonIgnore]` en escritura o eliminarlo del modelo cuando se descarte compatibilidad con configs pre-migración.
+Reemplazar con un mecanismo de copia automática (record, AutoMapper, reflexión supervisada por test) o al menos agregar un test que valide que `Clone()` y `CopyTo()` cubren todos los campos públicos.
 
 ---
 
