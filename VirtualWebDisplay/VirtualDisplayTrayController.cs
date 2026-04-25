@@ -358,6 +358,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             private readonly TrackBar _jpegQualitySlider;
             private readonly Label _jpegQualityValueLabel;
             private readonly CheckBox _rotateStreamCheckBox;
+            private readonly ComboBox _browserImageFitCombo;
             private readonly Control[] _managedControls;
             private bool _suppressEvents;
 
@@ -374,8 +375,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     {
                         Left = 14,
                         Top = currentTop,
-                        Width = 120,
-                        Text = "Habilitada",
+                        Width = 180,
+                        Text = "Habilitar (experimental)",
                     };
                     TabPage.Controls.Add(_enabledCheckBox);
                     currentTop += 28;
@@ -502,9 +503,24 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 {
                     Left = 14,
                     Top = currentTop,
-                    Width = 320,
+                    Width = 240,
                     Text = "Rotar imagen 90° (girar retransmisión)",
                 };
+
+                var fitLabel = CreateLabel("Ajuste:", 262, currentTop);
+                _browserImageFitCombo = new ComboBox
+                {
+                    Left = 302,
+                    Top = currentTop - 2,
+                    Width = 158,
+                    DropDownStyle = ComboBoxStyle.DropDownList,
+                };
+                _browserImageFitCombo.Items.AddRange(
+                [
+                    new ImageFitItem("fill", "Estirar (llenar)"),
+                    new ImageFitItem("cover", "Recortar (cover)"),
+                    new ImageFitItem("contain", "Contener (barras)"),
+                ]);
 
                 _managedControls =
                 [
@@ -527,6 +543,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     _jpegQualitySlider,
                     _jpegQualityValueLabel,
                     _rotateStreamCheckBox,
+                    fitLabel,
+                    _browserImageFitCombo,
                 ];
 
                 TabPage.Controls.AddRange(_managedControls);
@@ -558,6 +576,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _captureIntervalInput.ValueChanged += (_, _) => UpdateState();
                 _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
                 _rotateStreamCheckBox.CheckedChanged += (_, _) => UpdateState();
+                _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
             }
 
             public TabPage TabPage { get; }
@@ -575,6 +594,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value;
                 config.JpegQuality = _jpegQualitySlider.Value;
                 config.RotateForPortrait = _rotateStreamCheckBox.Checked;
+                config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
                 config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
 
                 VirtualDisplayProfiles.EnsureValidSelection(config);
@@ -610,6 +630,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
                     .FirstOrDefault(item => item.Placement == VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement))
                     ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
+
+                var normalizedFit = config.BrowserImageFit?.Trim().ToLowerInvariant() ?? "fill";
+                _browserImageFitCombo.SelectedItem = _browserImageFitCombo.Items.Cast<ImageFitItem>()
+                    .FirstOrDefault(item => item.Fit == normalizedFit)
+                    ?? _browserImageFitCombo.Items.Cast<ImageFitItem>().First(item => item.Fit == "fill");
 
                 _transmissionMethodCombo.SelectedItem = _transmissionMethodCombo.Items.Cast<TransmissionMethodItem>()
                     .First(item => item.Method == TransmissionModeOptions.NormalizeMethod(config.TransmissionMethod));
@@ -681,6 +706,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
             }
 
             private sealed record PlacementItem(string Placement, string DisplayName)
+            {
+                public override string ToString() => DisplayName;
+            }
+
+            private sealed record ImageFitItem(string Fit, string DisplayName)
             {
                 public override string ToString() => DisplayName;
             }

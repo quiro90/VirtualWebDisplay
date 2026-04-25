@@ -168,7 +168,7 @@ static string BuildWebImagePage(string title, string browserImageFit, int interv
 
             :root {
                 --vw: 100vw;
-                --vh: 85vh;
+                --vh: 100vh;
             }
 
             html, body {
