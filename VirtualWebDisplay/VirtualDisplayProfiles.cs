@@ -10,12 +10,35 @@ public static class VirtualDisplayProfiles
     public const string IPad = "IPad";
     public const string Custom = "Custom";
 
+    private static readonly Size[] SupportedPortraitModes =
+    [
+        new(600, 800),
+        new(720, 1280),
+        new(800, 1280),
+        new(900, 1440),
+        new(1000, 1600),
+        new(1050, 1680),
+        new(1080, 1920),
+        new(1080, 2560),
+        new(1080, 3840),
+        new(1080, 4096),
+        new(1200, 1600),
+        new(1200, 1800),
+        new(1440, 2560),
+        new(1504, 2256),
+        new(1600, 2560),
+        new(1664, 2496),
+        new(1800, 2880),
+        new(1824, 2736),
+        new(2000, 3000),
+    ];
+
     private static readonly VirtualDisplayProfile[] Profiles =
     [
-        CreateScaledProfile(Kindle, "Kindle", nativeWidth: 1072, nativeHeight: 1448, maxHeight: 900, reduceHeightBy13Percent: true),
-        CreateScaledProfile(KindlePaperWhite12, "Kindle PaperWhite 12", nativeWidth: 1264, nativeHeight: 1680, maxHeight: 900, reduceHeightBy13Percent: true),
-        CreateScaledProfile(IPadMini, "iPad Mini", nativeWidth: 1488, nativeHeight: 2266, maxHeight: 1300, reduceHeightBy13Percent: false),
-        CreateScaledProfile(IPad, "iPad", nativeWidth: 1640, nativeHeight: 2360, maxHeight: 1800, reduceHeightBy13Percent: false),
+        CreateSupportedProfile(Kindle, "Kindle", nativeWidth: 1072, nativeHeight: 1448, maxHeight: 900, reduceHeightBy13Percent: true),
+        CreateSupportedProfile(KindlePaperWhite12, "Kindle PaperWhite 12", nativeWidth: 1264, nativeHeight: 1680, maxHeight: 900, reduceHeightBy13Percent: true),
+        CreateSupportedProfile(IPadMini, "iPad Mini", nativeWidth: 1488, nativeHeight: 2266, maxHeight: 1300, reduceHeightBy13Percent: false),
+        CreateSupportedProfile(IPad, "iPad", nativeWidth: 1640, nativeHeight: 2360, maxHeight: 1800, reduceHeightBy13Percent: false),
         new(Custom, "Personalizado", 0, 0),
     ];
 
@@ -107,13 +130,18 @@ public static class VirtualDisplayProfiles
         return false;
     }
 
-    private static VirtualDisplayProfile CreateScaledProfile(string id, string displayName, int nativeWidth, int nativeHeight, int maxHeight, bool reduceHeightBy13Percent)
+    private static VirtualDisplayProfile CreateSupportedProfile(string id, string displayName, int nativeWidth, int nativeHeight, int maxHeight, bool reduceHeightBy13Percent)
     {
         var portraitHeight = reduceHeightBy13Percent
             ? (int)Math.Round(maxHeight * 0.87)
             : maxHeight;
 
         var portraitWidth = (int)Math.Round(portraitHeight * nativeWidth / (double)nativeHeight);
-        return new VirtualDisplayProfile(id, displayName, portraitWidth, portraitHeight);
+        var supportedSize = SupportedPortraitModes
+            .OrderBy(size => Math.Abs(size.Width - portraitWidth) + Math.Abs(size.Height - portraitHeight))
+            .ThenBy(size => Math.Abs((size.Width / (double)size.Height) - (portraitWidth / (double)portraitHeight)))
+            .First();
+
+        return new VirtualDisplayProfile(id, displayName, supportedSize.Width, supportedSize.Height);
     }
 }

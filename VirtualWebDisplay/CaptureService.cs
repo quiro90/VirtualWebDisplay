@@ -67,11 +67,10 @@ public sealed class CaptureService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var interval = TimeSpan.FromSeconds(_config.CaptureIntervalSeconds);
-
         while (!stoppingToken.IsCancellationRequested)
         {
             var captureStart = DateTime.UtcNow;
+            var interval = TimeSpan.FromSeconds(TransmissionModeOptions.GetEffectiveCaptureIntervalSeconds(_config));
 
             try
             {
@@ -86,7 +85,7 @@ public sealed class CaptureService : BackgroundService
                     bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
 
                 var encoderParams = new EncoderParameters(1);
-                encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, (long)_config.JpegQuality);
+                encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, (long)TransmissionModeOptions.GetEffectiveJpegQuality(_config));
 
                 using var ms = new MemoryStream();
                 bitmap.Save(ms, JpegCodec, encoderParams);

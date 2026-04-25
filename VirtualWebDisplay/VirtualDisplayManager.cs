@@ -68,16 +68,12 @@ public sealed class VirtualDisplayManager : IDisposable
 
     private const int ENUM_CURRENT_SETTINGS = -1;
     private const int DM_POSITION = 0x00000020;
-    private const int DM_DISPLAYORIENTATION = 0x00000080;
     private const int DM_PELSWIDTH = 0x00080000;
     private const int DM_PELSHEIGHT = 0x00100000;
     private const uint CDS_UPDATEREGISTRY = 0x00000001;
     private const uint CDS_NORESET = 0x10000000;
     private const int DISP_CHANGE_SUCCESSFUL = 0;
     private const int DISP_CHANGE_BADMODE = -2;
-    private const int DMDO_DEFAULT = 0;
-    private const int DMDO_90 = 1;
-
     private IntPtr _handle = IntPtr.Zero;
     private int _displayIdx = -1;
     private CancellationTokenSource? _keepAliveCancellation;
@@ -261,28 +257,17 @@ public sealed class VirtualDisplayManager : IDisposable
 
         var requestedWidth = config.Width;
         var requestedHeight = config.Height;
-        var requestedLandscape = requestedWidth >= requestedHeight;
-        var baseModeWidth = requestedLandscape ? requestedWidth : requestedHeight;
-        var baseModeHeight = requestedLandscape ? requestedHeight : requestedWidth;
-        var mode = TryGetBestSupportedMode(deviceName, baseModeWidth, baseModeHeight)
+        var mode = TryGetBestSupportedMode(deviceName, requestedWidth, requestedHeight)
             ?? currentMode;
 
         var primaryBounds = Screen.PrimaryScreen?.Bounds
             ?? Screen.AllScreens.FirstOrDefault(s => s.Primary)?.Bounds
             ?? new Rectangle(0, 0, currentMode.dmPelsWidth, currentMode.dmPelsHeight);
 
-        var supportedWidth = mode.dmPelsWidth;
-        var supportedHeight = mode.dmPelsHeight;
-        var appliedWidth = requestedLandscape ? supportedWidth : supportedHeight;
-        var appliedHeight = requestedLandscape ? supportedHeight : supportedWidth;
-
-        mode.dmDisplayOrientation = requestedLandscape ? DMDO_DEFAULT : DMDO_90;
-        mode.dmPelsWidth = appliedWidth;
-        mode.dmPelsHeight = appliedHeight;
-        config.Width = appliedWidth;
-        config.Height = appliedHeight;
+        config.Width = mode.dmPelsWidth;
+        config.Height = mode.dmPelsHeight;
         mode.dmPosition = GetVirtualDisplayPosition(primaryBounds, config.VirtualDisplayPlacement, config.Width, config.Height);
-        mode.dmFields = DM_POSITION | DM_DISPLAYORIENTATION | DM_PELSWIDTH | DM_PELSHEIGHT;
+        mode.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
 
         var result = ChangeDisplaySettingsEx(deviceName, ref mode, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero);
         if (result != DISP_CHANGE_SUCCESSFUL)
