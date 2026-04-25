@@ -6,11 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseWindowsForms>true</UseWindowsForms>
-    <ApplicationIcon />
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <OutputType>WinExe</OutputType>
     <AssemblyName>VirtualWebDisplay</AssemblyName>
     <RootNamespace>VirtualWebDisplay</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="app.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SIPSorcery" Version="10.0.5" />

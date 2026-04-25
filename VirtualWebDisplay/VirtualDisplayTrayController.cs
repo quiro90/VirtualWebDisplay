@@ -17,6 +17,14 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private Action? _exitRequested;
     private IReadOnlyList<ScreenRuntimeContext> _screenRuntimes = [];
     private bool _disposed;
+    private Icon? _appIcon;
+
+    private static Icon LoadAppIcon()
+    {
+        var stream = typeof(VirtualDisplayTrayController).Assembly
+            .GetManifestResourceStream("VirtualWebDisplay.app.ico");
+        return stream is not null ? new Icon(stream) : SystemIcons.Application;
+    }
 
     public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore)
     {
@@ -106,10 +114,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _invoker = new Control();
         _invoker.CreateControl();
 
+        _appIcon = LoadAppIcon();
         _contextMenu = BuildContextMenu();
         _notifyIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = _appIcon,
             Text = TrimTrayText("VirtualWebDisplay"),
             Visible = true,
             ContextMenuStrip = _contextMenu,
@@ -123,6 +132,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();
         _contextMenu?.Dispose();
+        _appIcon?.Dispose();
         _invoker.Dispose();
     }
 
