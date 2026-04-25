@@ -4,13 +4,15 @@ using SIPSorcery.Net;
 
 public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 {
-    private const int MaxChunkSize = 32 * 1024;
+    private const int MaxChunkSize = 64 * 1024;
+    private const int MaxBufferedAmount = 512 * 1024;
     private static readonly RTCConfiguration PeerConfiguration = new();
 
     private readonly CaptureService _captureService;
     private readonly VirtualScreenConfig _config;
     private readonly ILogger<WebRtcStreamService> _logger;
     private readonly ConcurrentDictionary<Guid, PeerState> _peers = new();
+    private uint _frameId;
 
     public WebRtcStreamService(CaptureService captureService, VirtualScreenConfig config, ILogger<WebRtcStreamService> logger)
     {
@@ -95,9 +97,10 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
                 {
                     lastFrame = frame;
 
+                    var frameId = ++_frameId;
                     foreach (var peerEntry in _peers.ToArray())
                     {
-                        if (!peerEntry.Value.TrySendFrame(frame))
+                        if (!peerEntry.Value.TrySendFrame(frame, frameId))
                             continue;
                     }
                 }
@@ -159,19 +162,27 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
             _channelAccessor = channelAccessor;
         }
 
-        public bool TrySendFrame(byte[] frame)
+        public bool TrySendFrame(byte[] frame, uint frameId)
         {
             var channel = _channelAccessor();
             if (channel is null || channel.readyState != RTCDataChannelState.open)
                 return false;
 
-            channel.send($"{{\"type\":\"frame\",\"size\":{frame.Length}}}");
+            // Skip frame if send buffer is growing to avoid queuing stale frames.
+            if (channel.bufferedAmount > MaxBufferedAmount)
+                return false;
 
+            channel.send($"{{\"type\":\"frame\",\"id\":{frameId},\"size\":{frame.Length}}}");
+
+            // Prepend 4-byte little-endian frameId to each binary chunk so the
+            // client can discard chunks that belong to a superseded frame.
+            var idBytes = BitConverter.GetBytes(frameId);
             for (var offset = 0; offset < frame.Length; offset += MaxChunkSize)
             {
                 var chunkLength = Math.Min(MaxChunkSize, frame.Length - offset);
-                var chunk = new byte[chunkLength];
-                Buffer.BlockCopy(frame, offset, chunk, 0, chunkLength);
+                var chunk = new byte[4 + chunkLength];
+                Buffer.BlockCopy(idBytes, 0, chunk, 0, 4);
+                Buffer.BlockCopy(frame, offset, chunk, 4, chunkLength);
                 channel.send(chunk);
             }
 

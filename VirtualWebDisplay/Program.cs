@@ -304,6 +304,7 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
             var img = document.getElementById('screen');
             var status = document.getElementById('status');
             var currentUrl = null;
+            var currentFrameId = -1;
             var frameInfo = null;
             var frameBuffers = [];
             var receivedBytes = 0;
@@ -329,6 +330,7 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
             }
 
             function resetFrameAssembly(meta) {
+                currentFrameId = meta.id;
                 frameInfo = meta;
                 frameBuffers = [];
                 receivedBytes = 0;
@@ -349,7 +351,9 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
                 setStatus('Negociando WebRTC…');
 
                 var pc = new RTCPeerConnection({ iceServers: [] });
-                var channel = pc.createDataChannel('frames', { ordered: true });
+                // ordered: false + maxRetransmits: 0 → sin retransmisión ni head-of-line blocking.
+                // Un frame perdido o incompleto se descarta; el siguiente llega sin delay acumulado.
+                var channel = pc.createDataChannel('frames', { ordered: false, maxRetransmits: 0 });
                 channel.binaryType = 'arraybuffer';
 
                 channel.onopen = function () {
@@ -381,7 +385,17 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
                     if (!frameInfo)
                         return;
 
-                    var chunk = new Uint8Array(event.data);
+                    var data = new Uint8Array(event.data);
+                    if (data.length < 4)
+                        return;
+
+                    // First 4 bytes: little-endian uint32 frameId.
+                    // Discard chunks that belong to a superseded frame.
+                    var chunkFrameId = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
+                    if (chunkFrameId !== currentFrameId)
+                        return;
+
+                    var chunk = data.subarray(4);
                     frameBuffers.push(chunk);
                     receivedBytes += chunk.byteLength;
 
