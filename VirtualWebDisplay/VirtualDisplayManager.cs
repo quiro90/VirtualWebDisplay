@@ -3,15 +3,13 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 /// <summary>
-/// Manages an IddCx-based Virtual Display Driver (VDD) by talking directly to the installed driver.
-/// Compatible with open-source IddCx drivers that expose the standard VDD device interface.
-/// Download: https://github.com/itsmikethetech/Virtual-Display-Driver
+/// Manages a Parsec Virtual Display by talking directly to the installed driver.
+/// No external DLL is required next to this executable.
 /// </summary>
 public sealed class VirtualDisplayManager : IDisposable
 {
-    public const string InstallUrl = "https://github.com/VirtualDrivers/Virtual-Display-Driver/releases";
+    public const string InstallUrl = "https://parsec.app/downloads";
 
-    /// <summary>Device interface GUID exposed by compatible IddCx VDD drivers.</summary>
     private const string AdapterGuid = "{00b41627-04c4-429e-a26e-0265cf50c8fa}";
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -70,7 +68,6 @@ public sealed class VirtualDisplayManager : IDisposable
     private const int DM_POSITION = 0x00000020;
     private const int DM_PELSWIDTH = 0x00080000;
     private const int DM_PELSHEIGHT = 0x00100000;
-    private const int DM_DISPLAYFREQUENCY = 0x00400000;
     private const uint CDS_UPDATEREGISTRY = 0x00000001;
     private const uint CDS_NORESET = 0x10000000;
     private const int DISP_CHANGE_SUCCESSFUL = 0;
@@ -89,13 +86,13 @@ public sealed class VirtualDisplayManager : IDisposable
         if (!DriverApi.OpenHandle(AdapterGuid, out var handle))
         {
             return (false,
-                "No se encontró el driver de pantalla virtual IddCx instalado o accesible.\n" +
-                $"Descargá e instalá el Virtual Display Driver (VDD) desde:\n{InstallUrl}\n" +
-                "Asegurate de instalar el driver (.inf) con pnputil o el instalador incluido.");
+                "No se encontró el adaptador de Parsec Virtual Display instalado o accesible.\n" +
+                $"Descargá e instalá Parsec desde: {InstallUrl}\n" +
+                "Asegurate de instalar la versión de escritorio que incluye el Virtual Display Driver (VDD).");
         }
 
         DriverApi.CloseHandle(handle);
-        return (true, "IddCx Virtual Display Driver detectado correctamente.");
+        return (true, "Parsec VDD detectado correctamente.");
     }
 
     public (bool ok, string message) TryCreate(VirtualScreenConfig config)
@@ -114,7 +111,7 @@ public sealed class VirtualDisplayManager : IDisposable
             {
                 Reset();
                 return (false,
-                    "El driver IddCx VDD está instalado, pero no se pudo crear el display virtual automáticamente.");
+                    "El driver de Parsec VDD está instalado, pero no se pudo crear el display virtual automáticamente.");
             }
 
             StartKeepAlive();
@@ -154,14 +151,14 @@ public sealed class VirtualDisplayManager : IDisposable
 
             IsActive = true;
             return (true,
-                $"IddCx VDD: monitor virtual listo (índice interno {_displayIdx}, {Screen.AllScreens.Length} monitores totales" +
+                $"Parsec VDD: monitor virtual listo (índice interno {_displayIdx}, {Screen.AllScreens.Length} monitores totales" +
                 (WindowsMonitorIndex is int idx ? $", MonitorIndex Windows {idx}" : string.Empty) +
                 "). " + arrangeStatus);
         }
         catch (Exception ex)
         {
             Reset();
-            return (false, $"IddCx VDD: error inesperado — {ex.Message}");
+            return (false, $"Parsec VDD: error inesperado — {ex.Message}");
         }
     }
 
@@ -264,16 +261,14 @@ public sealed class VirtualDisplayManager : IDisposable
         // En modo duplicado se fuerza la resolución del monitor principal.
         var requestedWidth  = isDuplicate ? primaryBounds.Width  : config.Width;
         var requestedHeight = isDuplicate ? primaryBounds.Height : config.Height;
-        var requestedHz     = config.RefreshRateHz > 0 ? config.RefreshRateHz : 60;
 
-        var mode = TryGetBestSupportedMode(deviceName, requestedWidth, requestedHeight, requestedHz)
+        var mode = TryGetBestSupportedMode(deviceName, requestedWidth, requestedHeight)
             ?? currentMode;
 
         config.Width  = mode.dmPelsWidth;
         config.Height = mode.dmPelsHeight;
-        config.RefreshRateHz = mode.dmDisplayFrequency > 0 ? mode.dmDisplayFrequency : requestedHz;
         mode.dmPosition = GetVirtualDisplayPosition(primaryBounds, config.VirtualDisplayPlacement, config.Width, config.Height);
-        mode.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+        mode.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
 
         var result = ChangeDisplaySettingsEx(deviceName, ref mode, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero);
         if (result != DISP_CHANGE_SUCCESSFUL)
@@ -281,9 +276,9 @@ public sealed class VirtualDisplayManager : IDisposable
             var supportedModes = GetSupportedModes(deviceName);
             var supportedText = supportedModes.Count == 0
                 ? string.Empty
-                : $" Modos soportados: {string.Join(", ", supportedModes.Select(m => $"{m.dmPelsWidth}×{m.dmPelsHeight}@{m.dmDisplayFrequency}Hz").Distinct())}.";
+                : $" Modos soportados: {string.Join(", ", supportedModes.Select(m => $"{m.dmPelsWidth}×{m.dmPelsHeight}").Distinct())}.";
             var reason = result == DISP_CHANGE_BADMODE
-                ? "La resolución o tasa de refresco pedida no está soportada por el driver del monitor virtual."
+                ? "La resolución pedida no está soportada por el driver del monitor virtual."
                 : $"Windows creó el monitor virtual pero no permitió aplicarle posición/resolución (código {result}).";
             return (false, reason + supportedText);
         }
@@ -293,16 +288,16 @@ public sealed class VirtualDisplayManager : IDisposable
             return (false, $"Windows guardó cambios parciales del monitor virtual, pero no pudo refrescar la topología (código {result}).");
 
         if (isDuplicate)
-            return (true, $"Monitor virtual en modo duplicado (clone) del monitor principal con resolución {config.Width}×{config.Height}@{config.RefreshRateHz}Hz.");
+            return (true, $"Monitor virtual en modo duplicado (clone) del monitor principal con resolución {config.Width}×{config.Height}.");
 
         if (config.Width != requestedWidth || config.Height != requestedHeight)
         {
             return (true,
                 $"La resolución solicitada {requestedWidth}×{requestedHeight} no estaba disponible. " +
-                $"Se aplicó la más cercana soportada: {config.Width}×{config.Height}@{config.RefreshRateHz}Hz, ubicada a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal.");
+                $"Se aplicó la más cercana soportada: {config.Width}×{config.Height}, ubicada a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal.");
         }
 
-        return (true, $"Ubicado a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal con resolución {config.Width}×{config.Height}@{config.RefreshRateHz}Hz.");
+        return (true, $"Ubicado a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal con resolución {config.Width}×{config.Height}.");
     }
 
     private static List<DEVMODE> GetSupportedModes(string deviceName)
@@ -315,10 +310,7 @@ public sealed class VirtualDisplayManager : IDisposable
             if (!EnumDisplaySettings(deviceName, modeIndex, ref mode))
                 break;
 
-            if (modes.Any(existing =>
-                    existing.dmPelsWidth == mode.dmPelsWidth &&
-                    existing.dmPelsHeight == mode.dmPelsHeight &&
-                    existing.dmDisplayFrequency == mode.dmDisplayFrequency))
+            if (modes.Any(existing => existing.dmPelsWidth == mode.dmPelsWidth && existing.dmPelsHeight == mode.dmPelsHeight))
                 continue;
 
             modes.Add(mode);
@@ -327,24 +319,18 @@ public sealed class VirtualDisplayManager : IDisposable
         return modes;
     }
 
-    private static DEVMODE? TryGetBestSupportedMode(string deviceName, int requestedWidth, int requestedHeight, int requestedHz)
+    private static DEVMODE? TryGetBestSupportedMode(string deviceName, int requestedWidth, int requestedHeight)
     {
         var supportedModes = GetSupportedModes(deviceName);
         if (supportedModes.Count == 0)
             return null;
 
-        // Exact match: same resolution and same refresh rate.
-        var exactMode = supportedModes.FirstOrDefault(mode =>
-            mode.dmPelsWidth == requestedWidth &&
-            mode.dmPelsHeight == requestedHeight &&
-            mode.dmDisplayFrequency == requestedHz);
+        var exactMode = supportedModes.FirstOrDefault(mode => mode.dmPelsWidth == requestedWidth && mode.dmPelsHeight == requestedHeight);
         if (exactMode.dmPelsWidth == requestedWidth && exactMode.dmPelsHeight == requestedHeight)
             return exactMode;
 
-        // Best resolution match, then prefer closest Hz.
         return supportedModes
             .OrderBy(mode => Math.Abs(mode.dmPelsWidth - requestedWidth) + Math.Abs(mode.dmPelsHeight - requestedHeight))
-            .ThenBy(mode => Math.Abs(mode.dmDisplayFrequency - requestedHz))
             .ThenBy(mode => Math.Abs((mode.dmPelsWidth / (double)mode.dmPelsHeight) - (requestedWidth / (double)requestedHeight)))
             .First();
     }
