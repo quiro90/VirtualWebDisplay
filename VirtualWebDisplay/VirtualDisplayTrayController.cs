@@ -163,48 +163,13 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _settingsStore.Save(_settings);
     }
 
-    private static void CopyConfig(VirtualScreenConfig source, VirtualScreenConfig target)
-    {
-        target.Enabled = source.Enabled;
-        target.Width = source.Width;
-        target.Height = source.Height;
-        target.Profile = source.Profile;
-        target.Landscape = source.Landscape;
-        target.CustomWidth = source.CustomWidth;
-        target.CustomHeight = source.CustomHeight;
-        target.TransmissionMethod = source.TransmissionMethod;
-        target.CaptureIntervalSeconds = source.CaptureIntervalSeconds;
-        target.JpegQuality = source.JpegQuality;
-        target.Port = source.Port;
-        target.RotateForPortrait = source.RotateForPortrait;
-        target.MonitorIndex = source.MonitorIndex;
-        target.VirtualDisplayPlacement = source.VirtualDisplayPlacement;
-        target.BrowserImageFit = source.BrowserImageFit;
-    }
-
-    private static VirtualScreenConfig CloneConfig(VirtualScreenConfig source) => new()
-    {
-        Enabled = source.Enabled,
-        Width = source.Width,
-        Height = source.Height,
-        Profile = source.Profile,
-        Landscape = source.Landscape,
-        CustomWidth = source.CustomWidth,
-        CustomHeight = source.CustomHeight,
-        TransmissionMethod = source.TransmissionMethod,
-        CaptureIntervalSeconds = source.CaptureIntervalSeconds,
-        JpegQuality = source.JpegQuality,
-        Port = source.Port,
-        RotateForPortrait = source.RotateForPortrait,
-        MonitorIndex = source.MonitorIndex,
-        VirtualDisplayPlacement = source.VirtualDisplayPlacement,
-        BrowserImageFit = source.BrowserImageFit,
-    };
+    private static void CopyConfig(VirtualScreenConfig source, VirtualScreenConfig target) =>
+        source.CopyTo(target);
 
     private static VirtualWebDisplaySettings CloneSettings(VirtualWebDisplaySettings settings) => new()
     {
-        Screen1 = CloneConfig(settings.Screen1),
-        Screen2 = CloneConfig(settings.Screen2),
+        Screen1 = settings.Screen1.Clone(),
+        Screen2 = settings.Screen2.Clone(),
     };
 
     private static void OpenStreamUrl(string url)
@@ -364,7 +329,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
             public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config)
             {
-                _baseConfig = CloneConfig(config);
+                _baseConfig = config.Clone();
                 _allowDisable = allowDisable;
                 TabPage = new TabPage(title);
 
@@ -583,7 +548,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
             public VirtualScreenConfig BuildConfig(bool alwaysEnabled)
             {
-                var config = CloneConfig(_baseConfig);
+                var config = _baseConfig.Clone();
                 config.Enabled = alwaysEnabled || _enabledCheckBox?.Checked == true;
                 config.Profile = VirtualDisplayProfiles.Custom;
                 config.Landscape = false;

@@ -121,19 +121,21 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        foreach (var peerId in _peers.Keys.ToArray())
-            RemovePeer(peerId);
-
+        CloseAllPeers();
         await base.StopAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var peerId in _peers.Keys.ToArray())
-            RemovePeer(peerId);
-
+        CloseAllPeers();
         await base.StopAsync(CancellationToken.None);
         base.Dispose();
+    }
+
+    private void CloseAllPeers()
+    {
+        foreach (var peerId in _peers.Keys.ToArray())
+            RemovePeer(peerId);
     }
 
     private void RemovePeer(Guid peerId)

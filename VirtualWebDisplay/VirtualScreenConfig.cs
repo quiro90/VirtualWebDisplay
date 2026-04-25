@@ -52,4 +52,42 @@ public sealed class VirtualScreenConfig
     /// Para Kindle Paperwhite 12 en navegador, "contain" es el valor recomendado.
     /// </summary>
     public string BrowserImageFit { get; set; } = "contain";
+
+    public VirtualScreenConfig Clone() => new()
+    {
+        Enabled = Enabled,
+        Width = Width,
+        Height = Height,
+        Profile = Profile,
+        Landscape = Landscape,
+        CustomWidth = CustomWidth,
+        CustomHeight = CustomHeight,
+        TransmissionMethod = TransmissionMethod,
+        CaptureIntervalSeconds = CaptureIntervalSeconds,
+        JpegQuality = JpegQuality,
+        Port = Port,
+        RotateForPortrait = RotateForPortrait,
+        MonitorIndex = MonitorIndex,
+        VirtualDisplayPlacement = VirtualDisplayPlacement,
+        BrowserImageFit = BrowserImageFit,
+    };
+
+    public void CopyTo(VirtualScreenConfig target)
+    {
+        target.Enabled = Enabled;
+        target.Width = Width;
+        target.Height = Height;
+        target.Profile = Profile;
+        target.Landscape = Landscape;
+        target.CustomWidth = CustomWidth;
+        target.CustomHeight = CustomHeight;
+        target.TransmissionMethod = TransmissionMethod;
+        target.CaptureIntervalSeconds = CaptureIntervalSeconds;
+        target.JpegQuality = JpegQuality;
+        target.Port = Port;
+        target.RotateForPortrait = RotateForPortrait;
+        target.MonitorIndex = MonitorIndex;
+        target.VirtualDisplayPlacement = VirtualDisplayPlacement;
+        target.BrowserImageFit = BrowserImageFit;
+    }
 }

@@ -47,15 +47,7 @@ public sealed class VirtualScreenSettingsStore
 
             return CreateDefaults();
         }
-        catch (IOException)
-        {
-            return CreateDefaults();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return CreateDefaults();
-        }
-        catch (JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
             return CreateDefaults();
         }

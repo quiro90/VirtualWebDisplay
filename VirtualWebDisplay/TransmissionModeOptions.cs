@@ -25,7 +25,7 @@ public static class TransmissionModeOptions
     public static string GetDisplayName(string? method) =>
         NormalizeMethod(method) switch
         {
-            Rtc => "WebRTC (recomendado tablets)",
+            Rtc => "WebRTC",
             _ => "Web image",
         };
 
