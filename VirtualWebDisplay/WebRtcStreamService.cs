@@ -4,7 +4,7 @@ using SIPSorcery.Net;
 
 public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 {
-    private const int MaxChunkSize = 16 * 1024;
+    private const int MaxChunkSize = 32 * 1024;
     private static readonly RTCConfiguration PeerConfiguration = new();
 
     private readonly CaptureService _captureService;

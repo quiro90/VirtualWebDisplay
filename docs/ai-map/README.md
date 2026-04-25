@@ -25,8 +25,23 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
   - `VirtualDisplayManager` para crear/reconfigurar el monitor virtual,
   - `CaptureService` para capturar JPEGs del monitor,
   - `WebRtcStreamService` para retransmitir frames por `WebRTC DataChannel`.
-- `VirtualDisplayTrayController` expone configuración y control desde el tray.
+- `VirtualDisplayTrayController` expone configuración y control desde el tray (incluye `ResolutionConfigurationForm` embebida).
 - `VirtualScreenSettingsStore` guarda la configuración del usuario en `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`.
 
-## Qué no es core
-Los archivos `WeatherForecast.cs` y `Controllers/WeatherForecastController.cs` parecen residuo de la plantilla web y **no forman parte del flujo principal** de pantallas virtuales.
+## Archivos principales del dominio
+| Archivo | Rol |
+|---|---|
+| `Program.cs` | Bootstrapper, compositor, endpoints HTTP, páginas HTML |
+| `ScreenRuntimeContext.cs` | Unidad operativa por pantalla |
+| `VirtualDisplayManager.cs` | Crear/destruir monitor virtual vía Win32 |
+| `CaptureService.cs` | Captura periódica + codificación JPEG |
+| `WebRtcStreamService.cs` | Negociación WebRTC + emisión de frames |
+| `VirtualDisplayTrayController.cs` | Tray icon + formulario de configuración |
+| `VirtualScreenSettingsStore.cs` | Carga y persistencia de JSON de usuario |
+| `VirtualWebDisplaySettings.cs` | Objeto raíz de configuración (Screen1 + Screen2) |
+| `VirtualScreenConfig.cs` | Config de una sola pantalla virtual |
+| `VirtualDisplayProfiles.cs` | Catálogo de perfiles de resolución |
+| `TransmissionModeOptions.cs` | Constantes y validación de modos WebImage/Rtc |
+| `VirtualDisplayPlacementOptions.cs` | Normalización y cálculo de posición del monitor |
+| `NetworkAddressHelper.cs` | Detección de IP local y construcción de URLs |
+| `SingleInstanceManager.cs` | Mutex de instancia única + shutdown listener |

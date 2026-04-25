@@ -1,47 +1,50 @@
-# Mapeo por componentes
+﻿# Mapeo por componentes
 
 ## `Program.cs`
-**Rol:** composición de toda la aplicación.
+**Rol:** composición y arranque de toda la aplicación.
 
 ### Responsabilidades
 - garantizar instancia única con `SingleInstanceManager`,
 - cargar configuración con `VirtualScreenSettingsStore`,
-- abrir la UI inicial del tray,
-- detectar IP/hostname local,
-- verificar disponibilidad del driver virtual,
+- abrir la UI inicial del tray (`VirtualDisplayTrayController`),
+- detectar IP/hostname local con `NetworkAddressHelper`,
+- verificar disponibilidad del driver virtual (`VirtualDisplayManager.VerifyDriverAvailability()`),
 - crear `ScreenRuntimeContext` por cada pantalla habilitada,
 - exponer endpoints HTTP,
 - generar HTML cliente para `WebImage` y `WebRTC`.
 
 ### Funciones clave
-- `DetectLocalIp()`
 - `ShowInstallDialog(...)`
-- `BuildWebImagePage(...)`
-- `BuildRtcPage(...)`
-- `DisposeRuntimesAsync(...)`
-- `ResolveRuntime(HttpContext)`
+- `BrowserImageFit(string? fit)` — normaliza a `fill`, `cover` o `contain`
+- `BuildWebImagePage(string title, string browserImageFit, int intervalMs)`
+- `BuildRtcPage(string title, string browserImageFit)`
+- `DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext>)`
+- `ResolveRuntime(HttpContext)` — resuelve el runtime según el puerto local de la conexión
 
-### Observación
-Las páginas HTML del cliente están embebidas en strings. Si se toca la UX web, hoy el lugar correcto es este archivo.
+### HTML embebido
+Las páginas HTML del cliente están embebidas como strings interpolados. Ambas páginas:
+- usan `object-fit` configurado por `BrowserImageFit` (`fill` = estirar, `cover` = recortar, `contain` = barras),
+- usan `width: 100vw; height: 100vh` para ocupar toda la pantalla del cliente,
+- son responsivas a cambios de viewport con `syncViewport()`.
 
 ---
 
 ## `ScreenRuntimeContext.cs`
-**Rol:** contenedor de runtime por pantalla.
+**Rol:** contenedor de runtime por pantalla virtual activa.
 
 ### Agrupa
-- `VirtualScreenConfig`
-- `VirtualDisplayManager`
-- `CaptureService`
-- `WebRtcStreamService`
+- `VirtualScreenConfig` (configuración activa)
+- `VirtualDisplayManager` (monitor Win32)
+- `CaptureService` (captura JPEG)
+- `WebRtcStreamService` (emisión WebRTC)
 - URLs de acceso (`HostUrl`, `IpUrl`)
 
 ### Métodos clave
-- `StartAsync(...)`: inicia captura y broadcaster WebRTC.
+- `StartAsync(CancellationToken)`: inicia captura y broadcaster WebRTC.
 - `StopAsync()`: detiene servicios en orden seguro.
-- `Dispose()/DisposeAsync()`: libera servicios y display virtual.
+- `Dispose()` / `DisposeAsync()`: libera servicios y display virtual.
 
-### Idea
+### Nota
 Es la unidad operativa principal por pantalla. Si en el futuro se agrega una tercera pantalla, el patrón ya existe aquí.
 
 ---
@@ -52,21 +55,22 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 ### Responsabilidades
 - verificar si `Parsec VDD` está instalado,
 - abrir handle nativo al adaptador,
-- agregar display virtual,
+- agregar display virtual vía IOCTL `Add`,
 - mantener vivo el driver con un loop de `Update`,
-- identificar qué `Screen` nuevo creó Windows,
+- identificar qué `Screen` nuevo creó Windows (`WindowsMonitorIndex`),
 - aplicar resolución y posición relativa al monitor principal,
 - eliminar el display al liberar recursos.
 
 ### API pública importante
-- `VerifyDriverAvailability()`
+- `VerifyDriverAvailability()` — static, verifica el driver antes de crear runtimes
 - `TryCreate(VirtualScreenConfig)`
 - `TryReconfigure(VirtualScreenConfig)`
+- `WindowsMonitorIndex` — índice asignado por Windows al monitor creado
 - `Dispose()`
 
 ### Detalles internos importantes
 - usa `EnumDisplaySettings` y `ChangeDisplaySettingsEx` para topología/resolución,
-- normaliza la posición con `right/left/top/bottom`,
+- usa `VirtualDisplayPlacementOptions.GetPosition(...)` para calcular la posición,
 - ajusta el `VirtualScreenConfig` a la resolución realmente soportada por el driver,
 - contiene `DriverApi`, que encapsula IOCTLs `Add`, `Remove` y `Update`.
 
@@ -85,16 +89,18 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 - copiar la pantalla con `Graphics.CopyFromScreen`,
 - dibujar el cursor encima si está visible,
 - rotar si `RotateForPortrait` está activo,
-- codificar a JPEG con calidad configurable,
+- codificar a JPEG con la calidad configurada (`JpegQuality`),
+- respetar el intervalo de captura (`CaptureIntervalSeconds`),
 - guardar en memoria el último frame.
 
 ### API pública importante
-- `GetCurrentFrame()`
-- `ExecuteAsync(...)`
+- `GetCurrentFrame()` — devuelve el último JPEG capturado como `byte[]`
+- `ExecuteAsync(CancellationToken)` — loop principal (hereda de `BackgroundService`)
 
 ### Notas
 - hereda de `BackgroundService`,
-- comparte el último frame por referencia para que `/cap`, `/mjpeg` y `WebRtcStreamService` reutilicen la misma captura.
+- comparte el último frame por referencia para que `/cap`, `/mjpeg` y `WebRtcStreamService` reutilicen la misma captura sin duplicar memoria,
+- tanto `WebImage` como `Rtc` usan los mismos parámetros `CaptureIntervalSeconds` y `JpegQuality`.
 
 ---
 
@@ -106,12 +112,12 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 - registrar peers activos,
 - detectar cierre/desconexión y limpiar peers,
 - tomar el último JPEG disponible desde `CaptureService`,
-- enviar metadata JSON + chunks binarios.
+- enviar metadata JSON + chunks binarios al cliente.
 
 ### API pública importante
 - `CreateAnswerAsync(WebRtcSessionOffer, CancellationToken)`
-- `ExecuteAsync(...)`
-- `StopAsync(...)`
+- `ExecuteAsync(CancellationToken)`
+- `StopAsync(CancellationToken)`
 - `DisposeAsync()`
 
 ### Protocolo interno de frame
@@ -122,152 +128,134 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 ---
 
 ## `VirtualDisplayTrayController.cs`
-**Rol:** interfaz operativa en bandeja del sistema y formulario de configuración.
+**Rol:** gestionar el tray icon y el formulario de configuración de pantallas.
 
 ### Responsabilidades
-- correr una UI STA separada para el tray,
-- mostrar formulario de configuración inicial y de runtime,
-- persistir selección del usuario,
-- mostrar URLs disponibles por pantalla,
-- permitir abrir la URL y salir de la app.
+- ejecutar el bucle de UI de Windows Forms en un hilo STA dedicado,
+- mostrar el formulario de configuración inicial (`ShowStartupConfiguration`),
+- construir el menú contextual del tray,
+- actualizar el texto del tray con el estado de los runtimes,
+- mostrar balloon tips al arrancar y al guardar,
+- persistir cambios de configuración vía `VirtualScreenSettingsStore`.
 
-### Zonas internas
-- `VirtualDisplayTrayController`: ciclo de vida del tray y menús.
-- `ResolutionConfigurationForm`: formulario modal.
-- `ScreenTabControls`: construcción de la UI por pantalla.
+### Clase interna: `ResolutionConfigurationForm`
+Form embebido dentro de `VirtualDisplayTrayController` que contiene dos tabs (Pantalla 1 / Pantalla 2), cada una con `ScreenTabControls` que expone:
+- combo de perfil de resolución
+- inputs de ancho/alto (habilitados solo en perfil personalizado)
+- botón de rotación ↕
+- combo de posición del monitor virtual (derecha/izquierda/arriba/abajo)
+- input de puerto (editable solo en el arranque inicial)
+- combo de modo de transmisión (WebImage / WebRTC)
+- input de intervalo de captura (segundos)
+- slider de calidad JPEG
+- checkbox de rotación 90°
+- **combo de ajuste de imagen** (`BrowserImageFit`): Estirar/Recortar/Contener
 
-### Qué configura
-- perfil de dispositivo,
-- orientación,
-- tamaño custom,
-- posición del monitor virtual,
-- puerto,
-- método de transmisión,
-- intervalo de captura,
-- calidad JPEG.
+### Método clave
+- `ConfigureRuntimeActions(Action exitRequested, IReadOnlyList<ScreenRuntimeContext>)`
+- `UpdateStatus(string status)`
+- `PostToUi(Action)` — despacha al hilo STA seguro
+
+### Copia y clonado de config
+- `CopyConfig(source, target)` — copia campo a campo entre dos `VirtualScreenConfig`
+- `CloneConfig(source)` — crea nueva instancia copiada
+- `CloneSettings(settings)` — clona el par Screen1+Screen2
 
 ---
 
 ## `VirtualScreenSettingsStore.cs`
-**Rol:** persistencia local de configuración de usuario.
+**Rol:** cargar y guardar la configuración del usuario.
 
-### Responsabilidades
-- cargar configuración JSON,
-- migrar formato legado `VirtualScreen`,
-- devolver defaults robustos ante errores,
-- guardar de forma segura mediante archivo temporal + replace/move,
-- ocultar carpeta y archivo en Windows.
-
-### Puntos clave
-- carpeta: `%USERPROFILE%\.virtualwebdisplay`
+### Detalles
+- directorio: `%USERPROFILE%\.virtualwebdisplay`
 - archivo: `virtualscreen.user.json`
-- tolera `IOException`, `UnauthorizedAccessException`, `JsonException`
+- soporta migración desde formato legado (campo `VirtualScreen` -> `Screen1` + `Screen2` defaults)
+- `CreateDefaults()` centraliza los valores por defecto para evitar inconsistencias
 
 ---
 
 ## `VirtualWebDisplaySettings.cs`
-**Rol:** raíz de configuración persistida.
+**Rol:** objeto raíz de configuración.
 
 ### Estructura
-- `Screen1`
-- `Screen2`
-
-### Reglas clave
-- `Screen1` siempre queda habilitada,
-- evita puertos duplicados,
-- aplica defaults válidos para ambas pantallas.
+- `Screen1`: `VirtualScreenConfig` (siempre habilitada, puerto 8000 por defecto)
+- `Screen2`: `VirtualScreenConfig` (deshabilitada por defecto, puerto 8001)
+- `EnsureValid()`: normaliza puertos, profiles y modos; garantiza que Screen1.Enabled=true
 
 ---
 
 ## `VirtualScreenConfig.cs`
-**Rol:** modelo de configuración por pantalla.
+**Rol:** configuración completa de una pantalla virtual.
 
-### Campos más relevantes
-- `Enabled`
-- `Width` / `Height`
-- `Profile`, `Landscape`, `CustomWidth`, `CustomHeight`
-- `TransmissionMethod`
-- `CaptureIntervalSeconds`
-- `JpegQuality`
-- `Port`
-- `RotateForPortrait`
-- `MonitorIndex`
-- `VirtualDisplayPlacement`
-- `BrowserImageFit`
-
-### Significado práctico
-Es el contrato central entre UI, creación del monitor, captura y exposición web.
+### Campos clave
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `Enabled` | bool | Si se crea esta pantalla |
+| `Profile` | string | Id del perfil de resolución |
+| `CustomWidth`/`CustomHeight` | int | Resolución cuando Profile = Custom |
+| `Width`/`Height` | int | Resolución efectiva final |
+| `Port` | int | Puerto HTTP de esta pantalla |
+| `TransmissionMethod` | string | `WebImage` o `Rtc` |
+| `CaptureIntervalSeconds` | double | Intervalo de captura (compartido por ambos modos) |
+| `JpegQuality` | int | Calidad JPEG 10-100 (compartido por ambos modos) |
+| `RotateForPortrait` | bool | Rota el bitmap 90° antes de codificar |
+| `MonitorIndex` | int | -1=auto, 0=primario, 1+=otros |
+| `VirtualDisplayPlacement` | string | right/left/top/bottom |
+| `BrowserImageFit` | string | fill/cover/contain |
 
 ---
 
 ## `VirtualDisplayProfiles.cs`
-**Rol:** catálogo de perfiles y resolución efectiva.
+**Rol:** catálogo de resoluciones predefinidas.
 
-### Responsabilidades
-- exponer perfiles conocidos (`Kindle`, `KindlePaperWhite12`, `IPadMini`, `IPad`, `Custom`),
-- mapear perfil + orientación a tamaño efectivo,
-- inferir perfil si una resolución coincide,
-- aproximar resoluciones nativas a modos realmente soportados por Parsec VDD.
+### Perfiles disponibles
+Todos se almacenan en portrait; la app rota si `Landscape=true`.
+Incluyen resoluciones desde 720×1280 hasta 1200×1920, más `Custom`.
+La resolución recomendada es **1080×1920**.
 
-### Punto importante
-Este archivo codifica mucho del conocimiento de producto: los destinos esperados son lectores/tablets usados como pantalla secundaria vía web.
-
----
-
-## `VirtualDisplayPlacementOptions.cs`
-**Rol:** helper compartido para normalizar y etiquetar la posición del monitor virtual.
-
-### Responsabilidades
-- normalizar `right/left/top/bottom` y equivalentes en español,
-- devolver la etiqueta visible para UI,
-- calcular la posición relativa al monitor principal.
-
-### Impacto
-Evita divergencias entre `VirtualDisplayManager.cs` y `VirtualDisplayTrayController.cs`.
-
----
-
-## `NetworkAddressHelper.cs`
-**Rol:** helper compartido para IP local y URLs de acceso.
-
-### Responsabilidades
-- detectar IP local IPv4,
-- construir URL HTTP a partir de host y puerto.
-
-### Impacto
-Centraliza una regla usada por `Program.cs`, `ScreenRuntimeContext.cs` y `VirtualDisplayTrayController.cs`.
+### API relevante
+- `VirtualDisplayProfiles.All` — lista completa de perfiles
+- `EnsureValidSelection(VirtualScreenConfig)` — normaliza profile, landscape y dimensiones
+- `GetEffectiveSize(profileId, landscape, customW, customH)` — calcula `Width`/`Height` finales
+- `IsCustom(profileId)`
 
 ---
 
 ## `TransmissionModeOptions.cs`
-**Rol:** reglas del modo de transmisión.
+**Rol:** constantes y validación de modos de transmisión.
 
-### Responsabilidades
-- normalizar `WebImage` y `Rtc`,
-- elegir método recomendado según perfil,
-- validar límites de intervalo y JPEG,
-- exponer helpers `IsWebImage` / `IsRtc`.
+### Constantes
+- `WebImage` = `"WebImage"`
+- `Rtc` = `"Rtc"`
 
-### Regla actual
-- Kindle / Kindle PaperWhite 12 -> `WebImage`
-- resto -> `Rtc`
+### Nota importante
+Ambos modos comparten `CaptureIntervalSeconds` y `JpegQuality` de `VirtualScreenConfig`.
+
+---
+
+## `VirtualDisplayPlacementOptions.cs`
+**Rol:** centralizar normalización y cálculo de posición del monitor virtual.
+
+### API
+- `Normalize(string?)` — acepta español e inglés, devuelve right/left/top/bottom
+- `GetDisplayLabel(string?)` — etiqueta en español
+- `GetPosition(Rectangle primaryBounds, string?, int width, int height)` — coordenadas Win32
+
+---
+
+## `NetworkAddressHelper.cs`
+**Rol:** detección de IP local y construcción de URLs de acceso.
+
+### API
+- `DetectLocalIp()`
+- `BuildAccessUrl(string host, int port)`
 
 ---
 
 ## `SingleInstanceManager.cs`
-**Rol:** impedir múltiples instancias del mismo ejecutable.
+**Rol:** garantizar que solo haya una instancia activa; permitir que una nueva instancia cierre la anterior.
 
-### Estrategia
-- `Mutex` nombrado por hash del path del ejecutable,
-- `EventWaitHandle` para solicitar cierre de instancia previa,
-- si no responde, intenta cerrarla o matarla.
-
-### Impacto
-Evita conflictos de puertos, tray duplicado y displays virtuales sobrantes.
-
----
-
-## `WeatherForecast.cs` y `Controllers/WeatherForecastController.cs`
-**Rol actual:** residuo de plantilla `ASP.NET Core`.
-
-No participan en la funcionalidad principal de pantallas virtuales. Pueden documentarse como ajenos al dominio principal.
+### API
+- `CreateForCurrentExecutable()`
+- `EnsureSingleInstance(TimeSpan timeout)`
+- `StartShutdownListener(Action onShutdownRequested)`
