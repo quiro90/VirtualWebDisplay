@@ -357,6 +357,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             private readonly NumericUpDown _captureIntervalInput;
             private readonly TrackBar _jpegQualitySlider;
             private readonly Label _jpegQualityValueLabel;
+            private readonly CheckBox _rotateStreamCheckBox;
             private readonly Label _resolutionPreviewLabel;
             private readonly Label _streamingPreviewLabel;
             private readonly Label _accessUrlLabel;
@@ -499,6 +500,16 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 currentTop += 54;
 
+                _rotateStreamCheckBox = new CheckBox
+                {
+                    Left = 14,
+                    Top = currentTop,
+                    Width = 320,
+                    Text = "Rotar imagen 90° (girar retransmisión)",
+                };
+
+                currentTop += 26;
+
                 _resolutionPreviewLabel = new Label
                 {
                     Left = 14,
@@ -551,6 +562,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     qualityLabel,
                     _jpegQualitySlider,
                     _jpegQualityValueLabel,
+                    _rotateStreamCheckBox,
                     _resolutionPreviewLabel,
                     _streamingPreviewLabel,
                     _accessUrlLabel,
@@ -572,6 +584,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _transmissionMethodCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _captureIntervalInput.ValueChanged += (_, _) => UpdateState();
                 _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
+                _rotateStreamCheckBox.CheckedChanged += (_, _) => UpdateState();
             }
 
             public TabPage TabPage { get; }
@@ -589,6 +602,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
                 config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value;
                 config.JpegQuality = _jpegQualitySlider.Value;
+                config.RotateForPortrait = _rotateStreamCheckBox.Checked;
                 config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
 
                 VirtualDisplayProfiles.EnsureValidSelection(config);
@@ -612,6 +626,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
                 _captureIntervalInput.Value = Math.Max(_captureIntervalInput.Minimum, Math.Min(_captureIntervalInput.Maximum, (decimal)config.CaptureIntervalSeconds));
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
+                _rotateStreamCheckBox.Checked = config.RotateForPortrait;
 
                 _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
                     .FirstOrDefault(item => item.Placement == VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement))

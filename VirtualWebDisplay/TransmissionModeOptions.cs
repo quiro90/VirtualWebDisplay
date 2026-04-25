@@ -17,12 +17,7 @@ public static class TransmissionModeOptions
         config.JpegQuality = Math.Clamp(config.JpegQuality, MinJpegQuality, MaxJpegQuality);
     }
 
-    public static string GetRecommendedMethod(string? profileId) =>
-        VirtualDisplayProfiles.NormalizeProfileId(profileId) switch
-        {
-            VirtualDisplayProfiles.Kindle or VirtualDisplayProfiles.KindlePaperWhite12 => WebImage,
-            _ => Rtc,
-        };
+    public static string GetRecommendedMethod(string? profileId) => Rtc;
 
     public static string NormalizeMethod(string? method) =>
         string.Equals(method, Rtc, StringComparison.OrdinalIgnoreCase) ? Rtc : WebImage;

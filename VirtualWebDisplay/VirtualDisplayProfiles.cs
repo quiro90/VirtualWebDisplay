@@ -4,42 +4,24 @@ public sealed record VirtualDisplayProfile(string Id, string DisplayName, int Po
 
 public static class VirtualDisplayProfiles
 {
-    public const string Kindle = "Kindle";
-    public const string KindlePaperWhite12 = "KindlePaperWhite12";
-    public const string IPadMini = "IPadMini";
-    public const string IPad = "IPad";
     public const string Custom = "Custom";
-
-    private static readonly Size[] SupportedPortraitModes =
-    [
-        new(600, 800),
-        new(720, 1280),
-        new(800, 1280),
-        new(900, 1440),
-        new(1000, 1600),
-        new(1050, 1680),
-        new(1080, 1920),
-        new(1080, 2560),
-        new(1080, 3840),
-        new(1080, 4096),
-        new(1200, 1600),
-        new(1200, 1800),
-        new(1440, 2560),
-        new(1504, 2256),
-        new(1600, 2560),
-        new(1664, 2496),
-        new(1800, 2880),
-        new(1824, 2736),
-        new(2000, 3000),
-    ];
 
     private static readonly VirtualDisplayProfile[] Profiles =
     [
-        CreateSupportedProfile(Kindle, "Kindle", nativeWidth: 1072, nativeHeight: 1448, maxHeight: 900, reduceHeightBy13Percent: true),
-        CreateSupportedProfile(KindlePaperWhite12, "Kindle PaperWhite 12", nativeWidth: 1264, nativeHeight: 1680, maxHeight: 900, reduceHeightBy13Percent: true),
-        CreateSupportedProfile(IPadMini, "iPad Mini", nativeWidth: 1488, nativeHeight: 2266, maxHeight: 1300, reduceHeightBy13Percent: false),
-        CreateSupportedProfile(IPad, "iPad", nativeWidth: 1640, nativeHeight: 2360, maxHeight: 1800, reduceHeightBy13Percent: false),
-        new(Custom, "Personalizado", 0, 0),
+        new("1200x1920", "1200 × 1920",           1200, 1920),
+        new("1200x1800", "1200 × 1800",           1200, 1800),
+        new("1200x1600", "1200 × 1600",           1200, 1600),
+        new("1152x2048", "1152 × 2048",           1152, 2048),
+        new("1080x3840", "1080 × 3840",           1080, 3840),
+        new("1080x2560", "1080 × 2560",           1080, 2560),
+        new("1080x1920", "1080 × 1920 (recomendada)", 1080, 1920),
+        new("1050x1680", "1050 × 1680",           1050, 1680),
+        new("900x1600",  "900 × 1600",             900, 1600),
+        new("900x1440",  "900 × 1440",             900, 1440),
+        new("800x1280",  "800 × 1280",             800, 1280),
+        new("768x1366",  "768 × 1366",             768, 1366),
+        new("720x1280",  "720 × 1280",             720, 1280),
+        new(Custom,      "Personalizado",             0,    0),
     ];
 
     public static IReadOnlyList<VirtualDisplayProfile> All => Profiles;
@@ -128,20 +110,5 @@ public static class VirtualDisplayProfiles
         profileId = Custom;
         landscape = width > height;
         return false;
-    }
-
-    private static VirtualDisplayProfile CreateSupportedProfile(string id, string displayName, int nativeWidth, int nativeHeight, int maxHeight, bool reduceHeightBy13Percent)
-    {
-        var portraitHeight = reduceHeightBy13Percent
-            ? (int)Math.Round(maxHeight * 0.87)
-            : maxHeight;
-
-        var portraitWidth = (int)Math.Round(portraitHeight * nativeWidth / (double)nativeHeight);
-        var supportedSize = SupportedPortraitModes
-            .OrderBy(size => Math.Abs(size.Width - portraitWidth) + Math.Abs(size.Height - portraitHeight))
-            .ThenBy(size => Math.Abs((size.Width / (double)size.Height) - (portraitWidth / (double)portraitHeight)))
-            .First();
-
-        return new VirtualDisplayProfile(id, displayName, supportedSize.Width, supportedSize.Height);
     }
 }
