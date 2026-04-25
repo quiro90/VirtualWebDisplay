@@ -52,6 +52,7 @@ public sealed class CaptureService : BackgroundService
     private readonly VirtualScreenConfig _config;
     private byte[] _currentFrame = [];
     private readonly Lock _frameLock = new();
+    private ulong _lastRawHash;
 
     // Codec cached once to avoid repeated lookups
     private static readonly ImageCodecInfo JpegCodec =
@@ -80,6 +81,17 @@ public sealed class CaptureService : BackgroundService
                     await Task.Delay(interval, stoppingToken);
                     continue;
                 }
+
+                var rawHash = SampleHash(bitmap);
+                if (rawHash == _lastRawHash)
+                {
+                    // Screen unchanged — skip encoding entirely.
+                    var delay2 = interval - (DateTime.UtcNow - captureStart);
+                    if (delay2 > TimeSpan.Zero)
+                        await Task.Delay(delay2, stoppingToken);
+                    continue;
+                }
+                _lastRawHash = rawHash;
 
                 if (_config.RotateForPortrait)
                     bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
@@ -151,6 +163,39 @@ public sealed class CaptureService : BackgroundService
                 DeleteObject(iconInfo.hbmColor);
 
             DestroyIcon(iconHandle);
+        }
+    }
+
+    /// <summary>
+    /// FNV-1a hash over a ~1.5% pixel sample grid (every 8th pixel on each axis).
+    /// Fast enough to run on every frame; sensitive enough to detect any visible change.
+    /// </summary>
+    private static unsafe ulong SampleHash(Bitmap bmp)
+    {
+        const int xStep = 8;
+        const int yStep = 8;
+        var rect = new Rectangle(0, 0, bmp.Width, bmp.Height);
+        var data = bmp.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            var hash = 14695981039346656037UL;
+            var stride = data.Stride;
+            var ptr = (byte*)data.Scan0;
+            for (var y = 0; y < bmp.Height; y += yStep)
+            {
+                var row = ptr + y * stride;
+                for (var x = 0; x < bmp.Width; x += xStep)
+                {
+                    var px = *(uint*)(row + x * 4);
+                    hash ^= px;
+                    hash *= 1099511628211UL;
+                }
+            }
+            return hash;
+        }
+        finally
+        {
+            bmp.UnlockBits(data);
         }
     }
 
