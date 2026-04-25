@@ -345,7 +345,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
             private readonly NumericUpDown _portInput;
             private readonly ComboBox _transmissionMethodCombo;
             private readonly NumericUpDown _captureIntervalInput;
-            private readonly ComboBox _refreshRateCombo;
             private readonly TrackBar _jpegQualitySlider;
             private readonly Label _jpegQualityValueLabel;
             private readonly ComboBox _streamRotationCombo;
@@ -466,34 +465,19 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 {
                     Left = 14,
                     Top = currentTop + 18,
-                    Width = 84,
+                    Width = 96,
                     Minimum = 3M,
                     Maximum = 500M,
                     DecimalPlaces = 0,
                     Increment = 1M,
                 };
 
-                var refreshRateLabel = CreateLabel("Refresco:", 106, currentTop);
-                _refreshRateCombo = new ComboBox
-                {
-                    Left = 106,
-                    Top = currentTop + 16,
-                    Width = 90,
-                    DropDownStyle = ComboBoxStyle.DropDownList,
-                };
-                _refreshRateCombo.Items.AddRange(
-                [
-                    new RefreshRateItem(30,  "30 Hz"),
-                    new RefreshRateItem(60,  "60 Hz"),
-                    new RefreshRateItem(120, "120 Hz"),
-                ]);
-
-                var qualityLabel = CreateLabel("Calidad JPEG:", 206, currentTop);
+                var qualityLabel = CreateLabel("Calidad JPEG:", 126, currentTop);
                 _jpegQualitySlider = new TrackBar
                 {
-                    Left = 206,
+                    Left = 126,
                     Top = currentTop + 10,
-                    Width = 200,
+                    Width = 228,
                     Minimum = 10,
                     Maximum = 100,
                     TickFrequency = 10,
@@ -502,9 +486,9 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 };
                 _jpegQualityValueLabel = new Label
                 {
-                    Left = 414,
+                    Left = 362,
                     Top = currentTop + 20,
-                    Width = 48,
+                    Width = 64,
                 };
 
                 currentTop += 54;
@@ -568,8 +552,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     _transmissionMethodCombo,
                     captureIntervalLabel,
                     _captureIntervalInput,
-                    refreshRateLabel,
-                    _refreshRateCombo,
                     qualityLabel,
                     _jpegQualitySlider,
                     _jpegQualityValueLabel,
@@ -609,7 +591,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _portInput.ValueChanged += (_, _) => UpdateState();
                 _transmissionMethodCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _captureIntervalInput.ValueChanged += (_, _) => UpdateState();
-                _refreshRateCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
                 _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
@@ -628,7 +609,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 config.Port = (int)_portInput.Value;
                 config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
                 config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
-                config.RefreshRateHz = ((RefreshRateItem)_refreshRateCombo.SelectedItem!).Hz;
                 config.JpegQuality = _jpegQualitySlider.Value;
                 config.StreamRotationDegrees = ((StreamRotationItem)_streamRotationCombo.SelectedItem!).Degrees;
                 config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
@@ -661,12 +641,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
                 _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
-
-                var validHz = new[] { 30, 60, 120 };
-                var hz = validHz.Contains(config.RefreshRateHz) ? config.RefreshRateHz : 60;
-                _refreshRateCombo.SelectedItem = _refreshRateCombo.Items.Cast<RefreshRateItem>()
-                    .First(item => item.Hz == hz);
-
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
                 var validDegrees = new[] { 0, 90, 180, 270 };
                 var degrees = validDegrees.Contains(config.StreamRotationDegrees) ? config.StreamRotationDegrees : 0;
@@ -789,11 +763,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
             }
 
             private sealed record ImageFitItem(string Fit, string DisplayName)
-            {
-                public override string ToString() => DisplayName;
-            }
-
-            private sealed record RefreshRateItem(int Hz, string DisplayName)
             {
                 public override string ToString() => DisplayName;
             }

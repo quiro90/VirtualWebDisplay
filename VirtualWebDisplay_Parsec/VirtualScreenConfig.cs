@@ -32,13 +32,8 @@ public sealed class VirtualScreenConfig
     public int StreamRotationDegrees { get; set; }
 
     /// <summary>
-    /// Refresh rate in Hz for the virtual display. Typical values: 30, 60, 120.
-    /// </summary>
-    public int RefreshRateHz { get; set; } = 60;
-
-    /// <summary>
     /// Index of the monitor to capture from Screen.AllScreens.
-    /// -1 = auto: use the created IddCx virtual display.
+    /// -1 = auto: use the created Parsec virtual display.
     ///  0 = primary monitor.
     ///  1 = second monitor (physical or virtual).
     /// Normalmente conviene dejar -1 para capturar automáticamente el monitor virtual creado por la app.
@@ -76,7 +71,6 @@ public sealed class VirtualScreenConfig
         Port = Port,
         RotateForPortrait = RotateForPortrait,
         StreamRotationDegrees = StreamRotationDegrees,
-        RefreshRateHz = RefreshRateHz,
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
         BrowserImageFit = BrowserImageFit,
@@ -97,7 +91,6 @@ public sealed class VirtualScreenConfig
         target.Port = Port;
         target.RotateForPortrait = RotateForPortrait;
         target.StreamRotationDegrees = StreamRotationDegrees;
-        target.RefreshRateHz = RefreshRateHz;
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;
         target.BrowserImageFit = BrowserImageFit;

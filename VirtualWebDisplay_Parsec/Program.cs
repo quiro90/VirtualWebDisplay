@@ -24,180 +24,127 @@ var hostName = Dns.GetHostName();
 
 using var tray = new VirtualDisplayTrayController(settings, settingsStore, localIp);
 
-/// <summary>
-/// Busca la carpeta VirtualDisplayDriver\ subiendo hasta 6 niveles desde el directorio del ejecutable.
-/// Devuelve la ruta completa al MttVDD.inf si la encuentra, o null si no.
-/// </summary>
-static string? FindDriverInfPath()
+static void ShowInstallDialog(string title, string message, string installUrl)
 {
-    var dir = AppContext.BaseDirectory;
-    for (var i = 0; i < 6; i++)
+    using var done = new ManualResetEventSlim(false);
+    Exception? error = null;
+
+    var sta = new Thread(() =>
     {
-        var candidate = Path.GetFullPath(Path.Combine(dir, "VirtualDisplayDriver", "MttVDD.inf"));
-        if (File.Exists(candidate))
-            return candidate;
-        dir = Directory.GetParent(dir)?.FullName ?? dir;
-    }
-    return null;
-}
-
-/// <summary>
-/// Instala el driver ejecutando pnputil elevado (UAC) y copia vdd_settings.xml a C:\IddSampleDriver\.
-/// </summary>
-static void InstallDriver(string infPath)
-{
-    var driverDir = Path.GetDirectoryName(infPath)!;
-    var settingsSrc = Path.Combine(driverDir, "vdd_settings.xml");
-    const string destDir = @"C:\IddSampleDriver";
-
-    // Un solo comando PowerShell elevado: crea el directorio, copia la config y llama a pnputil.
-    var copySettings = File.Exists(settingsSrc)
-        ? $"Copy-Item -Force '{settingsSrc}' '{destDir}\\vdd_settings.xml'; "
-        : string.Empty;
-
-    var psCmd = $"New-Item -ItemType Directory -Force '{destDir}' | Out-Null; " +
-                copySettings +
-                $"pnputil /add-driver '{infPath}' /install; " +
-                "Read-Host 'Presioná Enter para cerrar'";
-
-    Process.Start(new ProcessStartInfo("powershell.exe", $"-NoProfile -Command \"{psCmd}\"")
-    {
-        UseShellExecute = true,
-        Verb = "runas",   // solicita elevación UAC
-    });
-}
-
-static void ShowDriverMissingDialog(string message, string downloadUrl)
-{
-    var infPath = FindDriverInfPath();
-    var canInstall = infPath is not null;
-
-    // Altura del formulario: mayor si mostramos el botón de instalación.
-    var formHeight = canInstall ? 248 : 210;
-
-    using var form = new Form
-    {
-        Text = "VirtualWebDisplay — Driver IddCx VDD no encontrado",
-        StartPosition = FormStartPosition.CenterScreen,
-        FormBorderStyle = FormBorderStyle.FixedDialog,
-        MaximizeBox = false,
-        MinimizeBox = false,
-        ShowInTaskbar = true,
-        ClientSize = new Size(560, formHeight),
-    };
-
-    var messageLabel = new Label
-    {
-        AutoSize = false,
-        Left = 18,
-        Top = 16,
-        Width = 524,
-        Height = 90,
-        Text = message,
-    };
-
-    // — Sección instalación local (visible solo si se encontraron los archivos del driver) —
-    var installLabel = new Label
-    {
-        AutoSize = false,
-        Left = 18,
-        Top = 112,
-        Width = 524,
-        Height = 36,
-        Text = canInstall
-            ? $"✔ Driver encontrado en:\n{Path.GetDirectoryName(infPath)}"
-            : string.Empty,
-        Visible = canInstall,
-    };
-
-    var installButton = new Button
-    {
-        Left = 18,
-        Top = 152,
-        Width = 160,
-        Height = 28,
-        Text = "Instalar driver (requiere UAC)",
-        Visible = canInstall,
-    };
-
-    var installNoteLabel = new Label
-    {
-        AutoSize = false,
-        Left = 186,
-        Top = 156,
-        Width = 356,
-        Height = 20,
-        Text = "Instala MttVDD.inf y copia vdd_settings.xml",
-        ForeColor = System.Drawing.Color.Gray,
-        Visible = canInstall,
-    };
-
-    var separator = new Label
-    {
-        AutoSize = false,
-        Left = 18,
-        Top = canInstall ? 190 : 108,
-        Width = 524,
-        Height = 2,
-        BorderStyle = BorderStyle.Fixed3D,
-    };
-
-    var urlTop = canInstall ? 200 : 112;
-
-    var urlLabel = new Label { AutoSize = true, Left = 18, Top = urlTop, Text = "O descargá el driver manualmente desde:" };
-
-    var urlBox = new TextBox
-    {
-        Left = 18,
-        Top = urlTop + 20,
-        Width = 420,
-        ReadOnly = true,
-        Text = downloadUrl,
-    };
-
-    var openButton = new Button
-    {
-        Left = 446,
-        Top = urlTop + 18,
-        Width = 96,
-        Height = 26,
-        Text = "Abrir página",
-    };
-
-    var okButton = new Button
-    {
-        Left = 446,
-        Top = urlTop + 56,
-        Width = 96,
-        Height = 26,
-        Text = "Cerrar",
-        DialogResult = DialogResult.OK,
-    };
-
-    installButton.Click += (_, _) =>
-    {
-        installButton.Enabled = false;
-        installButton.Text = "Instalando…";
         try
         {
-            InstallDriver(infPath!);
-            installButton.Text = "Iniciado — reiniciá la app";
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            using var form = new Form
+            {
+                Text = title,
+                StartPosition = FormStartPosition.CenterScreen,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ShowInTaskbar = true,
+                ClientSize = new Size(620, 230),
+            };
+
+            var messageLabel = new Label
+            {
+                AutoSize = false,
+                Left = 20,
+                Top = 18,
+                Width = 580,
+                Height = 110,
+                Text = message,
+            };
+
+            var urlLabel = new Label
+            {
+                AutoSize = true,
+                Left = 20,
+                Top = 132,
+                Text = "Instalador oficial:",
+            };
+
+            var urlBox = new TextBox
+            {
+                Left = 20,
+                Top = 154,
+                Width = 460,
+                ReadOnly = true,
+                Text = installUrl,
+            };
+
+            var openButton = new Button
+            {
+                Left = 490,
+                Top = 152,
+                Width = 110,
+                Height = 28,
+                Text = "Abrir descarga",
+            };
+
+            var copyButton = new Button
+            {
+                Left = 374,
+                Top = 192,
+                Width = 110,
+                Height = 28,
+                Text = "Copiar URL",
+            };
+
+            var okButton = new Button
+            {
+                Left = 490,
+                Top = 192,
+                Width = 110,
+                Height = 28,
+                Text = "Cerrar",
+                DialogResult = DialogResult.OK,
+            };
+
+            openButton.Click += (_, _) => Process.Start(new ProcessStartInfo(installUrl) { UseShellExecute = true });
+            copyButton.Click += (_, _) =>
+            {
+                Clipboard.SetText(installUrl);
+                urlBox.Focus();
+                urlBox.SelectAll();
+                copyButton.Text = "Copiada";
+            };
+
+            form.Controls.AddRange([messageLabel, urlLabel, urlBox, openButton, copyButton, okButton]);
+            form.AcceptButton = okButton;
+            form.CancelButton = okButton;
+            form.Shown += (_, _) =>
+            {
+                urlBox.Focus();
+                urlBox.SelectAll();
+            };
+
+            form.ShowDialog();
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"No se pudo iniciar la instalación:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            installButton.Enabled = true;
-            installButton.Text = "Instalar driver (requiere UAC)";
+            error = ex;
         }
-    };
+        finally
+        {
+            done.Set();
+        }
+    });
 
-    openButton.Click += (_, _) => Process.Start(new ProcessStartInfo(downloadUrl) { UseShellExecute = true });
+    sta.SetApartmentState(ApartmentState.STA);
+    sta.IsBackground = true;
+    sta.Start();
+    done.Wait();
 
-    form.Controls.AddRange([messageLabel, installLabel, installButton, installNoteLabel, separator, urlLabel, urlBox, openButton, okButton]);
-    form.AcceptButton = okButton;
-    form.CancelButton = okButton;
-    form.Shown += (_, _) => { urlBox.Focus(); urlBox.SelectAll(); };
-    form.ShowDialog();
+    if (error is not null)
+    {
+        MessageBox.Show(
+            message + $"\n\nInstalador oficial: {installUrl}",
+            title,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Warning);
+    }
 }
 
 static string BrowserImageFit(string? fit) =>
@@ -573,7 +520,10 @@ if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.Virtu
     var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
     if (!driverReady)
     {
-        ShowDriverMissingDialog(driverStatus, VirtualDisplayManager.InstallUrl);
+        ShowInstallDialog(
+            "VirtualWebDisplay — Falta Parsec VDD",
+            driverStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+            VirtualDisplayManager.InstallUrl);
         return;
     }
 }
@@ -613,7 +563,10 @@ try
         var (ok, vddStatus) = runtime.DisplayManager.TryCreate(runtime.Config);
         if (!ok)
         {
-            ShowDriverMissingDialog(vddStatus, VirtualDisplayManager.InstallUrl);
+            ShowInstallDialog(
+                $"VirtualWebDisplay — Error en {runtime.DisplayName}",
+                vddStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+                VirtualDisplayManager.InstallUrl);
             return;
         }
 
