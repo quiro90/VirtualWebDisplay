@@ -15,6 +15,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private NotifyIcon? _notifyIcon;
     private ContextMenuStrip? _contextMenu;
     private Action? _exitRequested;
+    private Action? _restartRequested;
     private IReadOnlyList<ScreenRuntimeContext> _screenRuntimes = [];
     private bool _disposed;
     private Icon? _appIcon;
@@ -62,9 +63,10 @@ public sealed class VirtualDisplayTrayController : IDisposable
         return completion.Task.GetAwaiter().GetResult();
     }
 
-    public void ConfigureRuntimeActions(Action exitRequested, IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
+    public void ConfigureRuntimeActions(Action exitRequested, Action restartRequested, IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
         _exitRequested = exitRequested;
+        _restartRequested = restartRequested;
         _screenRuntimes = screenRuntimes;
 
         PostToUi(() =>
@@ -149,6 +151,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
             menu.Items.Add(new ToolStripSeparator());
         }
 
+        menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add("Reiniciar", null, (_, _) => RestartApplication());
         menu.Items.Add("Salir", null, (_, _) => ExitApplication());
         return menu;
     }
@@ -160,7 +164,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             return;
 
         ApplySelection(form.Selection);
-        _notifyIcon?.ShowBalloonTip(4000, "VirtualWebDisplay", "Configuración guardada. Reiniciá la app para recrear pantallas y puertos con los nuevos valores.", ToolTipIcon.Info);
+        _notifyIcon?.ShowBalloonTip(4000, "VirtualWebDisplay", "Configuración guardada. Usá 'Reiniciar' desde el ícono de bandeja para aplicar los nuevos valores.", ToolTipIcon.Info);
     }
 
     private void ApplySelection(VirtualWebDisplaySettings selection)
@@ -196,12 +200,25 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _context?.ExitThread();
     }
 
+    private void RestartApplication()
+    {
+        _restartRequested?.Invoke();
+        _context?.ExitThread();
+    }
+
     private void PostToUi(Action action)
     {
-        if (_invoker is null || _invoker.IsDisposed)
+        if (_invoker is null || _invoker.IsDisposed || !_invoker.IsHandleCreated)
             return;
 
-        _invoker.BeginInvoke(action);
+        try
+        {
+            _invoker.BeginInvoke(action);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+        {
+            // El control fue destruido entre el guard y el BeginInvoke (race condition al cerrar).
+        }
     }
 
     private static string TrimTrayText(string text) =>

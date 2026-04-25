@@ -477,7 +477,6 @@ static async Task DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext> runtime
     foreach (var runtime in runtimes.Reverse())
         await runtime.DisposeAsync();
 }
-
 var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
 if (!driverReady)
 {
@@ -488,7 +487,9 @@ if (!driverReady)
     return;
 }
 
-if (!tray.ShowStartupConfiguration())
+var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
+
+if (!autoStart && !tray.ShowStartupConfiguration())
     return;
 
 settings.EnsureValid();
@@ -537,6 +538,14 @@ try
 
     tray.ConfigureRuntimeActions(
         () => app.Lifetime.StopApplication(),
+        () =>
+        {
+            var processPath = Environment.ProcessPath
+                ?? Process.GetCurrentProcess().MainModule?.FileName;
+            if (processPath is not null)
+                Process.Start(new ProcessStartInfo(processPath, "--autostart") { UseShellExecute = true });
+            app.Lifetime.StopApplication();
+        },
         runtimes);
 
     ScreenRuntimeContext ResolveRuntime(HttpContext context) =>
@@ -636,3 +645,11 @@ finally
 {
     await DisposeRuntimesAsync(runtimes);
 }
+
+// Liberar el mutex explícitamente antes de Exit para que la nueva instancia
+// (en caso de reinicio) pueda adquirirlo sin AbandonedMutexException.
+singleInstance.Dispose();
+
+// Forzar la terminación del proceso una vez que todo el cleanup completó.
+// SIPSorcery y Kestrel pueden dejar threads internos que impiden la salida natural.
+Environment.Exit(0);
