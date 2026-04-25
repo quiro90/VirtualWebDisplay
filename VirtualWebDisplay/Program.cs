@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Windows.Forms;
 
 using var singleInstance = SingleInstanceManager.CreateForCurrentExecutable();
@@ -23,16 +21,7 @@ settings.EnsureValid();
 
 using var tray = new VirtualDisplayTrayController(settings, settingsStore);
 
-static string DetectLocalIp() =>
-    NetworkInterface.GetAllNetworkInterfaces()
-        .Where(n => n.OperationalStatus == OperationalStatus.Up
-                 && n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-        .SelectMany(n => n.GetIPProperties().UnicastAddresses)
-        .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork)
-        .Select(a => a.Address.ToString())
-        .FirstOrDefault() ?? "127.0.0.1";
-
-var localIp = DetectLocalIp();
+var localIp = NetworkAddressHelper.DetectLocalIp();
 var hostName = Dns.GetHostName();
 
 static void ShowInstallDialog(string title, string message, string installUrl)

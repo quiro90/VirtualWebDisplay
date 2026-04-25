@@ -34,7 +34,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 
         peerConnection.ondatachannel += channel =>
         {
-            if (!string.Equals(channel.label, "frames", StringComparison.OrdinalIgnoreCase) && framesChannel is not null)
+            if (!string.Equals(channel.label, "frames", StringComparison.OrdinalIgnoreCase) || framesChannel is not null)
                 return;
 
             framesChannel = channel;
@@ -129,7 +129,8 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         foreach (var peerId in _peers.Keys.ToArray())
             RemovePeer(peerId);
 
-        await Task.CompletedTask;
+        await base.StopAsync(CancellationToken.None);
+        base.Dispose();
     }
 
     private void RemovePeer(Guid peerId)

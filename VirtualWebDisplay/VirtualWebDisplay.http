@@ -1,6 +1,0 @@
-@VirtualWebDisplay_HostAddress = http://localhost:5148
-
-GET {{VirtualWebDisplay_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Windows.Forms;
 
 public sealed class VirtualDisplayTrayController : IDisposable
@@ -234,18 +232,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private static string TrimTrayText(string text) =>
         text.Length <= 63 ? text : text[..63];
 
-    private static string DetectLocalIp() =>
-        NetworkInterface.GetAllNetworkInterfaces()
-            .Where(n => n.OperationalStatus == OperationalStatus.Up
-                     && n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-            .SelectMany(n => n.GetIPProperties().UnicastAddresses)
-            .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork)
-            .Select(a => a.Address.ToString())
-            .FirstOrDefault() ?? "127.0.0.1";
-
-    private static string BuildAccessUrl(string host, int port) =>
-        port == 80 ? $"http://{host}/" : $"http://{host}:{port}/";
-
     public void Dispose()
     {
         if (_disposed)
@@ -393,7 +379,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
                         Width = 120,
                         Text = "Habilitada",
                     };
-                    _enabledCheckBox.CheckedChanged += (_, _) => UpdateState();
                     TabPage.Controls.Add(_enabledCheckBox);
                     currentTop += 28;
                 }
@@ -576,6 +561,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 Initialize(config);
 
+                if (_enabledCheckBox is not null)
+                    _enabledCheckBox.CheckedChanged += (_, _) => UpdateState();
                 _profileCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _landscapeCheckBox.CheckedChanged += (_, _) => UpdateState();
                 _widthInput.ValueChanged += (_, _) => UpdateState();
@@ -627,8 +614,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
 
                 _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
-                    .FirstOrDefault(item => item.Placement == NormalizePlacement(config.VirtualDisplayPlacement))
-                    ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == "right");
+                    .FirstOrDefault(item => item.Placement == VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement))
+                    ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
 
                 _transmissionMethodCombo.SelectedItem = _transmissionMethodCombo.Items.Cast<TransmissionMethodItem>()
                     .First(item => item.Method == TransmissionModeOptions.NormalizeMethod(config.TransmissionMethod));
@@ -658,10 +645,10 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 var previewConfig = BuildConfig(alwaysEnabled: !_allowDisable);
                 var displayName = TransmissionModeOptions.GetDisplayName(previewConfig.TransmissionMethod);
-                var hostUrl = BuildAccessUrl(Dns.GetHostName(), previewConfig.Port);
-                var ipUrl = BuildAccessUrl(DetectLocalIp(), previewConfig.Port);
+                var hostUrl = NetworkAddressHelper.BuildAccessUrl(Dns.GetHostName(), previewConfig.Port);
+                var ipUrl = NetworkAddressHelper.BuildAccessUrl(NetworkAddressHelper.DetectLocalIp(), previewConfig.Port);
 
-                _resolutionPreviewLabel.Text = $"Resolución: {previewConfig.Width}×{previewConfig.Height} · Posición: {NormalizePlacementLabel(previewConfig.VirtualDisplayPlacement)}";
+                _resolutionPreviewLabel.Text = $"Resolución: {previewConfig.Width}×{previewConfig.Height} · Posición: {VirtualDisplayPlacementOptions.GetDisplayLabel(previewConfig.VirtualDisplayPlacement)}";
                 _streamingPreviewLabel.Text = $"{displayName}: {previewConfig.CaptureIntervalSeconds:0.###} s · JPEG {previewConfig.JpegQuality}%";
                 _accessUrlLabel.Text = $"URL local: {hostUrl}";
                 _alternateAccessUrlLabel.Text = string.Equals(hostUrl, ipUrl, StringComparison.OrdinalIgnoreCase)
@@ -676,25 +663,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 Top = top,
                 Text = text,
             };
-
-            private static string NormalizePlacement(string? placement) =>
-                placement?.Trim().ToLowerInvariant() switch
-                {
-                    "left" or "izquierda" => "left",
-                    "top" or "up" or "arriba" => "top",
-                    "bottom" or "down" or "abajo" => "bottom",
-                    _ => "right",
-                };
-
-            private static string NormalizePlacementLabel(string? placement) =>
-                NormalizePlacement(placement) switch
-                {
-                    "left" => "izquierda",
-                    "top" => "arriba",
-                    "bottom" => "abajo",
-                    _ => "derecha",
-                };
-
             private sealed record ProfileItem(string ProfileId, string DisplayName)
             {
                 public override string ToString() => DisplayName;

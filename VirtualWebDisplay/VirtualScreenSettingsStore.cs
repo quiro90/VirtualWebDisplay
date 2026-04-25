@@ -21,11 +21,7 @@ public sealed class VirtualScreenSettingsStore
     public VirtualWebDisplaySettings Load()
     {
         if (!File.Exists(_filePath))
-        {
-            var defaults = new VirtualWebDisplaySettings();
-            defaults.EnsureValid();
-            return defaults;
-        }
+            return CreateDefaults();
 
         try
         {
@@ -49,27 +45,19 @@ public sealed class VirtualScreenSettingsStore
                 return migrated;
             }
 
-            var defaults = new VirtualWebDisplaySettings();
-            defaults.EnsureValid();
-            return defaults;
+            return CreateDefaults();
         }
         catch (IOException)
         {
-            var defaults = new VirtualWebDisplaySettings();
-            defaults.EnsureValid();
-            return defaults;
+            return CreateDefaults();
         }
         catch (UnauthorizedAccessException)
         {
-            var defaults = new VirtualWebDisplaySettings();
-            defaults.EnsureValid();
-            return defaults;
+            return CreateDefaults();
         }
         catch (JsonException)
         {
-            var defaults = new VirtualWebDisplaySettings();
-            defaults.EnsureValid();
-            return defaults;
+            return CreateDefaults();
         }
     }
 
@@ -116,6 +104,13 @@ public sealed class VirtualScreenSettingsStore
         var normalizedAttributes = attributes & ~FileAttributes.ReadOnly & ~FileAttributes.Hidden & ~FileAttributes.System;
         if (normalizedAttributes != attributes)
             File.SetAttributes(filePath, normalizedAttributes);
+    }
+
+    private static VirtualWebDisplaySettings CreateDefaults()
+    {
+        var defaults = new VirtualWebDisplaySettings();
+        defaults.EnsureValid();
+        return defaults;
     }
 
     private static void EnsureHiddenDirectory(string directory)

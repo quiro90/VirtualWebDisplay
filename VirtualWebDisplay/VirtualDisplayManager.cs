@@ -8,11 +8,9 @@ using System.Windows.Forms;
 /// </summary>
 public sealed class VirtualDisplayManager : IDisposable
 {
-    public const string InstallUrl = "https://github.com/nomi-san/parsec-vdd/releases/download/v0.45.1/ParsecVDisplay-v0.45-setup.exe";
-    public const string ReleasesUrl = "https://github.com/nomi-san/parsec-vdd/releases";
+    public const string InstallUrl = "https://parsec.app/downloads";
 
     private const string AdapterGuid = "{00b41627-04c4-429e-a26e-0265cf50c8fa}";
-    private const string PortableUrl = "https://github.com/nomi-san/parsec-vdd/releases/download/v0.45.1/ParsecVDisplay-v0.45-portable.zip";
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern bool EnumDisplaySettings(string lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
@@ -89,9 +87,8 @@ public sealed class VirtualDisplayManager : IDisposable
         {
             return (false,
                 "No se encontró el adaptador de Parsec Virtual Display instalado o accesible.\n" +
-                "Instalá Parsec VDD con alguno de estos paquetes oficiales:\n" +
-                $"• Setup: {InstallUrl}\n" +
-                $"• Portable: {PortableUrl}");
+                $"Descargá e instalá Parsec desde: {InstallUrl}\n" +
+                "Asegurate de instalar la versión de escritorio que incluye el Virtual Display Driver (VDD).");
         }
 
         DriverApi.CloseHandle(handle);
@@ -349,32 +346,12 @@ public sealed class VirtualDisplayManager : IDisposable
 
     private static POINTL GetVirtualDisplayPosition(Rectangle primaryBounds, string? placement, int width, int height)
     {
-        return NormalizePlacement(placement) switch
-        {
-            "left" => new POINTL { x = primaryBounds.Left - width, y = primaryBounds.Top },
-            "top" => new POINTL { x = primaryBounds.Left, y = primaryBounds.Top - height },
-            "bottom" => new POINTL { x = primaryBounds.Left, y = primaryBounds.Bottom },
-            _ => new POINTL { x = primaryBounds.Right, y = primaryBounds.Top },
-        };
+        var position = VirtualDisplayPlacementOptions.GetPosition(primaryBounds, placement, width, height);
+        return new POINTL { x = position.X, y = position.Y };
     }
 
-    private static string NormalizePlacement(string? placement) =>
-        placement?.Trim().ToLowerInvariant() switch
-        {
-            "left" or "izquierda" => "left",
-            "top" or "up" or "arriba" => "top",
-            "bottom" or "down" or "abajo" => "bottom",
-            _ => "right",
-        };
-
     private static string NormalizePlacementLabel(string? placement) =>
-        NormalizePlacement(placement) switch
-        {
-            "left" => "izquierda",
-            "top" => "arriba",
-            "bottom" => "abajo",
-            _ => "derecha",
-        };
+        VirtualDisplayPlacementOptions.GetDisplayLabel(placement);
 
     private static DEVMODE CreateDevMode() => new()
     {

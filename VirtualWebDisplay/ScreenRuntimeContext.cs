@@ -10,8 +10,8 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         DisplayManager = new VirtualDisplayManager();
         CaptureService = new CaptureService(config);
         WebRtcStreamService = new WebRtcStreamService(CaptureService, config, NullLogger<WebRtcStreamService>.Instance);
-        HostUrl = BuildAccessUrl(hostName, config.Port);
-        IpUrl = BuildAccessUrl(localIp, config.Port);
+        HostUrl = NetworkAddressHelper.BuildAccessUrl(hostName, config.Port);
+        IpUrl = NetworkAddressHelper.BuildAccessUrl(localIp, config.Port);
     }
 
     public string Id { get; }
@@ -60,7 +60,4 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         {
         }
     }
-
-    private static string BuildAccessUrl(string host, int port) =>
-        port == 80 ? $"http://{host}/" : $"http://{host}:{port}/";
 }
