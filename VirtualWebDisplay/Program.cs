@@ -499,16 +499,6 @@ static async Task DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext> runtime
     foreach (var runtime in runtimes.Reverse())
         await runtime.DisposeAsync();
 }
-var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
-if (!driverReady)
-{
-    ShowInstallDialog(
-        "VirtualWebDisplay — Falta Parsec VDD",
-        driverStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
-        VirtualDisplayManager.InstallUrl);
-    return;
-}
-
 var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
 
 if (!autoStart && !tray.ShowStartupConfiguration())
@@ -524,7 +514,35 @@ var runtimes = new List<ScreenRuntimeContext>
 if (settings.Screen2.Enabled)
     runtimes.Add(new ScreenRuntimeContext("screen2", "Pantalla 2", settings.Screen2, hostName, localIp));
 
-builder.WebHost.UseUrls(runtimes.Select(runtime => $"http://0.0.0.0:{runtime.Config.Port}").ToArray());
+// Solo verificar VDD si al menos una pantalla necesita monitor virtual (no está en modo duplicado).
+if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement)))
+{
+    var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
+    if (!driverReady)
+    {
+        ShowInstallDialog(
+            "VirtualWebDisplay — Falta Parsec VDD",
+            driverStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+            VirtualDisplayManager.InstallUrl);
+        return;
+    }
+}
+
+var certStoreDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    VirtualScreenSettingsStore.DirectoryName);
+
+var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
+
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    foreach (var runtime in runtimes)
+    {
+        kestrel.ListenAnyIP(runtime.Config.Port);
+        kestrel.ListenAnyIP(runtime.Config.Port + 1, listenOptions =>
+            listenOptions.UseHttps(tlsCert));
+    }
+});
 
 var app = builder.Build();
 singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
@@ -533,6 +551,15 @@ try
 {
     foreach (var runtime in runtimes)
     {
+        if (VirtualDisplayPlacementOptions.IsDuplicate(runtime.Config.VirtualDisplayPlacement))
+        {
+            // Modo duplicado: capturar el monitor principal sin crear un monitor virtual.
+            var primaryIndex = Array.FindIndex(Screen.AllScreens, s => s.Primary);
+            runtime.Config.MonitorIndex = primaryIndex >= 0 ? primaryIndex : 0;
+            await runtime.StartAsync(CancellationToken.None);
+            continue;
+        }
+
         var (ok, vddStatus) = runtime.DisplayManager.TryCreate(runtime.Config);
         if (!ok)
         {
@@ -639,6 +666,14 @@ try
         }
     });
 
+    app.MapGet("/cert", () =>
+    {
+        return Results.Bytes(
+            tlsCertDerBytes,
+            "application/x-x509-ca-cert",
+            LocalCertificateProvider.CrtDownloadFileName);
+    });
+
     app.MapGet("/config", (HttpContext ctx) =>
     {
         var runtime = ResolveRuntime(ctx);
@@ -651,15 +686,28 @@ try
         });
     });
 
-    Console.WriteLine("┌─────────────────────────────────────────┐");
-    Console.WriteLine("│  📺  VirtualWebDisplay                   │");
+    Console.WriteLine("┌──────────────────────────────────────────────────────┐");
+    Console.WriteLine("│  📺  VirtualWebDisplay                                │");
     foreach (var runtime in runtimes)
     {
-        Console.WriteLine($"│  {runtime.DisplayName,-10}: {runtime.HostUrl,-20}│");
+        var httpsHostUrl = runtime.HostUrl.Replace($":{runtime.Config.Port}", $":{runtime.Config.Port + 1}").Replace("http://", "https://");
+        var httpsIpUrl   = runtime.IpUrl.Replace($":{runtime.Config.Port}", $":{runtime.Config.Port + 1}").Replace("http://", "https://");
+        Console.WriteLine($"│  {runtime.DisplayName,-10}  HTTP : {runtime.HostUrl,-28}│");
+        Console.WriteLine($"│  {string.Empty,-10}  HTTPS: {httpsHostUrl,-28}│");
         if (!string.Equals(runtime.HostUrl, runtime.IpUrl, StringComparison.OrdinalIgnoreCase))
-            Console.WriteLine($"│  {"IP",-10}: {runtime.IpUrl,-20}│");
+        {
+            Console.WriteLine($"│  {"IP",-10}  HTTP : {runtime.IpUrl,-28}│");
+            Console.WriteLine($"│  {string.Empty,-10}  HTTPS: {httpsIpUrl,-28}│");
+        }
+        var certUrl = $"{runtime.IpUrl}/cert";
+        Console.WriteLine($"│  {"Cert",-10}       {certUrl,-28}│");
     }
-    Console.WriteLine("└─────────────────────────────────────────┘");
+    Console.WriteLine("│                                                      │");
+    Console.WriteLine("│  ⚠  Para HTTPS sin warning en Safari/iOS:            │");
+    Console.WriteLine("│     1. Abre /cert desde Safari en el dispositivo      │");
+    Console.WriteLine("│     2. Instala el perfil (Ajustes → Perfil descargado)│");
+    Console.WriteLine("│     3. Ajustes → General → Acerca → Conf. de cert.   │");
+    Console.WriteLine("└──────────────────────────────────────────────────────┘");
 
     app.Run();
 }

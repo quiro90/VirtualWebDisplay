@@ -6,6 +6,10 @@ public static class VirtualDisplayPlacementOptions
     public const string Left = "left";
     public const string Top = "top";
     public const string Bottom = "bottom";
+    public const string Duplicate = "duplicate";
+
+    public static bool IsDuplicate(string? placement) =>
+        string.Equals(placement?.Trim(), Duplicate, StringComparison.OrdinalIgnoreCase);
 
     public static string Normalize(string? placement) =>
         placement?.Trim().ToLowerInvariant() switch
@@ -13,6 +17,7 @@ public static class VirtualDisplayPlacementOptions
             Left or "izquierda" => Left,
             Top or "up" or "arriba" => Top,
             Bottom or "down" or "abajo" => Bottom,
+            Duplicate or "duplicar" => Duplicate,
             _ => Right,
         };
 
@@ -22,6 +27,7 @@ public static class VirtualDisplayPlacementOptions
             Left => "izquierda",
             Top => "arriba",
             Bottom => "abajo",
+            Duplicate => "duplicado (clone)",
             _ => "derecha",
         };
 
@@ -31,6 +37,7 @@ public static class VirtualDisplayPlacementOptions
             Left => new Point(primaryBounds.Left - width, primaryBounds.Top),
             Top => new Point(primaryBounds.Left, primaryBounds.Top - height),
             Bottom => new Point(primaryBounds.Left, primaryBounds.Bottom),
+            Duplicate => new Point(primaryBounds.Left, primaryBounds.Top),
             _ => new Point(primaryBounds.Right, primaryBounds.Top),
         };
 }

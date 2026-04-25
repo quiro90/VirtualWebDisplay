@@ -252,16 +252,20 @@ public sealed class VirtualDisplayManager : IDisposable
         if (!EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref currentMode))
             return (false, "No se pudo leer la configuración actual del monitor virtual; queda con la disposición que asigne Windows.");
 
-        var requestedWidth = config.Width;
-        var requestedHeight = config.Height;
-        var mode = TryGetBestSupportedMode(deviceName, requestedWidth, requestedHeight)
-            ?? currentMode;
-
         var primaryBounds = Screen.PrimaryScreen?.Bounds
             ?? Screen.AllScreens.FirstOrDefault(s => s.Primary)?.Bounds
             ?? new Rectangle(0, 0, currentMode.dmPelsWidth, currentMode.dmPelsHeight);
 
-        config.Width = mode.dmPelsWidth;
+        var isDuplicate = VirtualDisplayPlacementOptions.IsDuplicate(config.VirtualDisplayPlacement);
+
+        // En modo duplicado se fuerza la resolución del monitor principal.
+        var requestedWidth  = isDuplicate ? primaryBounds.Width  : config.Width;
+        var requestedHeight = isDuplicate ? primaryBounds.Height : config.Height;
+
+        var mode = TryGetBestSupportedMode(deviceName, requestedWidth, requestedHeight)
+            ?? currentMode;
+
+        config.Width  = mode.dmPelsWidth;
         config.Height = mode.dmPelsHeight;
         mode.dmPosition = GetVirtualDisplayPosition(primaryBounds, config.VirtualDisplayPlacement, config.Width, config.Height);
         mode.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
@@ -282,6 +286,9 @@ public sealed class VirtualDisplayManager : IDisposable
         result = ChangeDisplaySettingsEx(null, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero);
         if (result != DISP_CHANGE_SUCCESSFUL)
             return (false, $"Windows guardó cambios parciales del monitor virtual, pero no pudo refrescar la topología (código {result}).");
+
+        if (isDuplicate)
+            return (true, $"Monitor virtual en modo duplicado (clone) del monitor principal con resolución {config.Width}×{config.Height}.");
 
         if (config.Width != requestedWidth || config.Height != requestedHeight)
         {

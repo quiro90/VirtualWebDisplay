@@ -398,6 +398,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     new PlacementItem("left", "Izquierda"),
                     new PlacementItem("top", "Arriba"),
                     new PlacementItem("bottom", "Abajo"),
+                    new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, "Duplicar"),
                 ]);
 
                 currentTop += 54;
@@ -619,8 +620,9 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
                 _rotateStreamCheckBox.Checked = config.RotateForPortrait;
 
+                var normalizedPlacement = VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement);
                 _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
-                    .FirstOrDefault(item => item.Placement == VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement))
+                    .FirstOrDefault(item => item.Placement == normalizedPlacement)
                     ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
 
                 var normalizedFit = config.BrowserImageFit?.Trim().ToLowerInvariant() ?? "fill";
@@ -671,10 +673,27 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 foreach (var control in _managedControls)
                     control.Enabled = enabled && (control != _portInput || _portInput.Enabled);
 
-                var isCustom = VirtualDisplayProfiles.IsCustom(((ProfileItem)_profileCombo.SelectedItem!).ProfileId);
-                _widthInput.Enabled = enabled && isCustom;
-                _heightInput.Enabled = enabled && isCustom;
-                _rotarButton.Enabled = enabled && isCustom;
+                var isDuplicate = (_placementCombo.SelectedItem as PlacementItem)?.Placement == VirtualDisplayPlacementOptions.Duplicate;
+
+                if (isDuplicate && enabled)
+                {
+                    var primary = Screen.PrimaryScreen ?? Screen.AllScreens[0];
+                    _suppressEvents = true;
+                    _widthInput.Value  = Math.Clamp(primary.Bounds.Width,  _widthInput.Minimum,  _widthInput.Maximum);
+                    _heightInput.Value = Math.Clamp(primary.Bounds.Height, _heightInput.Minimum, _heightInput.Maximum);
+                    _suppressEvents = false;
+                    _profileCombo.Enabled = false;
+                    _widthInput.Enabled   = false;
+                    _heightInput.Enabled  = false;
+                    _rotarButton.Enabled  = false;
+                }
+                else
+                {
+                    var isCustom = VirtualDisplayProfiles.IsCustom(((ProfileItem)_profileCombo.SelectedItem!).ProfileId);
+                    _widthInput.Enabled  = enabled && isCustom;
+                    _heightInput.Enabled = enabled && isCustom;
+                    _rotarButton.Enabled = enabled && isCustom;
+                }
 
                 _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
             }
