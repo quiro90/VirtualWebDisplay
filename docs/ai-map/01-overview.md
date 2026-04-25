@@ -67,7 +67,7 @@ Acceso desde navegador/dispositivo
 El dominio real de la aplicación no es "servir páginas web", sino **crear una extensión virtual del escritorio Windows y exponerla de forma simple por navegador**. Casi toda decisión de diseño gira alrededor de ese objetivo:
 
 - perfiles de resolución orientados a Kindle/iPad y otros dispositivos,
-- opción de rotación para portrait (`RotateForPortrait`),
+- rotación configurable del frame capturado (`StreamRotationDegrees`: 0°, 90°, 180°, 270°),
 - ajuste de `object-fit` en navegador (`BrowserImageFit`: `fill`, `cover`, `contain`),
 - soporte de varios puertos para varias pantallas simultáneas,
 - recomendación de `WebImage` para e-ink y `Rtc` para tablets.

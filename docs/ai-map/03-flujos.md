@@ -34,7 +34,7 @@
 2. Resuelve región con `GetCaptureRegion()` según `MonitorIndex`.
 3. Copia pantalla a `Bitmap`.
 4. Si corresponde, dibuja cursor.
-5. Si `RotateForPortrait` está activo, rota 90°.
+5. Si `StreamRotationDegrees` es distinto de 0, rota el bitmap según corresponda.
 6. Codifica JPEG con `JpegQuality` configurado.
 7. Guarda bytes en `_currentFrame`.
 8. Espera `CaptureIntervalSeconds` antes del próximo frame.
@@ -67,8 +67,8 @@
 
 ## 6. Cambio de configuración en runtime
 1. El usuario abre `Configuración...` desde el tray (doble clic o menú contextual).
-2. `ResolutionConfigurationForm` edita una copia de settings (`CloneSettings`).
-3. Si acepta, `ApplySelection(...)` copia valores al objeto real vía `CopyConfig`.
+2. `ResolutionConfigurationForm` trabaja sobre una copia clonada de settings (`Screen1.Clone()` + `Screen2.Clone()`).
+3. Si acepta, `ApplySelection(...)` copia valores al objeto real vía `VirtualScreenConfig.CopyTo(...)`.
 4. `VirtualScreenSettingsStore.Save(...)` persiste JSON.
 5. La UI avisa con balloon tip que hace falta reiniciar para recrear pantallas y puertos.
 

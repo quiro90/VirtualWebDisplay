@@ -33,7 +33,8 @@ Screen2: VirtualScreenConfig
 | `TransmissionMethod` | "Rtc" | `WebImage` o `Rtc` |
 | `CaptureIntervalSeconds` | 0.25 | Ritmo de generación/emisión (compartido por ambos modos) |
 | `JpegQuality` | 40 | Calidad de compresión 10-100 (compartido por ambos modos) |
-| `RotateForPortrait` | true | Rota el bitmap capturado 90° |
+| `StreamRotationDegrees` | 0 | Rotación del frame capturado: 0, 90, 180 o 270 grados |
+| `RotateForPortrait` | false | **Legacy** — migrado a `StreamRotationDegrees`. Se mantiene solo para leer configs antiguas |
 | `MonitorIndex` | -1 | -1=auto (VDD creado), 0=primario, 1+=otros |
 | `VirtualDisplayPlacement` | "right" | right/left/top/bottom |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |

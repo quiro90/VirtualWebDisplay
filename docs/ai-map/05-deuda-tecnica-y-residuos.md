@@ -28,6 +28,12 @@ La página `BuildWebImagePage` tenía `--vh: 85vh` hardcodeado. Corregido a `100
 ### 6. Control de `BrowserImageFit` en UI
 El campo `BrowserImageFit` ya existía en `VirtualScreenConfig` pero no tenía control en el formulario. Se agregó un combo en `ScreenTabControls` con tres opciones: Estirar (fill) / Recortar (cover) / Contener (contain). Se inicializa y guarda igual que los demás campos.
 
+### 7. Eliminación de wrappers redundantes en `VirtualDisplayTrayController`
+- `CopyConfig(source, target)` (wrapper de una línea sobre `source.CopyTo(target)`) inlineado en `ApplySelection`.
+- `CloneSettings(settings)` (definido en clase externa, usado solo en `ResolutionConfigurationForm`) inlineado directamente en el constructor del form.
+- `_portInput.Enabled` como estado implícito reemplazado por campo explícito `_portEditable` en `ScreenTabControls`.
+- Fallbacks muertos en `Initialize` eliminados: `config.Width > 0 ? config.Width : config.CustomWidth` y `w > 0 ? w : 1080` — `EnsureValid` ya garantiza `Width > 0` antes de construir el form.
+
 ---
 
 ## Deuda técnica vigente, ordenada por prioridad
@@ -49,17 +55,13 @@ Mover las plantillas a una clase generadora dedicada o archivos estáticos embeb
 
 ## Prioridad media
 
-### B. Duplicación en copia de config
-Hay tres métodos de copia en `VirtualDisplayTrayController`:
-- `CopyConfig(source, target)`
-- `CloneConfig(source)`
-- `CloneSettings(settings)`
+### B. Consistencia en `VirtualScreenConfig.Clone()` y `CopyTo()`
+Los métodos `Clone()` y `CopyTo()` en `VirtualScreenConfig` son manuales campo a campo. Si se agrega una propiedad nueva, es fácil olvidar actualizarlos.
 
-#### Riesgo
-Si se agrega una propiedad nueva a `VirtualScreenConfig`, es fácil olvidar actualizar todas las copias.
+Además, `RotateForPortrait` (legacy) sigue siendo clonado/copiado aunque su único uso sea la migración en `EnsureValid`. Podría eliminarse del modelo una vez que se considere el ciclo de vida de configs antiguas cerrado.
 
 #### Limpieza futura sugerida
-Agregar un método de copia centralizado en el modelo o un mapper dedicado.
+Marca `RotateForPortrait` con `[JsonIgnore]` en escritura o eliminarlo del modelo cuando se descarte compatibilidad con configs pre-migración.
 
 ---
 

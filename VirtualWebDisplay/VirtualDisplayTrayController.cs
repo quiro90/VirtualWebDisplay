@@ -173,20 +173,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
     {
         selection.EnsureValid();
 
-        CopyConfig(selection.Screen1, _settings.Screen1);
-        CopyConfig(selection.Screen2, _settings.Screen2);
+        selection.Screen1.CopyTo(_settings.Screen1);
+        selection.Screen2.CopyTo(_settings.Screen2);
         _settings.EnsureValid();
         _settingsStore.Save(_settings);
     }
-
-    private static void CopyConfig(VirtualScreenConfig source, VirtualScreenConfig target) =>
-        source.CopyTo(target);
-
-    private static VirtualWebDisplaySettings CloneSettings(VirtualWebDisplaySettings settings) => new()
-    {
-        Screen1 = settings.Screen1.Clone(),
-        Screen2 = settings.Screen2.Clone(),
-    };
 
     private static void OpenStreamUrl(string url)
     {
@@ -255,7 +246,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
             ShowInTaskbar = false;
             ClientSize = new Size(520, 420);
 
-            var workingCopy = CloneSettings(settings);
+            var workingCopy = new VirtualWebDisplaySettings
+            {
+                Screen1 = settings.Screen1.Clone(),
+                Screen2 = settings.Screen2.Clone(),
+            };
             workingCopy.EnsureValid();
 
             var descriptionLabel = new Label
@@ -340,6 +335,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
         {
             private readonly VirtualScreenConfig _baseConfig;
             private readonly bool _allowDisable;
+            private readonly bool _portEditable;
             private readonly CheckBox? _enabledCheckBox;
             private readonly ComboBox _profileCombo;
             private readonly NumericUpDown _widthInput;
@@ -362,6 +358,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             {
                 _baseConfig = config.Clone();
                 _allowDisable = allowDisable;
+                _portEditable = isInitialStartup;
                 _localIp = localIp;
                 TabPage = new TabPage(title);
 
@@ -445,7 +442,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     Width = 84,
                     Minimum = 1,
                     Maximum = 65535,
-                    Enabled = isInitialStartup,
                 };
 
                 var methodLabel = CreateLabel("Transmisión:", 340, currentTop);
@@ -628,8 +624,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 if (_enabledCheckBox is not null)
                     _enabledCheckBox.Checked = config.Enabled;
 
-                var w = config.Width > 0 ? config.Width : config.CustomWidth;
-                var h = config.Height > 0 ? config.Height : config.CustomHeight;
+                var w = config.Width;
+                var h = config.Height;
 
                 var matchedProfile = VirtualDisplayProfiles.All
                     .Where(p => !VirtualDisplayProfiles.IsCustom(p.Id))
@@ -639,8 +635,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _suppressEvents = true;
                 _profileCombo.SelectedItem = _profileCombo.Items.Cast<ProfileItem>()
                     .First(item => item.ProfileId == (matchedProfile?.Id ?? VirtualDisplayProfiles.Custom));
-                _widthInput.Value = Math.Max(_widthInput.Minimum, Math.Min(_widthInput.Maximum, w > 0 ? w : 1080));
-                _heightInput.Value = Math.Max(_heightInput.Minimum, Math.Min(_heightInput.Maximum, h > 0 ? h : 1920));
+                _widthInput.Value = Math.Clamp(w, _widthInput.Minimum, _widthInput.Maximum);
+                _heightInput.Value = Math.Clamp(h, _heightInput.Minimum, _heightInput.Maximum);
                 _suppressEvents = false;
 
                 _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
@@ -702,7 +698,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             {
                 var enabled = !_allowDisable || _enabledCheckBox?.Checked == true;
                 foreach (var control in _managedControls)
-                    control.Enabled = enabled && (control != _portInput || _portInput.Enabled);
+                    control.Enabled = enabled && (control != _portInput || _portEditable);
 
                 var isDuplicate = (_placementCombo.SelectedItem as PlacementItem)?.Placement == VirtualDisplayPlacementOptions.Duplicate;
 

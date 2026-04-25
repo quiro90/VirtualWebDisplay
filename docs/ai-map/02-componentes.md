@@ -148,7 +148,7 @@ Form embebido dentro de `VirtualDisplayTrayController` que contiene dos tabs (Pa
 - combo de modo de transmisión (WebImage / WebRTC)
 - input de intervalo de captura (segundos)
 - slider de calidad JPEG
-- checkbox de rotación 90°
+- combo de rotación de imagen (0° / 90° / 180° / 270°)
 - **combo de ajuste de imagen** (`BrowserImageFit`): Estirar/Recortar/Contener
 
 ### Método clave
@@ -157,9 +157,8 @@ Form embebido dentro de `VirtualDisplayTrayController` que contiene dos tabs (Pa
 - `PostToUi(Action)` — despacha al hilo STA seguro
 
 ### Copia y clonado de config
-- `CopyConfig(source, target)` — copia campo a campo entre dos `VirtualScreenConfig`
-- `CloneConfig(source)` — crea nueva instancia copiada
-- `CloneSettings(settings)` — clona el par Screen1+Screen2
+- La copia entre configs se hace directamente vía `VirtualScreenConfig.CopyTo(target)`, inlineado en `ApplySelection`.
+- El clonado del par Screen1+Screen2 se hace inline en `ResolutionConfigurationForm` con `settings.Screen1.Clone()` / `settings.Screen2.Clone()`.
 
 ---
 
