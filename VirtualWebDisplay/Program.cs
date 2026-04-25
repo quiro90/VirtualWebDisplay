@@ -230,6 +230,17 @@ static string BuildWebImagePage(string title, string browserImageFit, int interv
 
             syncViewport();
             next();
+
+            if ('wakeLock' in navigator) {
+                var _wl = null;
+                function _acqWL() {
+                    navigator.wakeLock.request('screen').then(function (l) { _wl = l; }).catch(function () {});
+                }
+                _acqWL();
+                document.addEventListener('visibilitychange', function () {
+                    if (document.visibilityState === 'visible') _acqWL();
+                });
+            }
         })();
         </script>
     </body>
@@ -461,6 +472,17 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
             window.addEventListener('resize', syncCanvasSize);
             syncCanvasSize();
 
+            if ('wakeLock' in navigator) {
+                var _wl = null;
+                function _acqWL() {
+                    navigator.wakeLock.request('screen').then(function (l) { _wl = l; }).catch(function () {});
+                }
+                _acqWL();
+                document.addEventListener('visibilitychange', function () {
+                    if (document.visibilityState === 'visible') _acqWL();
+                });
+            }
+
             connect().catch(function () {
                 setStatus('No se pudo iniciar WebRTC. Reintentando…');
                 window.setTimeout(connect, 2000);
@@ -557,7 +579,7 @@ try
         var browserImageFit = BrowserImageFit(runtime.Config.BrowserImageFit);
         return Results.Content(
             TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod)
-                ? BuildWebImagePage(runtime.DisplayName, browserImageFit, Math.Max(10, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)))
+                ? BuildWebImagePage(runtime.DisplayName, browserImageFit, Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)))
                 : BuildRtcPage(runtime.DisplayName, browserImageFit),
             "text/html");
     });

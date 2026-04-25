@@ -458,16 +458,16 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 currentTop += 54;
 
-                var captureIntervalLabel = CreateLabel("Actualizar cada (segundos):", 14, currentTop);
+                var captureIntervalLabel = CreateLabel("Actualizar cada (ms):", 14, currentTop);
                 _captureIntervalInput = new NumericUpDown
                 {
                     Left = 14,
                     Top = currentTop + 18,
                     Width = 96,
-                    Minimum = 0.01M,
-                    Maximum = 60M,
-                    DecimalPlaces = 3,
-                    Increment = 0.01M,
+                    Minimum = 3M,
+                    Maximum = 500M,
+                    DecimalPlaces = 0,
+                    Increment = 1M,
                 };
 
                 var qualityLabel = CreateLabel("Calidad JPEG:", 126, currentTop);
@@ -583,7 +583,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 config.CustomHeight = (int)_heightInput.Value;
                 config.Port = (int)_portInput.Value;
                 config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
-                config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value;
+                config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
                 config.JpegQuality = _jpegQualitySlider.Value;
                 config.RotateForPortrait = _rotateStreamCheckBox.Checked;
                 config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
@@ -615,7 +615,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _suppressEvents = false;
 
                 _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
-                _captureIntervalInput.Value = Math.Max(_captureIntervalInput.Minimum, Math.Min(_captureIntervalInput.Maximum, (decimal)config.CaptureIntervalSeconds));
+                _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
                 _rotateStreamCheckBox.Checked = config.RotateForPortrait;
 

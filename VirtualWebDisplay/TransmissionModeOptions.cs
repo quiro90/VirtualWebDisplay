@@ -3,7 +3,7 @@ public static class TransmissionModeOptions
     public const string WebImage = "WebImage";
     public const string Rtc = "Rtc";
 
-    private const double MinCaptureIntervalSeconds = 0.01;
+    private const double MinCaptureIntervalSeconds = 0.003;
     private const double MaxCaptureIntervalSeconds = 60;
     private const int MinJpegQuality = 10;
     private const int MaxJpegQuality = 100;
