@@ -93,8 +93,15 @@ public sealed class CaptureService : BackgroundService
                 }
                 _lastRawHash = rawHash;
 
-                if (_config.RotateForPortrait)
-                    bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
+                var rotateFlip = _config.StreamRotationDegrees switch
+                {
+                    90  => RotateFlipType.Rotate90FlipNone,
+                    180 => RotateFlipType.Rotate180FlipNone,
+                    270 => RotateFlipType.Rotate270FlipNone,
+                    _   => (RotateFlipType?)null,
+                };
+                if (rotateFlip is not null)
+                    bitmap.RotateFlip(rotateFlip.Value);
 
                 var encoderParams = new EncoderParameters(1);
                 encoderParams.Param[0] = new EncoderParameter(Encoder.Quality, (long)TransmissionModeOptions.GetEffectiveJpegQuality(_config));

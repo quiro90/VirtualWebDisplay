@@ -25,8 +25,11 @@ public sealed class VirtualScreenConfig
 
     public int Port { get; set; } = 8000;
 
-    /// <summary>Rotate the captured frame 90° so a landscape region is served as portrait (ideal for Kindle).</summary>
-    public bool RotateForPortrait { get; set; } = true;
+    /// <summary>Legacy: migrado a StreamRotationDegrees. Se mantiene para leer configs guardadas antiguas.</summary>
+    public bool RotateForPortrait { get; set; }
+
+    /// <summary>Degrees to rotate the captured frame before encoding: 0, 90, 180 or 270.</summary>
+    public int StreamRotationDegrees { get; set; }
 
     /// <summary>
     /// Index of the monitor to capture from Screen.AllScreens.
@@ -67,6 +70,7 @@ public sealed class VirtualScreenConfig
         JpegQuality = JpegQuality,
         Port = Port,
         RotateForPortrait = RotateForPortrait,
+        StreamRotationDegrees = StreamRotationDegrees,
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
         BrowserImageFit = BrowserImageFit,
@@ -86,6 +90,7 @@ public sealed class VirtualScreenConfig
         target.JpegQuality = JpegQuality;
         target.Port = Port;
         target.RotateForPortrait = RotateForPortrait;
+        target.StreamRotationDegrees = StreamRotationDegrees;
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;
         target.BrowserImageFit = BrowserImageFit;

@@ -349,7 +349,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             private readonly NumericUpDown _captureIntervalInput;
             private readonly TrackBar _jpegQualitySlider;
             private readonly Label _jpegQualityValueLabel;
-            private readonly CheckBox _rotateStreamCheckBox;
+            private readonly ComboBox _streamRotationCombo;
             private readonly ComboBox _browserImageFitCombo;
             private readonly Control[] _managedControls;
             private bool _suppressEvents;
@@ -492,13 +492,21 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 currentTop += 54;
 
-                _rotateStreamCheckBox = new CheckBox
+                var rotationLabel = CreateLabel("Rotación:", 14, currentTop);
+                _streamRotationCombo = new ComboBox
                 {
-                    Left = 14,
-                    Top = currentTop,
-                    Width = 240,
-                    Text = "Rotar imagen 90° (girar retransmisión)",
+                    Left = 82,
+                    Top = currentTop - 2,
+                    Width = 172,
+                    DropDownStyle = ComboBoxStyle.DropDownList,
                 };
+                _streamRotationCombo.Items.AddRange(
+                [
+                    new StreamRotationItem(0,   "No rotar imagen 0°"),
+                    new StreamRotationItem(90,  "Rotar imagen 90°"),
+                    new StreamRotationItem(180, "Rotar imagen 180°"),
+                    new StreamRotationItem(270, "Rotar imagen 270°"),
+                ]);
 
                 var fitLabel = CreateLabel("Ajuste:", 262, currentTop);
                 _browserImageFitCombo = new ComboBox
@@ -535,7 +543,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     qualityLabel,
                     _jpegQualitySlider,
                     _jpegQualityValueLabel,
-                    _rotateStreamCheckBox,
+                    rotationLabel,
+                    _streamRotationCombo,
                     fitLabel,
                     _browserImageFitCombo,
                 ];
@@ -568,7 +577,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _transmissionMethodCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _captureIntervalInput.ValueChanged += (_, _) => UpdateState();
                 _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
-                _rotateStreamCheckBox.CheckedChanged += (_, _) => UpdateState();
+                _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
             }
 
@@ -586,7 +595,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
                 config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
                 config.JpegQuality = _jpegQualitySlider.Value;
-                config.RotateForPortrait = _rotateStreamCheckBox.Checked;
+                config.StreamRotationDegrees = ((StreamRotationItem)_streamRotationCombo.SelectedItem!).Degrees;
                 config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
                 config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
 
@@ -618,7 +627,10 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
                 _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
-                _rotateStreamCheckBox.Checked = config.RotateForPortrait;
+                var validDegrees = new[] { 0, 90, 180, 270 };
+                var degrees = validDegrees.Contains(config.StreamRotationDegrees) ? config.StreamRotationDegrees : 0;
+                _streamRotationCombo.SelectedItem = _streamRotationCombo.Items.Cast<StreamRotationItem>()
+                    .First(item => item.Degrees == degrees);
 
                 var normalizedPlacement = VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement);
                 _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
@@ -712,6 +724,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
             }
 
             private sealed record TransmissionMethodItem(string Method, string DisplayName)
+            {
+                public override string ToString() => DisplayName;
+            }
+
+            private sealed record StreamRotationItem(int Degrees, string DisplayName)
             {
                 public override string ToString() => DisplayName;
             }
