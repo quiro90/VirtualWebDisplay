@@ -92,24 +92,24 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         {
             try
             {
-                var frame = _captureService.GetCurrentFrame();
-                if (frame.Length > 0 && !ReferenceEquals(frame, lastFrame))
+                // Poll at a short interval so new frames are dispatched within ~10 ms
+                // of being produced by CaptureService, regardless of the configured
+                // capture interval. The actual frame-rate cap is enforced by CaptureService.
+                if (_peers.Count > 0)
                 {
-                    lastFrame = frame;
-
-                    var frameId = ++_frameId;
-                    foreach (var peerEntry in _peers.ToArray())
+                    var frame = _captureService.GetCurrentFrame();
+                    if (frame.Length > 0 && !ReferenceEquals(frame, lastFrame))
                     {
-                        if (!peerEntry.Value.TrySendFrame(frame, frameId))
-                            continue;
+                        lastFrame = frame;
+                        var frameId = ++_frameId;foreach (var peerEntry in _peers.ToArray())
+                            peerEntry.Value.TrySendFrame(frame, frameId);
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromSeconds(TransmissionModeOptions.GetEffectiveCaptureIntervalSeconds(_config)), stoppingToken);
+                await Task.Delay(10, stoppingToken);
             }
             catch (OperationCanceledException)
-            {
-                break;
+            {break;
             }
             catch (Exception ex)
             {

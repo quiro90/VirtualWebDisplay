@@ -260,10 +260,7 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
                 inset: 0;
                 width: 100vw;
                 height: 100vh;
-                object-fit: {{browserImageFit}};
-                object-position: center center;
                 display: block;
-                image-rendering: auto;
                 background: #000;
             }
 
@@ -295,15 +292,16 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
         </style>
     </head>
     <body>
-        <img id="screen" alt="">
+        <canvas id="screen"></canvas>
         <div id="mode">WebRTC</div>
         <div id="status">Conectando…</div>
 
         <script>
         (function () {
-            var img = document.getElementById('screen');
+            var canvas = document.getElementById('screen');
+            var ctx = canvas.getContext('2d');
             var status = document.getElementById('status');
-            var currentUrl = null;
+            var fit = '{{browserImageFit}}';
             var currentFrameId = -1;
             var frameInfo = null;
             var frameBuffers = [];
@@ -336,15 +334,38 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
                 receivedBytes = 0;
             }
 
+            function syncCanvasSize() {
+                var w = window.innerWidth, h = window.innerHeight;
+                if (canvas.width !== w || canvas.height !== h) {
+                    canvas.width = w;
+                    canvas.height = h;
+                }
+            }
+
+            function drawFit(bitmap) {
+                var cw = canvas.width, ch = canvas.height;
+                var bw = bitmap.width, bh = bitmap.height;
+                ctx.clearRect(0, 0, cw, ch);
+                if (fit === 'fill') {
+                    ctx.drawImage(bitmap, 0, 0, cw, ch);
+                } else if (fit === 'cover') {
+                    var scale = Math.max(cw / bw, ch / bh);
+                    var sw = bw * scale, sh = bh * scale;
+                    ctx.drawImage(bitmap, (cw - sw) / 2, (ch - sh) / 2, sw, sh);
+                } else {
+                    var scale = Math.min(cw / bw, ch / bh);
+                    var sw = bw * scale, sh = bh * scale;
+                    ctx.drawImage(bitmap, (cw - sw) / 2, (ch - sh) / 2, sw, sh);
+                }
+            }
+
             function applyFrame(bytes) {
-                var blob = new Blob([bytes], { type: 'image/jpeg' });
-                var nextUrl = URL.createObjectURL(blob);
-                img.onload = function () {
-                    if (currentUrl)
-                        URL.revokeObjectURL(currentUrl);
-                    currentUrl = nextUrl;
-                };
-                img.src = nextUrl;
+                // createImageBitmap decodes JPEG off the main thread; drawImage is synchronous and fast.
+                createImageBitmap(new Blob([bytes], { type: 'image/jpeg' })).then(function (bitmap) {
+                    syncCanvasSize();
+                    drawFit(bitmap);
+                    bitmap.close();
+                });
             }
 
             async function connect() {
@@ -436,6 +457,9 @@ static string BuildRtcPage(string title, string browserImageFit) => $$"""
                 var answer = await response.json();
                 await pc.setRemoteDescription(answer);
             }
+
+            window.addEventListener('resize', syncCanvasSize);
+            syncCanvasSize();
 
             connect().catch(function () {
                 setStatus('No se pudo iniciar WebRTC. Reintentando…');
