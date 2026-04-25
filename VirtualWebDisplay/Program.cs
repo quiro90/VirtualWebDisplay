@@ -19,10 +19,10 @@ var settingsStore = new VirtualScreenSettingsStore();
 var settings = settingsStore.Load();
 settings.EnsureValid();
 
-using var tray = new VirtualDisplayTrayController(settings, settingsStore);
-
 var localIp = NetworkAddressHelper.DetectLocalIp();
 var hostName = Dns.GetHostName();
+
+using var tray = new VirtualDisplayTrayController(settings, settingsStore, localIp);
 
 static void ShowInstallDialog(string title, string message, string installUrl)
 {

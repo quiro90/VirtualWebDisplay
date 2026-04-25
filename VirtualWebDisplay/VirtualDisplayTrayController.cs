@@ -7,6 +7,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 {
     private readonly VirtualWebDisplaySettings _settings;
     private readonly VirtualScreenSettingsStore _settingsStore;
+    private readonly string _localIp;
     private readonly Thread _uiThread;
     private readonly ManualResetEventSlim _ready = new(false);
 
@@ -27,10 +28,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
         return stream is not null ? new Icon(stream) : SystemIcons.Application;
     }
 
-    public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore)
+    public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore, string localIp)
     {
         _settings = settings;
         _settingsStore = settingsStore;
+        _localIp = localIp;
         _uiThread = new Thread(RunUiThread)
         {
             IsBackground = true,
@@ -47,7 +49,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         PostToUi(() =>
         {
-            using var form = new ResolutionConfigurationForm(_settings, isInitialStartup: true);
+            using var form = new ResolutionConfigurationForm(_settings, isInitialStartup: true, _localIp);
             var result = form.ShowDialog();
             if (result == DialogResult.OK)
             {
@@ -159,7 +161,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     private void ShowConfigurationDialog()
     {
-        using var form = new ResolutionConfigurationForm(_settings, isInitialStartup: false);
+        using var form = new ResolutionConfigurationForm(_settings, isInitialStartup: false, _localIp);
         if (form.ShowDialog() != DialogResult.OK)
             return;
 
@@ -243,7 +245,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         public VirtualWebDisplaySettings Selection { get; private set; } = new();
 
-        public ResolutionConfigurationForm(VirtualWebDisplaySettings settings, bool isInitialStartup)
+        public ResolutionConfigurationForm(VirtualWebDisplaySettings settings, bool isInitialStartup, string localIp)
         {
             Text = isInitialStartup ? "VirtualWebDisplay & Configuración de pantallas" : "VirtualWebDisplay & Configuración";
             StartPosition = FormStartPosition.CenterScreen;
@@ -251,7 +253,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
-            ClientSize = new Size(520, 390);
+            ClientSize = new Size(520, 420);
 
             var workingCopy = CloneSettings(settings);
             workingCopy.EnsureValid();
@@ -273,11 +275,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 Left = 18,
                 Top = 62,
                 Width = 484,
-                Height = 270,
+                Height = 300,
             };
 
-            _screen1Controls = new ScreenTabControls("Pantalla 1", allowDisable: false, isInitialStartup, workingCopy.Screen1);
-            _screen2Controls = new ScreenTabControls("Pantalla 2", allowDisable: true, isInitialStartup, workingCopy.Screen2);
+            _screen1Controls = new ScreenTabControls("Pantalla 1", allowDisable: false, isInitialStartup, workingCopy.Screen1, localIp);
+            _screen2Controls = new ScreenTabControls("Pantalla 2", allowDisable: true,  isInitialStartup, workingCopy.Screen2, localIp);
 
             tabs.TabPages.Add(_screen1Controls.TabPage);
             tabs.TabPages.Add(_screen2Controls.TabPage);
@@ -285,7 +287,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             var acceptButton = new Button
             {
                 Left = 326,
-                Top = 344,
+                Top = 374,
                 Width = 84,
                 Height = 28,
                 Text = isInitialStartup ? "Iniciar" : "Guardar",
@@ -295,7 +297,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             var cancelButton = new Button
             {
                 Left = 418,
-                Top = 344,
+                Top = 374,
                 Width = 84,
                 Height = 28,
                 Text = isInitialStartup ? "Salir" : "Cerrar",
@@ -352,12 +354,15 @@ public sealed class VirtualDisplayTrayController : IDisposable
             private readonly ComboBox _streamRotationCombo;
             private readonly ComboBox _browserImageFitCombo;
             private readonly Control[] _managedControls;
+            private readonly string _localIp;
+            private readonly LinkLabel _httpUrlLink;
             private bool _suppressEvents;
 
-            public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config)
+            public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config, string localIp)
             {
                 _baseConfig = config.Clone();
                 _allowDisable = allowDisable;
+                _localIp = localIp;
                 TabPage = new TabPage(title);
 
                 var currentTop = 14;
@@ -523,6 +528,17 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     new ImageFitItem("contain", "Contener (barras)"),
                 ]);
 
+                currentTop += 36;
+
+                _httpUrlLink = new LinkLabel
+                {
+                    Left = 14,
+                    Top = currentTop,
+                    Width = 440,
+                    AutoSize = false,
+                    Text = $"http://{_localIp}:{config.Port}",
+                };
+
                 _managedControls =
                 [
                     profileLabel,
@@ -550,6 +566,9 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 ];
 
                 TabPage.Controls.AddRange(_managedControls);
+                TabPage.Controls.Add(_httpUrlLink);
+
+                _httpUrlLink.LinkClicked += (_, _) => OpenUrl(_httpUrlLink.Text);
 
                 Initialize(config);
 
@@ -708,6 +727,15 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 }
 
                 _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
+
+                var port = (int)_portInput.Value;
+                _httpUrlLink.Text = $"http://{_localIp}:{port}";
+            }
+
+            private static void OpenUrl(string url)
+            {
+                try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+                catch { }
             }
 
             private static Label CreateLabel(string text, int left, int top) => new()
