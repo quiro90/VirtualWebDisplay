@@ -376,6 +376,8 @@ public sealed class VirtualDisplayManager : IDisposable
 
     public void Dispose()
     {
+        StopKeepAlive();
+
         if (DriverApi.IsValidHandle(_handle) && _displayIdx >= 0)
         {
             try

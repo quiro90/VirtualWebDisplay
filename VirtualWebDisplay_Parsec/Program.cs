@@ -53,6 +53,26 @@ static async Task DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext> runtime
     foreach (var runtime in runtimes.Reverse())
         await runtime.DisposeAsync();
 }
+
+static async Task WaitForVirtualDisplaysRemovalAsync(IReadOnlyCollection<string> deviceNames, TimeSpan timeout)
+{
+    if (deviceNames.Count == 0)
+        return;
+
+    var deadline = DateTime.UtcNow + timeout;
+    while (DateTime.UtcNow < deadline)
+    {
+        var remaining = Screen.AllScreens
+            .Select(screen => screen.DeviceName)
+            .Where(name => deviceNames.Contains(name, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (remaining.Length == 0)
+            return;
+
+        await Task.Delay(120);
+    }
+}
 var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
 
 if (!autoStart && !tray.ShowStartupConfiguration())
@@ -108,6 +128,7 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 
 var app = builder.Build();
 singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
+var restartRequested = false;
 
 app.Lifetime.ApplicationStopping.Register(() =>
 {
@@ -158,10 +179,7 @@ try
         () => app.Lifetime.StopApplication(),
         () =>
         {
-            var processPath = Environment.ProcessPath
-                ?? Process.GetCurrentProcess().MainModule?.FileName;
-            if (processPath is not null)
-                Process.Start(new ProcessStartInfo(processPath, "--autostart") { UseShellExecute = true });
+            restartRequested = true;
             app.Lifetime.StopApplication();
         },
         runtimes);
@@ -301,13 +319,35 @@ try
 finally
 {
     Console.WriteLine("Limpiando recursos...");
+    var createdVirtualDeviceNames = runtimes
+        .Select(runtime => runtime.DisplayManager.WindowsDeviceName)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Cast<string>()
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
     await DisposeRuntimesAsync(runtimes);
+
+    if (restartRequested)
+    {
+        await WaitForVirtualDisplaysRemovalAsync(createdVirtualDeviceNames, TimeSpan.FromSeconds(6));
+        await Task.Delay(200);
+    }
+
     Console.WriteLine("Recursos liberados.");
 }
 
 // Liberar el mutex explícitamente antes de Exit para que la nueva instancia
 // (en caso de reinicio) pueda adquirirlo sin AbandonedMutexException.
 singleInstance.Dispose();
+
+if (restartRequested)
+{
+    var processPath = Environment.ProcessPath
+        ?? Process.GetCurrentProcess().MainModule?.FileName;
+    if (processPath is not null)
+        Process.Start(new ProcessStartInfo(processPath, "--autostart") { UseShellExecute = true });
+}
 
 // Forzar la terminación del proceso una vez que todo el cleanup completó.
 // SIPSorcery y Kestrel pueden dejar threads internos que impiden la salida natural.
