@@ -20,6 +20,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private IReadOnlyList<ScreenRuntimeContext> _screenRuntimes = [];
     private bool _disposed;
     private Icon? _appIcon;
+    private ResolutionConfigurationForm? _startupForm;
 
     private static Icon LoadAppIcon()
     {
@@ -49,17 +50,28 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         PostToUi(() =>
         {
-            using var form = new ResolutionConfigurationForm(_settings, isInitialStartup: true, _localIp);
-            var result = form.ShowDialog();
-            if (result == DialogResult.OK)
-            {
-                ApplySelection(form.Selection);
-                completion.TrySetResult(true);
-                return;
-            }
+            _startupForm = CreateConfigurationForm(isInitialStartup: true, hasStarted: false);
 
-            completion.TrySetResult(false);
-            _context?.ExitThread();
+            _startupForm.FormClosed += (_, _) =>
+            {
+                if (_startupForm.WasStarted)
+                {
+                    _startupForm = null;
+                }
+                else
+                {
+                    completion.TrySetResult(false);
+                    _context?.ExitThread();
+                }
+            };
+
+            _startupForm.ConfigurationApplied += _ =>
+            {
+                if (!_startupForm.WasStarted)
+                    completion.TrySetResult(true);
+            };
+
+            _startupForm.Show();
         });
 
         return completion.Task.GetAwaiter().GetResult();
@@ -79,6 +91,9 @@ public sealed class VirtualDisplayTrayController : IDisposable
             _contextMenu?.Dispose();
             _contextMenu = BuildContextMenu();
             _notifyIcon.ContextMenuStrip = _contextMenu;
+
+            // Notificar al formulario de inicio que la aplicación ya se inició
+            _startupForm?.NotifyStartupCompleted();
         });
 
         var summary = string.Join(" | ", _screenRuntimes.Select(runtime => $"{runtime.DisplayName}: {runtime.HostUrl}"));
@@ -161,12 +176,32 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     private void ShowConfigurationDialog()
     {
-        using var form = new ResolutionConfigurationForm(_settings, isInitialStartup: false, _localIp);
-        if (form.ShowDialog() != DialogResult.OK)
+        if (_startupForm is not null && !_startupForm.IsDisposed)
+        {
+            _startupForm.BringToFront();
+            _startupForm.Activate();
             return;
+        }
 
-        ApplySelection(form.Selection);
-        _notifyIcon?.ShowBalloonTip(4000, "VirtualWebDisplay", "Configuración guardada. Usá 'Reiniciar' desde el ícono de bandeja para aplicar los nuevos valores.", ToolTipIcon.Info);
+        var hasStarted = _screenRuntimes.Count > 0;
+        using var form = CreateConfigurationForm(isInitialStartup: false, hasStarted);
+
+        var dialogResult = form.ShowDialog();
+
+        if (dialogResult == DialogResult.OK && !hasStarted)
+        {
+            _notifyIcon?.ShowBalloonTip(4000, "VirtualWebDisplay", "Configuración guardada. Usá 'Reiniciar' desde el ícono de bandeja para aplicar los nuevos valores.", ToolTipIcon.Info);
+        }
+    }
+
+    private ResolutionConfigurationForm CreateConfigurationForm(bool isInitialStartup, bool hasStarted)
+    {
+        var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted);
+
+        form.ConfigurationApplied += ApplySelection;
+        form.RestartRequested += RestartApplication;
+
+        return form;
     }
 
     private void ApplySelection(VirtualWebDisplaySettings selection)
@@ -233,17 +268,28 @@ public sealed class VirtualDisplayTrayController : IDisposable
     {
         private readonly ScreenTabControls _screen1Controls;
         private readonly ScreenTabControls _screen2Controls;
+        private readonly Button _acceptButton;
+        private readonly bool _isInitialStartup;
+        private bool _wasStarted;
 
         public VirtualWebDisplaySettings Selection { get; private set; } = new();
+        public bool WasStarted => _wasStarted;
 
-        public ResolutionConfigurationForm(VirtualWebDisplaySettings settings, bool isInitialStartup, string localIp)
+        public event Action<VirtualWebDisplaySettings>? ConfigurationApplied;
+        public event Action? RestartRequested;
+
+        private string AcceptButtonText => _wasStarted ? "Reiniciar" : (_isInitialStartup ? "Iniciar" : "Guardar");
+
+        public ResolutionConfigurationForm(VirtualWebDisplaySettings settings, bool isInitialStartup, string localIp, bool hasStarted = false)
         {
+            _isInitialStartup = isInitialStartup;
+            _wasStarted = hasStarted;
             Text = isInitialStartup ? "VirtualWebDisplay & Configuración de pantallas" : "VirtualWebDisplay & Configuración";
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
-            ShowInTaskbar = false;
+            ShowInTaskbar = isInitialStartup;
             ClientSize = new Size(520, 420);
 
             var workingCopy = new VirtualWebDisplaySettings
@@ -279,15 +325,15 @@ public sealed class VirtualDisplayTrayController : IDisposable
             tabs.TabPages.Add(_screen1Controls.TabPage);
             tabs.TabPages.Add(_screen2Controls.TabPage);
 
-            var acceptButton = new Button
+            _acceptButton = new Button
             {
                 Left = 326,
                 Top = 374,
                 Width = 84,
                 Height = 28,
-                Text = isInitialStartup ? "Iniciar" : "Guardar",
-                DialogResult = DialogResult.OK,
+                Text = AcceptButtonText,
             };
+            _acceptButton.Click += AcceptButton_Click;
 
             var cancelButton = new Button
             {
@@ -296,39 +342,70 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 Width = 84,
                 Height = 28,
                 Text = isInitialStartup ? "Salir" : "Cerrar",
-                DialogResult = DialogResult.Cancel,
             };
+            cancelButton.Click += (_, _) => Close();
 
-            Controls.AddRange([descriptionLabel, tabs, acceptButton, cancelButton]);
-            AcceptButton = acceptButton;
+            Controls.AddRange([descriptionLabel, tabs, _acceptButton, cancelButton]);
+            AcceptButton = _acceptButton;
             CancelButton = cancelButton;
+        }
 
-            FormClosing += (_, args) =>
+        public void NotifyStartupCompleted()
+        {
+            if (!_isInitialStartup || _wasStarted)
+                return;
+
+            _wasStarted = true;
+            _acceptButton.Text = AcceptButtonText;
+        }
+
+        private void AcceptButton_Click(object? sender, EventArgs e)
+        {
+            if (!ValidateAndBuildSelection(out var selection))
+                return;
+
+            Selection = selection;
+            ConfigurationApplied?.Invoke(selection);
+
+            if (_wasStarted)
             {
-                if (DialogResult != DialogResult.OK)
-                    return;
+                RestartRequested?.Invoke();
+                if (!_isInitialStartup)
+                    CloseDialog();
+            }
+            else if (!_isInitialStartup)
+            {
+                CloseDialog();
+            }
+        }
 
-                var selection = new VirtualWebDisplaySettings
-                {
-                    Screen1 = _screen1Controls.BuildConfig(alwaysEnabled: true),
-                    Screen2 = _screen2Controls.BuildConfig(alwaysEnabled: false),
-                };
-
-                selection.EnsureValid();
-
-                if (selection.Screen2.Enabled && selection.Screen1.Port == selection.Screen2.Port)
-                {
-                    MessageBox.Show(
-                        "La Pantalla 2 debe usar un puerto distinto al de la Pantalla 1.",
-                        "VirtualWebDisplay & Puerto duplicado",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                    args.Cancel = true;
-                    return;
-                }
-
-                Selection = selection;
+        private bool ValidateAndBuildSelection(out VirtualWebDisplaySettings selection)
+        {
+            selection = new VirtualWebDisplaySettings
+            {
+                Screen1 = _screen1Controls.BuildConfig(alwaysEnabled: true),
+                Screen2 = _screen2Controls.BuildConfig(alwaysEnabled: false),
             };
+
+            selection.EnsureValid();
+
+            if (selection.Screen2.Enabled && selection.Screen1.Port == selection.Screen2.Port)
+            {
+                MessageBox.Show(
+                    "La Pantalla 2 debe usar un puerto distinto al de la Pantalla 1.",
+                    "VirtualWebDisplay & Puerto duplicado",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void CloseDialog()
+        {
+            DialogResult = DialogResult.OK;
+            Close();
         }
 
         private sealed class ScreenTabControls

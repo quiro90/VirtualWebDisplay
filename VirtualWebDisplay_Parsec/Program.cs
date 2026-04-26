@@ -506,11 +506,14 @@ if (!autoStart && !tray.ShowStartupConfiguration())
 
 settings.EnsureValid();
 
+// Crear runtimes solo para las pantallas habilitadas.
+// Cada pantalla usa su puerto configurado individualmente (no se calculan puertos dinámicamente).
 var runtimes = new List<ScreenRuntimeContext>
 {
     new("screen1", "Pantalla 1", settings.Screen1, hostName, localIp),
 };
 
+// Solo agregar Screen2 si está explícitamente habilitada en la configuración.
 if (settings.Screen2.Enabled)
     runtimes.Add(new ScreenRuntimeContext("screen2", "Pantalla 2", settings.Screen2, hostName, localIp));
 
@@ -534,11 +537,15 @@ var certStoreDir = Path.Combine(
 
 var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
 
+// Configurar Kestrel para escuchar solo en los puertos de las pantallas habilitadas.
+// Cada pantalla usa 2 puertos consecutivos: Port (HTTP) y Port+1 (HTTPS).
 builder.WebHost.ConfigureKestrel(kestrel =>
 {
     foreach (var runtime in runtimes)
     {
+        // HTTP: puerto configurado para esta pantalla.
         kestrel.ListenAnyIP(runtime.Config.Port);
+        // HTTPS: puerto configurado + 1 para esta pantalla.
         kestrel.ListenAnyIP(runtime.Config.Port + 1, listenOptions =>
             listenOptions.UseHttps(tlsCert));
     }
@@ -546,6 +553,11 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 
 var app = builder.Build();
 singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
+
+app.Lifetime.ApplicationStopping.Register(() =>
+{
+    Console.WriteLine("Deteniendo VirtualWebDisplay...");
+});
 
 try
 {
@@ -563,6 +575,7 @@ try
         var (ok, vddStatus) = runtime.DisplayManager.TryCreate(runtime.Config);
         if (!ok)
         {
+            await DisposeRuntimesAsync(runtimes);
             ShowInstallDialog(
                 $"VirtualWebDisplay — Error en {runtime.DisplayName}",
                 vddStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
@@ -574,6 +587,7 @@ try
             runtime.Config.MonitorIndex = virtualMonitorIndex;
         else if (runtime.Config.MonitorIndex < 0)
         {
+            await DisposeRuntimesAsync(runtimes);
             MessageBox.Show(
                 vddStatus + $"\n\nNo se pudo identificar el monitor virtual de Windows para {runtime.DisplayName}.",
                 "VirtualWebDisplay — Monitor virtual no detectado",
@@ -709,11 +723,13 @@ try
     Console.WriteLine("│     3. Ajustes → General → Acerca → Conf. de cert.   │");
     Console.WriteLine("└──────────────────────────────────────────────────────┘");
 
-    app.Run();
+    await app.RunAsync();
 }
 finally
 {
+    Console.WriteLine("Limpiando recursos...");
     await DisposeRuntimesAsync(runtimes);
+    Console.WriteLine("Recursos liberados.");
 }
 
 // Liberar el mutex explícitamente antes de Exit para que la nueva instancia
