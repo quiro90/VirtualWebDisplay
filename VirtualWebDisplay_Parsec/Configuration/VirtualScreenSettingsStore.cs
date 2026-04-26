@@ -1,4 +1,7 @@
 using System.Text.Json;
+using VirtualWebDisplay.Configuration.Models;
+
+namespace VirtualWebDisplay.Configuration;
 
 public sealed class VirtualScreenSettingsStore
 {

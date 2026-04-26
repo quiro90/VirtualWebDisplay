@@ -1,3 +1,5 @@
+namespace VirtualWebDisplay.Configuration.Models;
+
 public sealed class VirtualWebDisplaySettings
 {
     public VirtualScreenConfig Screen1 { get; set; } = CreateScreen1Defaults();

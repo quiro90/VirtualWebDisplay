@@ -1,3 +1,9 @@
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace VirtualWebDisplay.Infrastructure;
+
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,7 +54,7 @@ public sealed class SingleInstanceManager : IDisposable
             }
             catch (AbandonedMutexException)
             {
-                // El proceso anterior terminó sin liberar el mutex; lo adquirimos igual.
+                // El proceso anterior terminÃ³ sin liberar el mutex; lo adquirimos igual.
                 _ownsMutex = true;
                 return true;
             }
@@ -164,3 +170,4 @@ public sealed class SingleInstanceManager : IDisposable
         _mutex.Dispose();
     }
 }
+

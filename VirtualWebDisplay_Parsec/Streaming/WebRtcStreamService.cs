@@ -1,4 +1,12 @@
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using SIPSorcery.Net;
 using System.Collections.Concurrent;
+using VirtualWebDisplay.Configuration;
+using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Streaming.Models;
+
+namespace VirtualWebDisplay.Streaming;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 
@@ -198,5 +206,4 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     }
 }
 
-public sealed record WebRtcSessionOffer(string Sdp, string Type);
-public sealed record WebRtcSessionAnswer(string Sdp, string Type, string PeerId);
+

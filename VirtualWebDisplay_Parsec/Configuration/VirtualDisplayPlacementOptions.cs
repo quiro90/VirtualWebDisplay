@@ -1,3 +1,7 @@
+﻿using System.Drawing;
+
+namespace VirtualWebDisplay.Configuration;
+
 using System.Drawing;
 
 public static class VirtualDisplayPlacementOptions
@@ -41,3 +45,4 @@ public static class VirtualDisplayPlacementOptions
             _ => new Point(primaryBounds.Right, primaryBounds.Top),
         };
 }
+

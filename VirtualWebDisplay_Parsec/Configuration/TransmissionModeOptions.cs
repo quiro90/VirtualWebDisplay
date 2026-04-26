@@ -1,3 +1,7 @@
+﻿using VirtualWebDisplay.Configuration.Models;
+
+namespace VirtualWebDisplay.Configuration;
+
 public static class TransmissionModeOptions
 {
     public const string WebImage = "WebImage";
@@ -41,3 +45,4 @@ public static class TransmissionModeOptions
     public static int GetEffectiveJpegQuality(VirtualScreenConfig config) =>
         Math.Clamp(config.JpegQuality, MinJpegQuality, MaxJpegQuality);
 }
+

@@ -1,3 +1,12 @@
+﻿using Microsoft.Extensions.Hosting;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using VirtualWebDisplay.Configuration;
+using VirtualWebDisplay.Configuration.Models;
+
+namespace VirtualWebDisplay.Streaming;
+
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -85,7 +94,7 @@ public sealed class CaptureService : BackgroundService
                 var rawHash = SampleHash(bitmap);
                 if (rawHash == _lastRawHash)
                 {
-                    // Screen unchanged — skip encoding entirely.
+                    // Screen unchanged â€” skip encoding entirely.
                     var delay2 = interval - (DateTime.UtcNow - captureStart);
                     if (delay2 > TimeSpan.Zero)
                         await Task.Delay(delay2, stoppingToken);
@@ -219,3 +228,4 @@ public sealed class CaptureService : BackgroundService
             ?? new Rectangle(0, 0, _config.Width, _config.Height);
     }
 }
+

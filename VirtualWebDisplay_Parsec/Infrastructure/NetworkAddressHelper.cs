@@ -1,3 +1,8 @@
+﻿using System.Net.NetworkInformation;
+using System.Net.Sockets;
+
+namespace VirtualWebDisplay.Infrastructure;
+
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
@@ -15,3 +20,4 @@ public static class NetworkAddressHelper
     public static string BuildAccessUrl(string host, int port) =>
         port == 80 ? $"http://{host}/" : $"http://{host}:{port}/";
 }
+

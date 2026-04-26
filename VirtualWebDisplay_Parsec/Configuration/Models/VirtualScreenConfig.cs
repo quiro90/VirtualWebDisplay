@@ -1,3 +1,5 @@
+namespace VirtualWebDisplay.Configuration.Models;
+
 public sealed class VirtualScreenConfig
 {
     public bool Enabled { get; set; } = true;
