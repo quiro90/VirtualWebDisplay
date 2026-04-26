@@ -337,22 +337,16 @@ public sealed class VirtualDisplayTrayController : IDisposable
             private readonly bool _allowDisable;
             private readonly bool _portEditable;
             private readonly CheckBox? _enabledCheckBox;
-            private readonly ComboBox _profileCombo;
-            private readonly NumericUpDown _widthInput;
-            private readonly NumericUpDown _heightInput;
-            private readonly Button _rotarButton;
-            private readonly ComboBox _placementCombo;
             private readonly NumericUpDown _portInput;
             private readonly ComboBox _transmissionMethodCombo;
+            private readonly ComboBox _streamRotationCombo;
             private readonly NumericUpDown _captureIntervalInput;
             private readonly TrackBar _jpegQualitySlider;
             private readonly Label _jpegQualityValueLabel;
-            private readonly ComboBox _streamRotationCombo;
             private readonly ComboBox _browserImageFitCombo;
             private readonly Control[] _managedControls;
             private readonly string _localIp;
             private readonly LinkLabel _httpUrlLink;
-            private bool _suppressEvents;
 
             public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config, string localIp)
             {
@@ -369,87 +363,30 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     {
                         Left = 14,
                         Top = currentTop,
-                        Width = 180,
+                        Width = 200,
                         Text = "Habilitar (experimental)",
                     };
                     TabPage.Controls.Add(_enabledCheckBox);
                     currentTop += 28;
                 }
 
-                var profileLabel = CreateLabel("Perfil:", 14, currentTop);
-                _profileCombo = new ComboBox
-                {
-                    Left = 14,
-                    Top = currentTop + 18,
-                    Width = 260,
-                    DropDownStyle = ComboBoxStyle.DropDownList,
-                };
-                _profileCombo.Items.AddRange(VirtualDisplayProfiles.All.Select(profile => new ProfileItem(profile.Id, profile.DisplayName)).ToArray());
-
-                var placementLabel = CreateLabel("Posición:", 286, currentTop);
-                _placementCombo = new ComboBox
-                {
-                    Left = 286,
-                    Top = currentTop + 18,
-                    Width = 174,
-                    DropDownStyle = ComboBoxStyle.DropDownList,
-                };
-                _placementCombo.Items.AddRange(
-                [
-                    new PlacementItem("right", "Derecha"),
-                    new PlacementItem("left", "Izquierda"),
-                    new PlacementItem("top", "Arriba"),
-                    new PlacementItem("bottom", "Abajo"),
-                    new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, "Duplicar"),
-                ]);
-
-                currentTop += 54;
-
-                var widthLabel = CreateLabel("Ancho:", 14, currentTop);
-                _widthInput = new NumericUpDown
-                {
-                    Left = 14,
-                    Top = currentTop + 18,
-                    Width = 84,
-                    Minimum = 100,
-                    Maximum = 5000,
-                };
-
-                var heightLabel = CreateLabel("Alto:", 106, currentTop);
-                _heightInput = new NumericUpDown
-                {
-                    Left = 106,
-                    Top = currentTop + 18,
-                    Width = 84,
-                    Minimum = 100,
-                    Maximum = 5000,
-                };
-
-                _rotarButton = new Button
-                {
-                    Left = 196,
-                    Top = currentTop + 18,
-                    Width = 44,
-                    Height = 24,
-                    Text = "\u21d5",
-                };
-
-                var portLabel = CreateLabel("Puerto:", 248, currentTop);
+                // Row 1: Puerto | Transmisión | Rotación stream
+                var portLabel = CreateLabel("Puerto:", 14, currentTop);
                 _portInput = new NumericUpDown
                 {
-                    Left = 248,
+                    Left = 14,
                     Top = currentTop + 18,
-                    Width = 84,
+                    Width = 80,
                     Minimum = 1,
                     Maximum = 65535,
                 };
 
-                var methodLabel = CreateLabel("Transmisión:", 340, currentTop);
+                var methodLabel = CreateLabel("Transmisión:", 104, currentTop);
                 _transmissionMethodCombo = new ComboBox
                 {
-                    Left = 340,
+                    Left = 104,
                     Top = currentTop + 18,
-                    Width = 122,
+                    Width = 160,
                     DropDownStyle = ComboBoxStyle.DropDownList,
                 };
                 _transmissionMethodCombo.Items.AddRange(
@@ -458,8 +395,25 @@ public sealed class VirtualDisplayTrayController : IDisposable
                     new TransmissionMethodItem(TransmissionModeOptions.Rtc, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.Rtc)),
                 ]);
 
+                var rotationLabel = CreateLabel("Rotación stream:", 274, currentTop);
+                _streamRotationCombo = new ComboBox
+                {
+                    Left = 274,
+                    Top = currentTop + 18,
+                    Width = 178,
+                    DropDownStyle = ComboBoxStyle.DropDownList,
+                };
+                _streamRotationCombo.Items.AddRange(
+                [
+                    new RotationItem(0,   "Sin rotación (0°)"),
+                    new RotationItem(90,  "90° (portrait derecha)"),
+                    new RotationItem(180, "180° (invertido)"),
+                    new RotationItem(270, "270° (portrait izquierda)"),
+                ]);
+
                 currentTop += 54;
 
+                // Row 2: Actualizar cada | Calidad JPEG
                 var captureIntervalLabel = CreateLabel("Actualizar cada (ms):", 14, currentTop);
                 _captureIntervalInput = new NumericUpDown
                 {
@@ -488,41 +442,40 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 {
                     Left = 362,
                     Top = currentTop + 20,
-                    Width = 64,
+                    Width = 60,
                 };
 
                 currentTop += 54;
 
-                var rotationLabel = CreateLabel("Rotación:", 14, currentTop);
-                _streamRotationCombo = new ComboBox
-                {
-                    Left = 82,
-                    Top = currentTop - 2,
-                    Width = 172,
-                    DropDownStyle = ComboBoxStyle.DropDownList,
-                };
-                _streamRotationCombo.Items.AddRange(
-                [
-                    new StreamRotationItem(0,   "No rotar imagen 0°"),
-                    new StreamRotationItem(90,  "Rotar imagen 90°"),
-                    new StreamRotationItem(180, "Rotar imagen 180°"),
-                    new StreamRotationItem(270, "Rotar imagen 270°"),
-                ]);
-
-                var fitLabel = CreateLabel("Ajuste:", 262, currentTop);
+                // Row 3: Ajuste imagen | Botón configuración Windows
+                var fitLabel = CreateLabel("Ajuste:", 14, currentTop);
                 _browserImageFitCombo = new ComboBox
                 {
-                    Left = 302,
+                    Left = 66,
                     Top = currentTop - 2,
-                    Width = 158,
+                    Width = 156,
                     DropDownStyle = ComboBoxStyle.DropDownList,
                 };
                 _browserImageFitCombo.Items.AddRange(
                 [
-                    new ImageFitItem("fill", "Estirar (llenar)"),
-                    new ImageFitItem("cover", "Recortar (cover)"),
+                    new ImageFitItem("fill",    "Estirar (llenar)"),
+                    new ImageFitItem("cover",   "Recortar (cover)"),
                     new ImageFitItem("contain", "Contener (barras)"),
                 ]);
+
+                var windowsDisplayButton = new Button
+                {
+                    Left = 232,
+                    Top = currentTop - 4,
+                    Width = 230,
+                    Height = 28,
+                    Text = "Configurar pantallas (Windows) ↗",
+                };
+                windowsDisplayButton.Click += (_, _) =>
+                {
+                    try { Process.Start(new ProcessStartInfo("ms-settings:display") { UseShellExecute = true }); }
+                    catch { }
+                };
 
                 currentTop += 36;
 
@@ -537,28 +490,20 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 _managedControls =
                 [
-                    profileLabel,
-                    _profileCombo,
-                    placementLabel,
-                    _placementCombo,
-                    widthLabel,
-                    _widthInput,
-                    heightLabel,
-                    _heightInput,
-                    _rotarButton,
                     portLabel,
                     _portInput,
                     methodLabel,
                     _transmissionMethodCombo,
+                    rotationLabel,
+                    _streamRotationCombo,
                     captureIntervalLabel,
                     _captureIntervalInput,
                     qualityLabel,
                     _jpegQualitySlider,
                     _jpegQualityValueLabel,
-                    rotationLabel,
-                    _streamRotationCombo,
                     fitLabel,
                     _browserImageFitCombo,
+                    windowsDisplayButton,
                 ];
 
                 TabPage.Controls.AddRange(_managedControls);
@@ -570,29 +515,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
                 if (_enabledCheckBox is not null)
                     _enabledCheckBox.CheckedChanged += (_, _) => UpdateState();
-                _profileCombo.SelectedIndexChanged += (_, _) =>
-                {
-                    OnProfileSelected();
-                    UpdateState();
-                };
-                _widthInput.ValueChanged += (_, _) => OnDimensionChanged();
-                _heightInput.ValueChanged += (_, _) => OnDimensionChanged();
-                _rotarButton.Click += (_, _) =>
-                {
-                    var w = _widthInput.Value;
-                    var h = _heightInput.Value;
-                    _suppressEvents = true;
-                    _widthInput.Value = Math.Max(_widthInput.Minimum, Math.Min(_widthInput.Maximum, h));
-                    _heightInput.Value = Math.Max(_heightInput.Minimum, Math.Min(_heightInput.Maximum, w));
-                    _suppressEvents = false;
-                    UpdateState();
-                };
-                _placementCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _portInput.ValueChanged += (_, _) => UpdateState();
                 _transmissionMethodCombo.SelectedIndexChanged += (_, _) => UpdateState();
+                _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _captureIntervalInput.ValueChanged += (_, _) => UpdateState();
                 _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
-                _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
                 _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
             }
 
@@ -602,19 +529,12 @@ public sealed class VirtualDisplayTrayController : IDisposable
             {
                 var config = _baseConfig.Clone();
                 config.Enabled = alwaysEnabled || _enabledCheckBox?.Checked == true;
-                config.Profile = VirtualDisplayProfiles.Custom;
-                config.Landscape = false;
-                config.CustomWidth = (int)_widthInput.Value;
-                config.CustomHeight = (int)_heightInput.Value;
                 config.Port = (int)_portInput.Value;
                 config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
+                config.StreamRotationDegrees = ((RotationItem)_streamRotationCombo.SelectedItem!).Degrees;
                 config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
                 config.JpegQuality = _jpegQualitySlider.Value;
-                config.StreamRotationDegrees = ((StreamRotationItem)_streamRotationCombo.SelectedItem!).Degrees;
                 config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
-                config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
-
-                VirtualDisplayProfiles.EnsureValidSelection(config);
                 TransmissionModeOptions.EnsureValidSelection(config);
                 return config;
             }
@@ -624,33 +544,13 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 if (_enabledCheckBox is not null)
                     _enabledCheckBox.Checked = config.Enabled;
 
-                var w = config.Width;
-                var h = config.Height;
-
-                var matchedProfile = VirtualDisplayProfiles.All
-                    .Where(p => !VirtualDisplayProfiles.IsCustom(p.Id))
-                    .FirstOrDefault(p => (p.PortraitWidth == w && p.PortraitHeight == h)
-                                      || (p.PortraitHeight == w && p.PortraitWidth == h));
-
-                _suppressEvents = true;
-                _profileCombo.SelectedItem = _profileCombo.Items.Cast<ProfileItem>()
-                    .First(item => item.ProfileId == (matchedProfile?.Id ?? VirtualDisplayProfiles.Custom));
-                _widthInput.Value = Math.Clamp(w, _widthInput.Minimum, _widthInput.Maximum);
-                _heightInput.Value = Math.Clamp(h, _heightInput.Minimum, _heightInput.Maximum);
-                _suppressEvents = false;
-
                 _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
                 _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
                 _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
-                var validDegrees = new[] { 0, 90, 180, 270 };
-                var degrees = validDegrees.Contains(config.StreamRotationDegrees) ? config.StreamRotationDegrees : 0;
-                _streamRotationCombo.SelectedItem = _streamRotationCombo.Items.Cast<StreamRotationItem>()
-                    .First(item => item.Degrees == degrees);
 
-                var normalizedPlacement = VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement);
-                _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
-                    .FirstOrDefault(item => item.Placement == normalizedPlacement)
-                    ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
+                _streamRotationCombo.SelectedItem = _streamRotationCombo.Items.Cast<RotationItem>()
+                    .FirstOrDefault(item => item.Degrees == config.StreamRotationDegrees)
+                    ?? _streamRotationCombo.Items.Cast<RotationItem>().First(item => item.Degrees == 0);
 
                 var normalizedFit = config.BrowserImageFit?.Trim().ToLowerInvariant() ?? "fill";
                 _browserImageFitCombo.SelectedItem = _browserImageFitCombo.Items.Cast<ImageFitItem>()
@@ -663,64 +563,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 UpdateState();
             }
 
-            private void OnProfileSelected()
-            {
-                if (_suppressEvents)
-                    return;
-                var profileId = ((ProfileItem)_profileCombo.SelectedItem!).ProfileId;
-                if (VirtualDisplayProfiles.IsCustom(profileId))
-                    return;
-                var profile = VirtualDisplayProfiles.All.First(p => p.Id == profileId);
-                _suppressEvents = true;
-                _widthInput.Value = profile.PortraitWidth;
-                _heightInput.Value = profile.PortraitHeight;
-                _suppressEvents = false;
-            }
-
-            private void OnDimensionChanged()
-            {
-                if (_suppressEvents)
-                    return;
-                var profileId = ((ProfileItem)_profileCombo.SelectedItem!).ProfileId;
-                if (!VirtualDisplayProfiles.IsCustom(profileId))
-                {
-                    var profile = VirtualDisplayProfiles.All.First(p => p.Id == profileId);
-                    var w = (int)_widthInput.Value;
-                    var h = (int)_heightInput.Value;
-                    if (w != profile.PortraitWidth || h != profile.PortraitHeight)
-                        _profileCombo.SelectedItem = _profileCombo.Items.Cast<ProfileItem>()
-                            .First(item => item.ProfileId == VirtualDisplayProfiles.Custom);
-                }
-                UpdateState();
-            }
-
             private void UpdateState()
             {
                 var enabled = !_allowDisable || _enabledCheckBox?.Checked == true;
                 foreach (var control in _managedControls)
                     control.Enabled = enabled && (control != _portInput || _portEditable);
-
-                var isDuplicate = (_placementCombo.SelectedItem as PlacementItem)?.Placement == VirtualDisplayPlacementOptions.Duplicate;
-
-                if (isDuplicate && enabled)
-                {
-                    var primary = Screen.PrimaryScreen ?? Screen.AllScreens[0];
-                    _suppressEvents = true;
-                    _widthInput.Value  = Math.Clamp(primary.Bounds.Width,  _widthInput.Minimum,  _widthInput.Maximum);
-                    _heightInput.Value = Math.Clamp(primary.Bounds.Height, _heightInput.Minimum, _heightInput.Maximum);
-                    _suppressEvents = false;
-                    _profileCombo.Enabled = false;
-                    _widthInput.Enabled   = false;
-                    _heightInput.Enabled  = false;
-                    _rotarButton.Enabled  = false;
-                }
-                else
-                {
-                    var isCustom = VirtualDisplayProfiles.IsCustom(((ProfileItem)_profileCombo.SelectedItem!).ProfileId);
-                    _widthInput.Enabled  = enabled && isCustom;
-                    _heightInput.Enabled = enabled && isCustom;
-                    _rotarButton.Enabled = enabled && isCustom;
-                }
 
                 _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
 
@@ -742,22 +589,12 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 Text = text,
             };
 
-            private sealed record ProfileItem(string ProfileId, string DisplayName)
-            {
-                public override string ToString() => DisplayName;
-            }
-
             private sealed record TransmissionMethodItem(string Method, string DisplayName)
             {
                 public override string ToString() => DisplayName;
             }
 
-            private sealed record StreamRotationItem(int Degrees, string DisplayName)
-            {
-                public override string ToString() => DisplayName;
-            }
-
-            private sealed record PlacementItem(string Placement, string DisplayName)
+            private sealed record RotationItem(int Degrees, string DisplayName)
             {
                 public override string ToString() => DisplayName;
             }

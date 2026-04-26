@@ -2,12 +2,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 {
-    public ScreenRuntimeContext(string id, string displayName, VirtualScreenConfig config, string hostName, string localIp)
+    public ScreenRuntimeContext(string id, string displayName, VirtualScreenConfig config, string hostName, string localIp, int instanceIndex = 0)
     {
         Id = id;
         DisplayName = displayName;
         Config = config;
-        DisplayManager = new VirtualDisplayManager();
+        DisplayManager = new VirtualDisplayManager(instanceIndex);
         CaptureService = new CaptureService(config);
         WebRtcStreamService = new WebRtcStreamService(CaptureService, config, NullLogger<WebRtcStreamService>.Instance);
         HostUrl = NetworkAddressHelper.BuildAccessUrl(hostName, config.Port);

@@ -17,6 +17,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="vdd\MttVDD.inf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="vdd\MttVDD.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="vdd\mttvdd.cat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="SIPSorcery" Version="10.0.5" />
   </ItemGroup>
 

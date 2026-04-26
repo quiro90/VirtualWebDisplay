@@ -508,23 +508,64 @@ settings.EnsureValid();
 
 var runtimes = new List<ScreenRuntimeContext>
 {
-    new("screen1", "Pantalla 1", settings.Screen1, hostName, localIp),
+    new("screen1", "Pantalla 1", settings.Screen1, hostName, localIp, instanceIndex: 0),
 };
 
 if (settings.Screen2.Enabled)
-    runtimes.Add(new ScreenRuntimeContext("screen2", "Pantalla 2", settings.Screen2, hostName, localIp));
+    runtimes.Add(new ScreenRuntimeContext("screen2", "Pantalla 2", settings.Screen2, hostName, localIp, instanceIndex: 1));
 
 // Solo verificar VDD si al menos una pantalla necesita monitor virtual (no está en modo duplicado).
 if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement)))
 {
+    var virtualCount = runtimes.Count(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement));
+
+    // Generar vdd_settings.xml con la cantidad de monitores correcta y la lista completa de resoluciones.
+    try
+    {
+        if (VddSettingsManager.NeedsUpdate(virtualCount))
+            VddSettingsManager.WriteSettings(virtualCount);
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            $"No se pudo escribir la configuración del driver virtual:\n{ex.Message}",
+            "VirtualWebDisplay — Error de configuración",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Warning);
+    }
+
     var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
     if (!driverReady)
     {
-        ShowInstallDialog(
-            "VirtualWebDisplay — Falta Parsec VDD",
-            driverStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
-            VirtualDisplayManager.InstallUrl);
-        return;
+        // Intentar auto-instalación desde los archivos bundleados.
+        if (VddDriverInstaller.GetBundledInfPath() is not null)
+        {
+            var installResult = VddDriverInstaller.Install();
+            if (installResult is VddDriverInstaller.InstallResult.Success or VddDriverInstaller.InstallResult.RebootRequired)
+            {
+                driverReady = VddDriverInstaller.WaitForDriver(TimeSpan.FromSeconds(15));
+                if (!driverReady)
+                    (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
+            }
+            else if (installResult == VddDriverInstaller.InstallResult.Cancelled)
+            {
+                MessageBox.Show(
+                    "La instalación fue cancelada. VirtualWebDisplay necesita Virtual Display Driver para funcionar.",
+                    "VirtualWebDisplay — Instalación cancelada",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+        }
+
+        if (!driverReady)
+        {
+            ShowInstallDialog(
+                "VirtualWebDisplay — Falta Virtual Display Driver",
+                driverStatus + "\n\nEsta versión requiere Virtual Display Driver para crear el monitor virtual.",
+                VirtualDisplayManager.InstallUrl);
+            return;
+        }
     }
 }
 
@@ -565,7 +606,7 @@ try
         {
             ShowInstallDialog(
                 $"VirtualWebDisplay — Error en {runtime.DisplayName}",
-                vddStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+                vddStatus + "\n\nEsta versión requiere Virtual Display Driver para crear el monitor virtual.",
                 VirtualDisplayManager.InstallUrl);
             return;
         }
