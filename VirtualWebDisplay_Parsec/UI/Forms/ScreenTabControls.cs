@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.UI.Forms;
 
@@ -14,17 +15,25 @@ public sealed class ScreenTabControls
     private readonly bool _allowDisable;
     private readonly bool _portEditable;
     private readonly CheckBox? _enabledCheckBox;
+    private readonly Label _portLabel;
+    private readonly Label _methodLabel;
+    private readonly Label _placementLabel;
     private readonly ComboBox _placementCombo;
     private readonly NumericUpDown _portInput;
     private readonly ComboBox _transmissionMethodCombo;
+    private readonly Label _captureIntervalLabel;
     private readonly NumericUpDown _captureIntervalInput;
+    private readonly Label _qualityLabel;
     private readonly TrackBar _jpegQualitySlider;
     private readonly Label _jpegQualityValueLabel;
+    private readonly Label _rotationLabel;
     private readonly ComboBox _streamRotationCombo;
+    private readonly Label _fitLabel;
     private readonly ComboBox _browserImageFitCombo;
     private readonly Control[] _managedControls;
     private readonly string _localIp;
     private readonly LinkLabel _httpUrlLink;
+    private readonly Button _windowsDisplayButton;
 
     public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config, string localIp)
     {
@@ -42,14 +51,14 @@ public sealed class ScreenTabControls
                 Left = 14,
                 Top = currentTop,
                 Width = 180,
-                Text = "Habilitar (experimental)",
+                Text = AppText.Get("Tab_EnableExperimental"),
             };
             TabPage.Controls.Add(_enabledCheckBox);
             currentTop += 28;
         }
 
         // Fila 1: Puerto | Transmisión | Posición
-        var portLabel = CreateLabel("Puerto:", 14, currentTop);
+        _portLabel = CreateLabel(AppText.Get("Tab_Label_Port"), 14, currentTop);
         _portInput = new NumericUpDown
         {
             Left = 14,
@@ -59,7 +68,7 @@ public sealed class ScreenTabControls
             Maximum = 65535,
         };
 
-        var methodLabel = CreateLabel("Transmisión:", 98, currentTop);
+        _methodLabel = CreateLabel(AppText.Get("Tab_Label_Transmission"), 98, currentTop);
         _transmissionMethodCombo = new ComboBox
         {
             Left = 98,
@@ -73,7 +82,7 @@ public sealed class ScreenTabControls
             new TransmissionMethodItem(TransmissionModeOptions.Rtc, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.Rtc)),
         ]);
 
-        var placementLabel = CreateLabel("Posición:", 280, currentTop);
+        _placementLabel = CreateLabel(AppText.Get("Tab_Label_Placement"), 280, currentTop);
         _placementCombo = new ComboBox
         {
             Left = 280,
@@ -83,17 +92,17 @@ public sealed class ScreenTabControls
         };
         _placementCombo.Items.AddRange(
         [
-            new PlacementItem("right", "Derecha"),
-            new PlacementItem("left", "Izquierda"),
-            new PlacementItem("top", "Arriba"),
-            new PlacementItem("bottom", "Abajo"),
-            new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, "Duplicar"),
+            new PlacementItem("right", AppText.Get("Tab_Placement_Right")),
+            new PlacementItem("left", AppText.Get("Tab_Placement_Left")),
+            new PlacementItem("top", AppText.Get("Tab_Placement_Top")),
+            new PlacementItem("bottom", AppText.Get("Tab_Placement_Bottom")),
+            new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, AppText.Get("Tab_Placement_Duplicate")),
         ]);
 
         currentTop += 54;
 
         // Fila 2: Rotación stream
-        var rotationLabel = CreateLabel("Rotación stream:", 14, currentTop);
+        _rotationLabel = CreateLabel(AppText.Get("Tab_Label_StreamRotation"), 14, currentTop);
         _streamRotationCombo = new ComboBox
         {
             Left = 14,
@@ -103,16 +112,16 @@ public sealed class ScreenTabControls
         };
         _streamRotationCombo.Items.AddRange(
         [
-            new StreamRotationItem(0,   "Sin rotación (0°)"),
-            new StreamRotationItem(90,  "Rotar 90°"),
-            new StreamRotationItem(180, "Rotar 180°"),
-            new StreamRotationItem(270, "Rotar 270°"),
+            new StreamRotationItem(0,   AppText.Get("Tab_Rotation_0")),
+            new StreamRotationItem(90,  AppText.Get("Tab_Rotation_90")),
+            new StreamRotationItem(180, AppText.Get("Tab_Rotation_180")),
+            new StreamRotationItem(270, AppText.Get("Tab_Rotation_270")),
         ]);
 
         currentTop += 54;
 
         // Fila 3: Actualizar cada (ms) | Calidad JPEG
-        var captureIntervalLabel = CreateLabel("Actualizar cada (ms):", 14, currentTop);
+        _captureIntervalLabel = CreateLabel(AppText.Get("Tab_Label_CaptureIntervalMs"), 14, currentTop);
         _captureIntervalInput = new NumericUpDown
         {
             Left = 14,
@@ -124,7 +133,7 @@ public sealed class ScreenTabControls
             Increment = 1M,
         };
 
-        var qualityLabel = CreateLabel("Calidad JPEG:", 100, currentTop);
+        _qualityLabel = CreateLabel(AppText.Get("Tab_Label_JpegQuality"), 100, currentTop);
         _jpegQualitySlider = new TrackBar
         {
             Left = 100,
@@ -146,7 +155,7 @@ public sealed class ScreenTabControls
         currentTop += 54;
 
         // Fila 4: Ajuste | Botón configuración Windows
-        var fitLabel = CreateLabel("Ajuste:", 14, currentTop);
+        _fitLabel = CreateLabel(AppText.Get("Tab_Label_BrowserFit"), 14, currentTop);
         _browserImageFitCombo = new ComboBox
         {
             Left = 14,
@@ -156,20 +165,20 @@ public sealed class ScreenTabControls
         };
         _browserImageFitCombo.Items.AddRange(
         [
-            new ImageFitItem("fill", "Estirar (llenar)"),
-            new ImageFitItem("cover", "Recortar (cover)"),
-            new ImageFitItem("contain", "Contener (barras)"),
+            new ImageFitItem("fill", AppText.Get("Tab_BrowserFit_Fill")),
+            new ImageFitItem("cover", AppText.Get("Tab_BrowserFit_Cover")),
+            new ImageFitItem("contain", AppText.Get("Tab_BrowserFit_Contain")),
         ]);
 
-        var windowsDisplayButton = new Button
+        _windowsDisplayButton = new Button
         {
             Left = 206,
             Top = currentTop + 14,
             Width = 254,
             Height = 28,
-            Text = "Configurar pantallas (Windows) ↗",
+            Text = AppText.Get("Tab_Button_OpenWindowsDisplay"),
         };
-        windowsDisplayButton.Click += (_, _) =>
+        _windowsDisplayButton.Click += (_, _) =>
         {
             try { Process.Start(new ProcessStartInfo("ms-settings:display") { UseShellExecute = true }); }
             catch { }
@@ -188,26 +197,26 @@ public sealed class ScreenTabControls
 
         _managedControls =
         [
-            placementLabel,
+            _placementLabel,
             _placementCombo,
-            portLabel,
+            _portLabel,
             _portInput,
-            methodLabel,
+            _methodLabel,
             _transmissionMethodCombo,
-            captureIntervalLabel,
+            _captureIntervalLabel,
             _captureIntervalInput,
-            qualityLabel,
+            _qualityLabel,
             _jpegQualitySlider,
             _jpegQualityValueLabel,
-            rotationLabel,
+            _rotationLabel,
             _streamRotationCombo,
-            fitLabel,
+            _fitLabel,
             _browserImageFitCombo,
         ];
 
         TabPage.Controls.AddRange(_managedControls);
         TabPage.Controls.Add(_httpUrlLink);
-        TabPage.Controls.Add(windowsDisplayButton);
+        TabPage.Controls.Add(_windowsDisplayButton);
 
         _httpUrlLink.LinkClicked += (_, _) => OpenUrl(_httpUrlLink.Text);
 
@@ -225,6 +234,27 @@ public sealed class ScreenTabControls
     }
 
     public TabPage TabPage { get; }
+
+    public void ApplyLocalization()
+    {
+        _enabledCheckBox?.SetBounds(_enabledCheckBox.Left, _enabledCheckBox.Top, _enabledCheckBox.Width, _enabledCheckBox.Height);
+        if (_enabledCheckBox is not null)
+            _enabledCheckBox.Text = AppText.Get("Tab_EnableExperimental");
+
+        _portLabel.Text = AppText.Get("Tab_Label_Port");
+        _methodLabel.Text = AppText.Get("Tab_Label_Transmission");
+        _placementLabel.Text = AppText.Get("Tab_Label_Placement");
+        _rotationLabel.Text = AppText.Get("Tab_Label_StreamRotation");
+        _captureIntervalLabel.Text = AppText.Get("Tab_Label_CaptureIntervalMs");
+        _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
+        _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
+        _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
+
+        RefreshTransmissionOptions();
+        RefreshPlacementOptions();
+        RefreshRotationOptions();
+        RefreshBrowserFitOptions();
+    }
 
     public VirtualScreenConfig BuildConfig(bool alwaysEnabled)
     {
@@ -297,6 +327,78 @@ public sealed class ScreenTabControls
         Top = top,
         Text = text,
     };
+
+    private void RefreshTransmissionOptions()
+    {
+        var selectedMethod = (_transmissionMethodCombo.SelectedItem as TransmissionMethodItem)?.Method
+            ?? TransmissionModeOptions.WebImage;
+
+        _transmissionMethodCombo.Items.Clear();
+        _transmissionMethodCombo.Items.AddRange(
+        [
+            new TransmissionMethodItem(TransmissionModeOptions.WebImage, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.WebImage)),
+            new TransmissionMethodItem(TransmissionModeOptions.Rtc, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.Rtc)),
+        ]);
+
+        _transmissionMethodCombo.SelectedItem = _transmissionMethodCombo.Items.Cast<TransmissionMethodItem>()
+            .FirstOrDefault(item => item.Method == TransmissionModeOptions.NormalizeMethod(selectedMethod))
+            ?? _transmissionMethodCombo.Items.Cast<TransmissionMethodItem>().First();
+    }
+
+    private void RefreshPlacementOptions()
+    {
+        var selectedPlacement = (_placementCombo.SelectedItem as PlacementItem)?.Placement
+            ?? VirtualDisplayPlacementOptions.Right;
+
+        _placementCombo.Items.Clear();
+        _placementCombo.Items.AddRange(
+        [
+            new PlacementItem("right", AppText.Get("Tab_Placement_Right")),
+            new PlacementItem("left", AppText.Get("Tab_Placement_Left")),
+            new PlacementItem("top", AppText.Get("Tab_Placement_Top")),
+            new PlacementItem("bottom", AppText.Get("Tab_Placement_Bottom")),
+            new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, AppText.Get("Tab_Placement_Duplicate")),
+        ]);
+
+        _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
+            .FirstOrDefault(item => item.Placement == VirtualDisplayPlacementOptions.Normalize(selectedPlacement))
+            ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
+    }
+
+    private void RefreshRotationOptions()
+    {
+        var selectedDegrees = (_streamRotationCombo.SelectedItem as StreamRotationItem)?.Degrees ?? 0;
+
+        _streamRotationCombo.Items.Clear();
+        _streamRotationCombo.Items.AddRange(
+        [
+            new StreamRotationItem(0, AppText.Get("Tab_Rotation_0")),
+            new StreamRotationItem(90, AppText.Get("Tab_Rotation_90")),
+            new StreamRotationItem(180, AppText.Get("Tab_Rotation_180")),
+            new StreamRotationItem(270, AppText.Get("Tab_Rotation_270")),
+        ]);
+
+        _streamRotationCombo.SelectedItem = _streamRotationCombo.Items.Cast<StreamRotationItem>()
+            .FirstOrDefault(item => item.Degrees == selectedDegrees)
+            ?? _streamRotationCombo.Items.Cast<StreamRotationItem>().First(item => item.Degrees == 0);
+    }
+
+    private void RefreshBrowserFitOptions()
+    {
+        var selectedFit = (_browserImageFitCombo.SelectedItem as ImageFitItem)?.Fit ?? "fill";
+
+        _browserImageFitCombo.Items.Clear();
+        _browserImageFitCombo.Items.AddRange(
+        [
+            new ImageFitItem("fill", AppText.Get("Tab_BrowserFit_Fill")),
+            new ImageFitItem("cover", AppText.Get("Tab_BrowserFit_Cover")),
+            new ImageFitItem("contain", AppText.Get("Tab_BrowserFit_Contain")),
+        ]);
+
+        _browserImageFitCombo.SelectedItem = _browserImageFitCombo.Items.Cast<ImageFitItem>()
+            .FirstOrDefault(item => item.Fit == selectedFit)
+            ?? _browserImageFitCombo.Items.Cast<ImageFitItem>().First(item => item.Fit == "fill");
+    }
 
     private sealed record TransmissionMethodItem(string Method, string DisplayName)
     {

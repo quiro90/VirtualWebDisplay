@@ -1,3 +1,5 @@
+using VirtualWebDisplay.Localization;
+
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
@@ -9,10 +11,18 @@ public sealed class RtcPageTemplate : IHtmlTemplate
     {
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
         var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
+        var htmlLang = AppText.HtmlLang;
+        var statusConnecting = AppText.Get("WebRtc_Status_Connecting");
+        var statusNegotiating = AppText.Get("WebRtc_Status_Negotiating");
+        var statusConnected = AppText.Get("WebRtc_Status_Connected");
+        var statusDisconnectedRetrying = AppText.Get("WebRtc_Status_DisconnectedRetrying");
+        var statusErrorRetrying = AppText.Get("WebRtc_Status_ErrorRetrying");
+        var statusNegotiationFailed = AppText.Get("WebRtc_Status_NegotiationFailed");
+        var statusStartFailed = AppText.Get("WebRtc_Status_StartFailed");
 
         return $$"""
             <!DOCTYPE html>
-            <html lang="es">
+            <html lang="{{htmlLang}}">
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0,
@@ -68,7 +78,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
             <body>
                 <canvas id="screen"></canvas>
                 <div id="mode">WebRTC</div>
-                <div id="status">Conectando…</div>
+                <div id="status">{{statusConnecting}}</div>
 
                 <script>
                 (function () {
@@ -142,23 +152,23 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                     }
 
                     async function connect() {
-                        setStatus('Negociando WebRTC…');
+                        setStatus('{{statusNegotiating}}');
 
                         var pc = new RTCPeerConnection({ iceServers: [] });
                         var channel = pc.createDataChannel('frames', { ordered: false, maxRetransmits: 0 });
                         channel.binaryType = 'arraybuffer';
 
                         channel.onopen = function () {
-                            setStatus('WebRTC conectado');
+                            setStatus('{{statusConnected}}');
                         };
 
                         channel.onclose = function () {
-                            setStatus('WebRTC desconectado. Reintentando…');
+                            setStatus('{{statusDisconnectedRetrying}}');
                             window.setTimeout(connect, 1500);
                         };
 
                         channel.onerror = function () {
-                            setStatus('Error WebRTC. Reintentando…');
+                            setStatus('{{statusErrorRetrying}}');
                         };
 
                         channel.onmessage = function (event) {
@@ -207,7 +217,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
 
                         pc.onconnectionstatechange = function () {
                             if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed')
-                                setStatus('WebRTC desconectado. Reintentando…');
+                                setStatus('{{statusDisconnectedRetrying}}');
                         };
 
                         var offer = await pc.createOffer();
@@ -221,7 +231,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                         });
 
                         if (!response.ok)
-                            throw new Error('No se pudo negociar la sesión WebRTC.');
+                            throw new Error('{{statusNegotiationFailed}}');
 
                         var answer = await response.json();
                         await pc.setRemoteDescription(answer);
@@ -242,7 +252,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                     }
 
                     connect().catch(function () {
-                        setStatus('No se pudo iniciar WebRTC. Reintentando…');
+                        setStatus('{{statusStartFailed}}');
                         window.setTimeout(connect, 2000);
                     });
                 })();

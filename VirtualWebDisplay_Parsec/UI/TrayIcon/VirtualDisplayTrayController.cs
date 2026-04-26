@@ -5,6 +5,7 @@ using VirtualWebDisplay.UI.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure;
+using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.UI.TrayIcon;
 
@@ -111,7 +112,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             if (_notifyIcon is null)
                 return;
 
-            _notifyIcon.BalloonTipTitle = "VirtualWebDisplay";
+            _notifyIcon.BalloonTipTitle = AppText.Get("Tray_BalloonTitle");
             _notifyIcon.BalloonTipText = string.Join("\n", _screenRuntimes.Select(runtime =>
                 string.Equals(runtime.HostUrl, runtime.IpUrl, StringComparison.OrdinalIgnoreCase)
                     ? $"{runtime.DisplayName}: {runtime.HostUrl}"
@@ -127,7 +128,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             if (_notifyIcon is null)
                 return;
 
-            _notifyIcon.Text = TrimTrayText($"VirtualWebDisplay - {status}");
+            _notifyIcon.Text = TrimTrayText(AppText.Format("Tray_Status_Format", status));
         });
     }
 
@@ -145,7 +146,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _notifyIcon = new NotifyIcon
         {
             Icon = _appIcon,
-            Text = TrimTrayText("VirtualWebDisplay"),
+            Text = TrimTrayText(AppText.Get("Common_AppName")),
             Visible = true,
             ContextMenuStrip = _contextMenu,
         };
@@ -165,19 +166,19 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Configuración...", null, (_, _) => ShowConfigurationDialog());
+        menu.Items.Add(AppText.Get("Tray_Menu_Configuration"), null, (_, _) => ShowConfigurationDialog());
 
         if (_screenRuntimes.Count > 0)
         {
             foreach (var runtime in _screenRuntimes)
-                menu.Items.Add($"Abrir {runtime.DisplayName}", null, (_, _) => OpenStreamUrl(runtime.HostUrl));
+                menu.Items.Add(AppText.Format("Tray_Menu_OpenDisplay", runtime.DisplayName), null, (_, _) => OpenStreamUrl(runtime.HostUrl));
 
             menu.Items.Add(new ToolStripSeparator());
         }
 
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Reiniciar", null, (_, _) => RestartApplication());
-        menu.Items.Add("Salir", null, (_, _) => ExitApplication());
+        menu.Items.Add(AppText.Get("Tray_Menu_Restart"), null, (_, _) => RestartApplication());
+        menu.Items.Add(AppText.Get("Tray_Menu_Exit"), null, (_, _) => ExitApplication());
         return menu;
     }
 
@@ -197,7 +198,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         if (dialogResult == DialogResult.OK && !hasStarted)
         {
-            _notifyIcon?.ShowBalloonTip(4000, "VirtualWebDisplay", "Configuración guardada. Usá 'Reiniciar' desde el ícono de bandeja para aplicar los nuevos valores.", ToolTipIcon.Info);
+            _notifyIcon?.ShowBalloonTip(4000, AppText.Get("Tray_BalloonTitle"), AppText.Get("Tray_Balloon_ConfigSaved_Message"), ToolTipIcon.Info);
         }
     }
 

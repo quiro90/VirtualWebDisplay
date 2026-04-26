@@ -1,4 +1,5 @@
 ﻿using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.Configuration;
 
@@ -29,8 +30,8 @@ public static class TransmissionModeOptions
     public static string GetDisplayName(string? method) =>
         NormalizeMethod(method) switch
         {
-            Rtc => "WebRTC",
-            _ => "Web image",
+            Rtc => AppText.Get("Transmission_WebRtc"),
+            _ => AppText.Get("Transmission_WebImage"),
         };
 
     public static bool IsWebImage(string? method) =>

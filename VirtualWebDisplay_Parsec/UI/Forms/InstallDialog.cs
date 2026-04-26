@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
+using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.UI.Forms;
 
@@ -47,7 +48,7 @@ public static class InstallDialog
                     AutoSize = true,
                     Left = 20,
                     Top = 132,
-                    Text = "Instalador oficial:",
+                    Text = AppText.Get("InstallDialog_OfficialInstaller"),
                 };
 
                 var urlBox = new TextBox
@@ -65,7 +66,7 @@ public static class InstallDialog
                     Top = 152,
                     Width = 110,
                     Height = 28,
-                    Text = "Abrir descarga",
+                    Text = AppText.Get("InstallDialog_OpenDownload"),
                 };
 
                 var copyButton = new Button
@@ -74,7 +75,7 @@ public static class InstallDialog
                     Top = 192,
                     Width = 110,
                     Height = 28,
-                    Text = "Copiar URL",
+                    Text = AppText.Get("InstallDialog_CopyUrl"),
                 };
 
                 var okButton = new Button
@@ -83,7 +84,7 @@ public static class InstallDialog
                     Top = 192,
                     Width = 110,
                     Height = 28,
-                    Text = "Cerrar",
+                    Text = AppText.Get("InstallDialog_Close"),
                     DialogResult = DialogResult.OK,
                 };
 
@@ -93,7 +94,7 @@ public static class InstallDialog
                     Clipboard.SetText(installUrl);
                     urlBox.Focus();
                     urlBox.SelectAll();
-                    copyButton.Text = "Copiada";
+                    copyButton.Text = AppText.Get("InstallDialog_Copied");
                 };
 
                 form.Controls.AddRange([messageLabel, urlLabel, urlBox, openButton, copyButton, okButton]);
@@ -125,7 +126,7 @@ public static class InstallDialog
         if (error is not null)
         {
             MessageBox.Show(
-                message + $"\n\nInstalador oficial: {installUrl}",
+                AppText.Format("InstallDialog_FallbackMessageWithUrl", message, installUrl),
                 title,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);

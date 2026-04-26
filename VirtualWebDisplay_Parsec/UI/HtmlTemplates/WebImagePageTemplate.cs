@@ -1,3 +1,5 @@
+using VirtualWebDisplay.Localization;
+
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
@@ -10,10 +12,11 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
         var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
         var intervalMs = parameters.GetValueOrDefault("intervalMs", 250);
+        var htmlLang = AppText.HtmlLang;
 
         return $$"""
             <!DOCTYPE html>
-            <html lang="es">
+            <html lang="{{htmlLang}}">
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0,

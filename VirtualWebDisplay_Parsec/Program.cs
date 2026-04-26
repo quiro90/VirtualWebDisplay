@@ -11,22 +11,25 @@ using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.Streaming;
 using VirtualWebDisplay.Streaming.Models;
 using VirtualWebDisplay.Infrastructure;
+using VirtualWebDisplay.Localization;
+
+var settingsStore = new VirtualScreenSettingsStore();
+var settings = settingsStore.Load();
+settings.EnsureValid();
+AppText.ApplyCulture(settings.UiLanguage);
 
 using var singleInstance = SingleInstanceManager.CreateForCurrentExecutable();
 if (!singleInstance.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
 {
     MessageBox.Show(
-        "No se pudo cerrar la instancia anterior de VirtualWebDisplay para relanzarla.",
-        "VirtualWebDisplay — Relanzamiento fallido",
+        AppText.Get("Program_SingleInstanceCloseFailed_Message"),
+        AppText.Get("Program_SingleInstanceCloseFailed_Title"),
         MessageBoxButtons.OK,
         MessageBoxIcon.Warning);
     return;
 }
 
 var builder = WebApplication.CreateBuilder(args);
-var settingsStore = new VirtualScreenSettingsStore();
-var settings = settingsStore.Load();
-settings.EnsureValid();
 
 var localIp = NetworkAddressHelper.DetectLocalIp();
 var hostName = Dns.GetHostName();
@@ -56,17 +59,18 @@ if (!autoStart && !tray.ShowStartupConfiguration())
     return;
 
 settings.EnsureValid();
+AppText.ApplyCulture(settings.UiLanguage);
 
 // Crear runtimes solo para las pantallas habilitadas.
 // Cada pantalla usa su puerto configurado individualmente (no se calculan puertos dinámicamente).
 var runtimes = new List<ScreenRuntimeContext>
 {
-    new("screen1", "Pantalla 1", settings.Screen1, hostName, localIp),
+    new("screen1", AppText.Get("Runtime_Screen1"), settings.Screen1, hostName, localIp),
 };
 
 // Solo agregar Screen2 si está explícitamente habilitada en la configuración.
 if (settings.Screen2.Enabled)
-    runtimes.Add(new ScreenRuntimeContext("screen2", "Pantalla 2", settings.Screen2, hostName, localIp));
+    runtimes.Add(new ScreenRuntimeContext("screen2", AppText.Get("Runtime_Screen2"), settings.Screen2, hostName, localIp));
 
 // Solo verificar VDD si al menos una pantalla necesita monitor virtual (no está en modo duplicado).
 if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement)))
@@ -75,8 +79,8 @@ if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.Virtu
     if (!driverReady)
     {
         InstallDialog.Show(
-            "VirtualWebDisplay — Falta Parsec VDD",
-            driverStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+            AppText.Get("Program_DriverMissing_Title"),
+            driverStatus + "\n\n" + AppText.Get("Program_DriverMissing_MessageSuffix"),
             VirtualDisplayManager.InstallUrl);
         return;
     }
@@ -128,8 +132,8 @@ try
         {
             await DisposeRuntimesAsync(runtimes);
             InstallDialog.Show(
-                $"VirtualWebDisplay — Error en {runtime.DisplayName}",
-                vddStatus + "\n\nEsta versión requiere Parsec VDD para crear y capturar el monitor virtual.",
+                AppText.Format("Program_DisplayError_Title", runtime.DisplayName),
+                vddStatus + "\n\n" + AppText.Get("Program_DriverMissing_MessageSuffix"),
                 VirtualDisplayManager.InstallUrl);
             return;
         }
@@ -140,8 +144,8 @@ try
         {
             await DisposeRuntimesAsync(runtimes);
             MessageBox.Show(
-                vddStatus + $"\n\nNo se pudo identificar el monitor virtual de Windows para {runtime.DisplayName}.",
-                "VirtualWebDisplay — Monitor virtual no detectado",
+                vddStatus + "\n\n" + AppText.Format("Program_MonitorNotDetected_Message", runtime.DisplayName),
+                AppText.Get("Program_MonitorNotDetected_Title"),
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
             return;
@@ -209,10 +213,10 @@ try
     {
         var runtime = ResolveRuntime(ctx);
         if (!TransmissionModeOptions.IsRtc(runtime.Config.TransmissionMethod))
-            return Results.BadRequest(new { error = "WebRTC no está habilitado para el método de retransmisión actual." });
+            return Results.BadRequest(new { error = AppText.Get("Program_WebRtcDisabled_Error") });
 
         if (!string.Equals(offer.Type, "offer", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(offer.Sdp))
-            return Results.BadRequest(new { error = "Oferta WebRTC inválida." });
+            return Results.BadRequest(new { error = AppText.Get("Program_WebRtcInvalidOffer_Error") });
 
         var answer = await runtime.WebRtcStreamService.CreateAnswerAsync(offer, cancellationToken);
         return Results.Json(answer);

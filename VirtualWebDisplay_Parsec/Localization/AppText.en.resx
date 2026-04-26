@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <data name="Common_AppName" xml:space="preserve"><value>VirtualWebDisplay</value></data>
+  <data name="Language_Label" xml:space="preserve"><value>Language:</value></data>
+  <data name="Language_Spanish" xml:space="preserve"><value>Spanish</value></data>
+  <data name="Language_English" xml:space="preserve"><value>English</value></data>
+
+  <data name="Form_Config_TitleStartup" xml:space="preserve"><value>VirtualWebDisplay - Screen setup</value></data>
+  <data name="Form_Config_Title" xml:space="preserve"><value>VirtualWebDisplay - Configuration</value></data>
+  <data name="Form_Config_Header" xml:space="preserve"><value>Configure screens</value></data>
+  <data name="Form_Config_DescriptionStartup" xml:space="preserve"><value>Configure your screens.</value></data>
+  <data name="Form_Config_Description" xml:space="preserve"><value>Adjust each screen configuration. Changes are saved for the next app startup.</value></data>
+  <data name="Form_Config_Accept_Restart" xml:space="preserve"><value>Restart</value></data>
+  <data name="Form_Config_Accept_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Screen 1</value></data>
+  <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Screen 2</value></data>
+
+  <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>Screen 2 must use a different port than Screen 1.</value></data>
+  <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Duplicate port</value></data>
+
+  <data name="Tab_EnableExperimental" xml:space="preserve"><value>Enable (experimental)</value></data>
+  <data name="Tab_Label_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="Tab_Label_Transmission" xml:space="preserve"><value>Transmission:</value></data>
+  <data name="Tab_Label_Placement" xml:space="preserve"><value>Placement:</value></data>
+  <data name="Tab_Placement_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Tab_Placement_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Tab_Placement_Top" xml:space="preserve"><value>Top</value></data>
+  <data name="Tab_Placement_Bottom" xml:space="preserve"><value>Bottom</value></data>
+  <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Tab_Label_StreamRotation" xml:space="preserve"><value>Stream rotation:</value></data>
+  <data name="Tab_Rotation_0" xml:space="preserve"><value>No rotation (0°)</value></data>
+  <data name="Tab_Rotation_90" xml:space="preserve"><value>Rotate 90°</value></data>
+  <data name="Tab_Rotation_180" xml:space="preserve"><value>Rotate 180°</value></data>
+  <data name="Tab_Rotation_270" xml:space="preserve"><value>Rotate 270°</value></data>
+  <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
+  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>
+  <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Fit:</value></data>
+  <data name="Tab_BrowserFit_Fill" xml:space="preserve"><value>Stretch (fill)</value></data>
+  <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Crop (cover)</value></data>
+  <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
+  <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Open Windows display settings ↗</value></data>
+
+  <data name="Tray_Menu_Configuration" xml:space="preserve"><value>Configuration...</value></data>
+  <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>
+  <data name="Tray_Menu_Restart" xml:space="preserve"><value>Restart</value></data>
+  <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
+  <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
+  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply new values.</value></data>
+
+  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Official installer:</value></data>
+  <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Open download</value></data>
+  <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copy URL</value></data>
+  <data name="InstallDialog_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="InstallDialog_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="InstallDialog_FallbackMessageWithUrl" xml:space="preserve"><value>{0}\n\nOfficial installer: {1}</value></data>
+
+  <data name="Program_SingleInstanceCloseFailed_Message" xml:space="preserve"><value>The previous VirtualWebDisplay instance could not be closed for relaunch.</value></data>
+  <data name="Program_SingleInstanceCloseFailed_Title" xml:space="preserve"><value>VirtualWebDisplay - Relaunch failed</value></data>
+  <data name="Program_DriverMissing_Title" xml:space="preserve"><value>VirtualWebDisplay - Missing Parsec VDD</value></data>
+  <data name="Program_DriverMissing_MessageSuffix" xml:space="preserve"><value>This version requires Parsec VDD to create and capture the virtual monitor.</value></data>
+  <data name="Program_DisplayError_Title" xml:space="preserve"><value>VirtualWebDisplay - Error on {0}</value></data>
+  <data name="Program_MonitorNotDetected_Message" xml:space="preserve"><value>Windows virtual monitor could not be identified for {0}.</value></data>
+  <data name="Program_MonitorNotDetected_Title" xml:space="preserve"><value>VirtualWebDisplay - Virtual monitor not detected</value></data>
+  <data name="Program_WebRtcDisabled_Error" xml:space="preserve"><value>WebRTC is not enabled for the current transmission method.</value></data>
+  <data name="Program_WebRtcInvalidOffer_Error" xml:space="preserve"><value>Invalid WebRTC offer.</value></data>
+
+  <data name="Transmission_WebImage" xml:space="preserve"><value>Web image</value></data>
+  <data name="Transmission_WebRtc" xml:space="preserve"><value>WebRTC</value></data>
+
+  <data name="Runtime_Screen1" xml:space="preserve"><value>Screen 1</value></data>
+  <data name="Runtime_Screen2" xml:space="preserve"><value>Screen 2</value></data>
+
+  <data name="WebRtc_Status_Connecting" xml:space="preserve"><value>Connecting...</value></data>
+  <data name="WebRtc_Status_Negotiating" xml:space="preserve"><value>Negotiating WebRTC...</value></data>
+  <data name="WebRtc_Status_Connected" xml:space="preserve"><value>WebRTC connected</value></data>
+  <data name="WebRtc_Status_DisconnectedRetrying" xml:space="preserve"><value>WebRTC disconnected. Retrying...</value></data>
+  <data name="WebRtc_Status_ErrorRetrying" xml:space="preserve"><value>WebRTC error. Retrying...</value></data>
+  <data name="WebRtc_Status_NegotiationFailed" xml:space="preserve"><value>WebRTC session negotiation failed.</value></data>
+  <data name="WebRtc_Status_StartFailed" xml:space="preserve"><value>WebRTC startup failed. Retrying...</value></data>
+</root>
