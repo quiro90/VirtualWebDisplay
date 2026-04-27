@@ -44,6 +44,7 @@ public sealed class ScreenTabControls
     private readonly Button _windowsDisplayButton;
     private string _runtimeSecurityCode = string.Empty;
     private bool _showSecurityCode;
+    private bool _serviceRunning;
 
     public ScreenTabControls(
         string title,
@@ -404,7 +405,17 @@ public sealed class ScreenTabControls
     {
         var enabled = IsTabEnabled();
         foreach (var control in _managedControls)
-            control.Enabled = enabled && (control != _portInput || _portEditable);
+        {
+            if (_serviceRunning)
+            {
+                // Mientras el servicio corre, solo el botón de Windows Display queda activo
+                control.Enabled = control == _windowsDisplayButton;
+            }
+            else
+            {
+                control.Enabled = enabled && (control != _portInput || _portEditable);
+            }
+        }
 
         _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
 
@@ -426,6 +437,16 @@ public sealed class ScreenTabControls
             UpdateState();
     }
 
+    /// <summary>
+    /// Bloquea o desbloquea los controles de configuración según si el servicio está activo.
+    /// Mientras el servicio corre, solo el botón de configuración de Windows permanece habilitado.
+    /// </summary>
+    public void SetServiceRunning(bool running)
+    {
+        _serviceRunning = running;
+        UpdateState();
+    }
+
     public bool IsEnabledState() => IsTabEnabled();
 
     private bool IsTabEnabled()
@@ -439,33 +460,15 @@ public sealed class ScreenTabControls
 
     private void UpdateSecurityCodePreview(bool tabEnabled)
     {
-        if (!tabEnabled)
+        if (!tabEnabled || !_screenSecurityCheckBox.Checked)
         {
-            _showSecurityCode = false;
-            _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
-            _screenSecurityCodeTextBox.Text = AppText.Get("Tab_SecurityCode_Disabled");
-            _screenSecurityCodeToggleButton.Enabled = false;
-            _screenSecurityCodeToggleButton.Text = "👁";
-            return;
-        }
-
-        if (!_screenSecurityCheckBox.Checked)
-        {
-            _showSecurityCode = false;
-            _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
-            _screenSecurityCodeTextBox.Text = AppText.Get("Tab_SecurityCode_Disabled");
-            _screenSecurityCodeToggleButton.Enabled = false;
-            _screenSecurityCodeToggleButton.Text = "👁";
+            DisableSecurityCodePreview(AppText.Get("Tab_SecurityCode_Disabled"));
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_runtimeSecurityCode))
         {
-            _showSecurityCode = false;
-            _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
-            _screenSecurityCodeTextBox.Text = AppText.Get("Tab_SecurityCode_Pending");
-            _screenSecurityCodeToggleButton.Enabled = false;
-            _screenSecurityCodeToggleButton.Text = "👁";
+            DisableSecurityCodePreview(AppText.Get("Tab_SecurityCode_Pending"));
             return;
         }
 
@@ -473,6 +476,15 @@ public sealed class ScreenTabControls
         _screenSecurityCodeTextBox.UseSystemPasswordChar = !_showSecurityCode;
         _screenSecurityCodeToggleButton.Enabled = true;
         _screenSecurityCodeToggleButton.Text = _showSecurityCode ? "🙈" : "👁";
+    }
+
+    private void DisableSecurityCodePreview(string text)
+    {
+        _showSecurityCode = false;
+        _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
+        _screenSecurityCodeTextBox.Text = text;
+        _screenSecurityCodeToggleButton.Enabled = false;
+        _screenSecurityCodeToggleButton.Text = "👁";
     }
 
     private static void OpenUrl(string url)

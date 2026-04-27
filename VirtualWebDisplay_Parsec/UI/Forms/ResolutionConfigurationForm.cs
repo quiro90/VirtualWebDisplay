@@ -65,7 +65,7 @@ public sealed class ResolutionConfigurationForm : Form
         _wasStarted = hasStarted;
         _appearanceStore = appearanceStore;
 
-        var uiFont = TryCreateUiFont();
+        var uiFont = FormThemeApplicator.TryCreateUiFont();
         if (uiFont is not null)
             Font = uiFont;
 
@@ -220,6 +220,8 @@ public sealed class ResolutionConfigurationForm : Form
         ApplyLocalization();
         ApplyTheme();
         ApplyRuntimeSecurityCodes(screenRuntimes);
+        if (_wasStarted)
+            SetConfigurationControlsLocked(true);
     }
 
     public void NotifyServiceStarted(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
@@ -229,6 +231,7 @@ public sealed class ResolutionConfigurationForm : Form
         _pendingStartAction = false;
         UpdateAcceptButtonState();
         ApplyRuntimeSecurityCodes(screenRuntimes);
+        SetConfigurationControlsLocked(true);
     }
 
     private void AcceptButton_Click(object? sender, EventArgs e)
@@ -406,6 +409,14 @@ public sealed class ResolutionConfigurationForm : Form
         _serviceActionPending = false;
         _pendingStartAction = false;
         UpdateAcceptButtonState();
+        SetConfigurationControlsLocked(false);
+    }
+
+    private void SetConfigurationControlsLocked(bool locked)
+    {
+        _enableScreen2Check.Enabled = !locked;
+        _screen1Controls.SetServiceRunning(locked);
+        _screen2Controls.SetServiceRunning(locked);
     }
 
     private void UpdateAcceptButtonState()
@@ -451,18 +462,6 @@ public sealed class ResolutionConfigurationForm : Form
         var dark    = FormThemeApplicator.ResolveDarkMode(_selectedWindowTheme);
         var palette = dark ? ThemePalette.Dark() : ThemePalette.Light();
         AboutDialog.Show(this, palette.Background, palette.Foreground, palette.Panel, palette.Border);
-    }
-
-    private static Font? TryCreateUiFont()
-    {
-        try
-        {
-            return new Font("Segoe UI Variable Text", 9F);
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private void TitleBar_MouseDown(object? sender, MouseEventArgs e)

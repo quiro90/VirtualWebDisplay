@@ -114,6 +114,11 @@ internal static class FormThemeApplicator
                     c.ForeColor = palette.Foreground;
                     break;
 
+                case Panel p when p.Tag is "preserve-color":
+                    // BackColor intencional (p.ej. panel de advertencia amarillo) — no se toca.
+                    p.ForeColor = palette.Foreground;
+                    break;
+
                 default:
                     control.BackColor = palette.Panel;
                     control.ForeColor = palette.Foreground;
@@ -134,6 +139,16 @@ internal static class FormThemeApplicator
         button.ForeColor                  = palette.TitleForeground;
         button.FlatStyle                  = FlatStyle.Flat;
         button.FlatAppearance.BorderColor = palette.Border;
+    }
+
+    /// <summary>
+    /// Intenta crear la fuente UI preferida (Segoe UI Variable Text 9pt).
+    /// Devuelve null si la fuente no está instalada.
+    /// </summary>
+    internal static Font? TryCreateUiFont()
+    {
+        try { return new Font("Segoe UI Variable Text", 9F); }
+        catch { return null; }
     }
 
     /// <summary>

@@ -52,7 +52,7 @@ public sealed class CustomModesDialog : Form
         MinimizeBox     = false;
         ShowInTaskbar   = false;
 
-        var uiFont = TryCreateUiFont();
+        var uiFont = FormThemeApplicator.TryCreateUiFont();
         if (uiFont is not null) Font = uiFont;
 
         // ── Barra de título ─────────────────────────────────────────────
@@ -154,6 +154,7 @@ public sealed class CustomModesDialog : Form
             Width     = ClientSize.Width - 32, Height = 28,
             BackColor = Color.FromArgb(255, 251, 180),
             Anchor    = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+            Tag       = "preserve-color",
         };
         var warningEmoji = new Label
         {
@@ -272,10 +273,7 @@ public sealed class CustomModesDialog : Form
                     UseShellExecute = true,
                 };
                 Process.Start(psi);
-                MessageBox.Show(
-                    AppText.Get("CustomModes_Saved"),
-                    AppText.Get("Common_AppName"), MessageBoxButtons.OK, MessageBoxIcon.Information);
-                Close();
+                ShowSavedAndClose();
             }
             catch (Exception)
             {
@@ -291,10 +289,7 @@ public sealed class CustomModesDialog : Form
         try
         {
             VddCustomModesStore.Write(modes);
-            MessageBox.Show(
-                AppText.Get("CustomModes_Saved"),
-                AppText.Get("Common_AppName"), MessageBoxButtons.OK, MessageBoxIcon.Information);
-            Close();
+            ShowSavedAndClose();
         }
         catch (Exception ex)
         {
@@ -337,6 +332,14 @@ public sealed class CustomModesDialog : Form
         FormThemeApplicator.StyleTitleButton(_closeButton, palette);
     }
 
+    private void ShowSavedAndClose()
+    {
+        MessageBox.Show(
+            AppText.Get("CustomModes_Saved"),
+            AppText.Get("Common_AppName"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+        Close();
+    }
+
     private void TitleBar_MouseDown(object? sender, MouseEventArgs e)
     {
         if (e.Button == MouseButtons.Left)
@@ -344,11 +347,5 @@ public sealed class CustomModesDialog : Form
             ReleaseCapture();
             SendMessage(Handle, WmNclButtonDown, HtCaption, 0);
         }
-    }
-
-    private static Font? TryCreateUiFont()
-    {
-        try { return new Font("Segoe UI Variable Text", 9F); }
-        catch { return null; }
     }
 }
