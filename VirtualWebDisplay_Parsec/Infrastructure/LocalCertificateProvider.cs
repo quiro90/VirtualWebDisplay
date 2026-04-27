@@ -38,8 +38,8 @@ public static class LocalCertificateProvider
         {
             try
             {
-                var existing = new X509Certificate2(
-                    pfxPath, (string?)null, X509KeyStorageFlags.EphemeralKeySet);
+                var existing = X509CertificateLoader.LoadPkcs12FromFile(
+                    pfxPath, null, X509KeyStorageFlags.EphemeralKeySet);
 
                 if (existing.NotAfter > DateTime.UtcNow.AddDays(30))
                 {
@@ -115,8 +115,8 @@ public static class LocalCertificateProvider
         var derBytes = cert.Export(X509ContentType.Cert);
         File.WriteAllBytes(crtPath, derBytes);
 
-        var finalCert = new X509Certificate2(
-            pfxBytes, (string?)null, X509KeyStorageFlags.EphemeralKeySet);
+        var finalCert = X509CertificateLoader.LoadPkcs12(
+            pfxBytes, null, X509KeyStorageFlags.EphemeralKeySet);
         return (finalCert, derBytes);
     }
 }
