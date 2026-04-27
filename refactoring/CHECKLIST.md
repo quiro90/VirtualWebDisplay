@@ -99,11 +99,11 @@ Pasos:
 ### H. Revisión UI — posibles abstracciones menores
 **Archivos:** `ResolutionConfigurationForm.cs`, `ScreenTabControls.cs`, `FormThemeApplicator.cs`, `CaptureService.cs`
 
-- [ ] Evaluar reemplazar coordenadas absolutas en `ResolutionConfigurationForm` por `TableLayoutPanel` para las filas de botones inferiores (Accept/Cancel)
-- [ ] Evaluar si el patrón `currentTop += N` en `ScreenTabControls` puede encapsularse en un helper de layout para reducir el riesgo de desalineación al agregar filas
-- [ ] Documentar el `catch { }` en `FormThemeApplicator.ResolveDarkMode` (lectura de registry) — agregar comentario explicando por qué es aceptable silenciarlo
-- [ ] Verificar que todos los controles custom (`ThemedComboBox`, `ThemedNumericUpDown`, `ThemedTrackBar`) tienen `Dispose` correcto si crean recursos GDI
-- [ ] `CaptureService.ExecuteAsync`: cambiar `catch { }` silencioso a `catch (Exception ex) { _logger.LogDebug(ex, "Transient capture error."); }` — errores persistentes (monitor desconectado, etc.) actualmente no dejan ningún diagnóstico
+- [x] Evaluar reemplazar coordenadas absolutas en `ResolutionConfigurationForm` por `TableLayoutPanel` para las filas de botones inferiores — resuelto con `Anchor = Bottom | Right` en ambos botones (Accept/Cancel), sin necesidad de TableLayoutPanel
+- [x] Evaluar si el patrón `currentTop += N` en `ScreenTabControls` puede encapsularse — patrón válido, filas ya comentadas, sin riesgo real de desalineación; no se toca
+- [x] Documentar el `catch { }` en `FormThemeApplicator.ResolveDarkMode` — comentario añadido explicando que falla en entornos restringidos y el fallback es modo claro
+- [x] Verificar que los controles custom (`ThemedComboBox`, `ThemedNumericUpDown`, `ThemedTrackBar`) tienen `Dispose` correcto — todos los recursos GDI (Pen, SolidBrush, Font) usan `using`; ningún recurso queda sin liberar ✓
+- [x] `CaptureService.ExecuteAsync`: `catch { }` silencioso → `catch (Exception ex) { _logger.LogWarning(...) }` — inyectado `ILogger<CaptureService>` via constructor; `ILoggerFactory` propagado desde `app.Services` a través de `RuntimeFactory.GetEnabledPorts` → `RuntimeFactory.TryCreate` → `ScreenRuntimeContext`
 
 ---
 

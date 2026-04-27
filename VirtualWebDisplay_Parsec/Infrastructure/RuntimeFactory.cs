@@ -14,6 +14,33 @@ namespace VirtualWebDisplay.Infrastructure;
 internal static class RuntimeFactory
 {
     /// <summary>
+    /// Returns the enabled screen ports after verifying driver availability.
+    /// Returns <c>null</c> if the driver is unavailable and the user cannot continue.
+    /// Call this before building the DI container to configure Kestrel early.
+    /// </summary>
+    internal static IReadOnlyList<int>? GetEnabledPorts(VirtualWebDisplaySettings settings)
+    {
+        var screens = new List<VirtualScreenConfig> { settings.Screen1 };
+        if (settings.Screen2.Enabled)
+            screens.Add(settings.Screen2);
+
+        if (screens.Any(s => !VirtualDisplayPlacementOptions.IsDuplicate(s.VirtualDisplayPlacement)))
+        {
+            var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
+            if (!driverReady)
+            {
+                InstallDialog.Show(
+                    AppText.Get("Program_DriverMissing_Title"),
+                    driverStatus + "\n\n" + AppText.Get("Program_DriverMissing_MessageSuffix"),
+                    VirtualDisplayManager.InstallUrl);
+                return null;
+            }
+        }
+
+        return screens.Select(s => s.Port).ToList();
+    }
+
+    /// <summary>
     /// Crea la lista de runtimes a partir de la configuración actual.
     /// Devuelve <c>null</c> si el driver no está disponible y el usuario no puede continuar.
     /// </summary>
@@ -30,19 +57,6 @@ internal static class RuntimeFactory
 
         if (settings.Screen2.Enabled)
             runtimes.Add(new ScreenRuntimeContext("screen2", AppText.Get("Runtime_Screen2"), settings.Screen2, hostName, localIp, loggerFactory));
-
-        if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement)))
-        {
-            var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
-            if (!driverReady)
-            {
-                InstallDialog.Show(
-                    AppText.Get("Program_DriverMissing_Title"),
-                    driverStatus + "\n\n" + AppText.Get("Program_DriverMissing_MessageSuffix"),
-                    VirtualDisplayManager.InstallUrl);
-                return null;
-            }
-        }
 
         return runtimes;
     }

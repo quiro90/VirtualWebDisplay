@@ -184,21 +184,23 @@ public sealed class ResolutionConfigurationForm : Form
 
         _acceptButton = new Button
         {
-            Left = 346,
-            Top = 498,
-            Width = 84,
+            Left   = 346,
+            Top    = 498,
+            Width  = 84,
             Height = 30,
-            Text = AcceptButtonText,
+            Text   = AcceptButtonText,
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
         };
         _acceptButton.Click += AcceptButton_Click;
 
         _cancelButton = new Button
         {
-            Left = 438,
-            Top = 498,
-            Width = 84,
+            Left   = 438,
+            Top    = 498,
+            Width  = 84,
             Height = 30,
-            Text = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
+            Text   = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
         };
         _cancelButton.Click += (_, _) => Close();
 

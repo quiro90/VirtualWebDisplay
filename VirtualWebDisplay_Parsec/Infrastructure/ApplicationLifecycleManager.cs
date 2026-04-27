@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography.X509Certificates;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
@@ -27,17 +29,22 @@ internal static class ApplicationLifecycleManager
         var keepRunning = true;
         while (keepRunning)
         {
-            var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp);
-            if (runtimes is null)
+            // Resolve ports from settings before building the app, so Kestrel can be
+            // configured without creating the full runtimes twice.
+            var enabledPorts = RuntimeFactory.GetEnabledPorts(settings);
+            if (enabledPorts is null)
                 return;
 
             var builder = WebApplication.CreateBuilder(args);
-            KestrelConfigurator.Configure(builder, runtimes, tlsCert);
+            KestrelConfigurator.Configure(builder, enabledPorts, tlsCert);
 
             var app = builder.Build();
             var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
-            runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, loggerFactory)
-                ?? runtimes; // already validated above; re-create with loggers
+
+            var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, loggerFactory);
+            if (runtimes is null)
+                return;
+
             singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
             var stopRequested = false;
             var exitRequested = false;
