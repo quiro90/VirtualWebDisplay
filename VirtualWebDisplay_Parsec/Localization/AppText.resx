@@ -99,6 +99,19 @@
   <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Code</value></data>
   <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply the new changes.</value></data>
 
+  <data name="Form_Config_Menu_CustomModes" xml:space="preserve"><value>Custom resolutions...</value></data>
+  <data name="CustomModes_Title" xml:space="preserve"><value>Custom resolutions (Parsec VDD)</value></data>
+  <data name="CustomModes_Info" xml:space="preserve"><value>Up to 5 custom resolutions. Leave a slot empty to remove it. Requires administrator rights to save.</value></data>
+  <data name="CustomModes_Range" xml:space="preserve"><value>W/H: 300–4200 | Hz: 24–244</value></data>
+  <data name="CustomModes_Reset" xml:space="preserve"><value>Reset</value></data>
+  <data name="CustomModes_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="CustomModes_Saved" xml:space="preserve"><value>Custom resolutions saved. They will be available the next time a virtual display is created.</value></data>
+  <data name="CustomModes_InvalidSlot" xml:space="preserve"><value>Slot #{0} has incomplete or invalid values. Fill all three fields or leave the slot empty.</value></data>
+  <data name="CustomModes_InvalidResolution" xml:space="preserve"><value>Slot #{0}: width and height must be between {1} and {2} px.</value></data>
+  <data name="CustomModes_InvalidHz" xml:space="preserve"><value>Slot #{0}: refresh rate must be between {1} and {2} Hz.</value></data>
+  <data name="CustomModes_AccessDenied" xml:space="preserve"><value>Administrator access was denied. Custom resolutions were not saved.</value></data>
+  <data name="CustomModes_WriteError" xml:space="preserve"><value>Could not write to registry: {0}</value></data>
+
   <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>We recommend downloading VDD driver 0.45.0.0:</value></data>
   <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Open download page</value></data>
   <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copy URL</value></data>

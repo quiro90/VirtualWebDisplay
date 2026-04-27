@@ -31,6 +31,7 @@ public sealed class ResolutionConfigurationForm : Form
     private readonly ToolStripMenuItem _languageMenuItem;
     private readonly ToolStripMenuItem _windowStyleMenuItem;
     private readonly ToolStripSeparator _configurationMenuSeparator;
+    private readonly ToolStripMenuItem _customModesMenuItem;
     private readonly ToolStripMenuItem _aboutMenuItem;
     private readonly bool _isInitialStartup;
     private readonly AppearanceSettingsStore? _appearanceStore;
@@ -114,9 +115,11 @@ public sealed class ResolutionConfigurationForm : Form
         _languageMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_Language"));
         _windowStyleMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_WindowStyle"));
         _configurationMenuSeparator = new ToolStripSeparator();
+        _customModesMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_CustomModes"));
+        _customModesMenuItem.Click += (_, _) => ShowCustomModesDialog();
         _aboutMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_About"));
         _aboutMenuItem.Click += (_, _) => ShowAboutDialog();
-        _configurationMenu.Items.AddRange([_languageMenuItem, _windowStyleMenuItem, _configurationMenuSeparator, _aboutMenuItem]);
+        _configurationMenu.Items.AddRange([_languageMenuItem, _windowStyleMenuItem, _configurationMenuSeparator, _customModesMenuItem, _aboutMenuItem]);
 
         _configurationButton = new Button
         {
@@ -321,9 +324,10 @@ public sealed class ResolutionConfigurationForm : Form
 
     private void BuildConfigurationMenu()
     {
-        _languageMenuItem.Text = AppText.Get("Form_Config_Menu_Language");
+        _languageMenuItem.Text    = AppText.Get("Form_Config_Menu_Language");
         _windowStyleMenuItem.Text = AppText.Get("Form_Config_Menu_WindowStyle");
-        _aboutMenuItem.Text = AppText.Get("Form_Config_Menu_About");
+        _customModesMenuItem.Text = AppText.Get("Form_Config_Menu_CustomModes");
+        _aboutMenuItem.Text       = AppText.Get("Form_Config_Menu_About");
 
         _languageMenuItem.DropDownItems.Clear();
         foreach (var language in AppText.SupportedLanguages)
@@ -434,6 +438,12 @@ public sealed class ResolutionConfigurationForm : Form
 
         FormThemeApplicator.ApplyThemeToMenu(_configurationMenu, palette);
         Invalidate();
+    }
+
+    private void ShowCustomModesDialog()
+    {
+        using var dlg = new CustomModesDialog(_selectedWindowTheme);
+        dlg.ShowDialog(this);
     }
 
     private void ShowAboutDialog()

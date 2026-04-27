@@ -100,6 +100,19 @@
   <data name="About_Message" xml:space="preserve"><value>Virtual Web Display fue creado para retransmitir un escritorio virtual a cualquier otro dispositivo conectado a la misma red local, de una forma simple y directa.</value></data>
   <data name="About_Footer" xml:space="preserve"><value>Gracias por elegir Virtual Web Display.</value></data>
 
+  <data name="Form_Config_Menu_CustomModes" xml:space="preserve"><value>Resoluciones personalizadas...</value></data>
+  <data name="CustomModes_Title" xml:space="preserve"><value>Resoluciones personalizadas (Parsec VDD)</value></data>
+  <data name="CustomModes_Info" xml:space="preserve"><value>Hasta 5 resoluciones personalizadas. Dejá un slot vacío para eliminarlo. Guardar requiere permisos de administrador.</value></data>
+  <data name="CustomModes_Range" xml:space="preserve"><value>A/Al: 300–4200 | Hz: 24–244</value></data>
+  <data name="CustomModes_Reset" xml:space="preserve"><value>Resetear</value></data>
+  <data name="CustomModes_Save" xml:space="preserve"><value>Guardar</value></data>
+  <data name="CustomModes_Saved" xml:space="preserve"><value>Resoluciones guardadas. Estarán disponibles la próxima vez que se cree un display virtual.</value></data>
+  <data name="CustomModes_InvalidSlot" xml:space="preserve"><value>El slot #{0} tiene valores incompletos o inválidos. Completá los tres campos o dejá el slot vacío.</value></data>
+  <data name="CustomModes_InvalidResolution" xml:space="preserve"><value>Slot #{0}: el ancho y alto deben estar entre {1} y {2} px.</value></data>
+  <data name="CustomModes_InvalidHz" xml:space="preserve"><value>Slot #{0}: la frecuencia debe estar entre {1} y {2} Hz.</value></data>
+  <data name="CustomModes_AccessDenied" xml:space="preserve"><value>Se denegó el acceso de administrador. Las resoluciones no fueron guardadas.</value></data>
+  <data name="CustomModes_WriteError" xml:space="preserve"><value>No se pudo escribir en el registro: {0}</value></data>
+
   <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Recomendamos bajar el driver VDD 0.45.0.0:</value></data>
   <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Abrir página de descarga</value></data>
   <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copiar URL</value></data>

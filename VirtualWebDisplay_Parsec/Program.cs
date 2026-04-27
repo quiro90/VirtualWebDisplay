@@ -3,7 +3,35 @@ using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.UI.TrayIcon;
+
+// ── Modo UAC: solo escribe modos custom al registro y sale ───────────────────
+if (args.Length >= 2 && args[0] == "--set-custom-modes")
+{
+    try
+    {
+        var modes = args[1]
+            .Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(entry =>
+            {
+                var atIdx = entry.IndexOf('@');
+                var xIdx  = entry.IndexOf('x');
+                var w  = int.Parse(entry[..xIdx]);
+                var h  = int.Parse(entry[(xIdx + 1)..atIdx]);
+                var hz = int.Parse(entry[(atIdx + 1)..]);
+                return new VddCustomModesStore.CustomMode(w, h, hz);
+            })
+            .ToList();
+        VddCustomModesStore.Write(modes);
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(ex.Message, "VirtualWebDisplay", MessageBoxButtons.OK, MessageBoxIcon.Error);
+    }
+    return;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 var appearanceStore = new AppearanceSettingsStore();
 var appearance = appearanceStore.Load();
