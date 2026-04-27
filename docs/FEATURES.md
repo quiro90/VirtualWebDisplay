@@ -36,10 +36,13 @@ Perfiles predefinidos:
 | 2560×1440 | 2K / QHD | 16:9 | Monitores de alta resolución, trabajo profesional |
 | 3840×2160 | 4K / UHD | 16:9 | Máxima calidad (requiere hardware potente) |
 
-**Resoluciones Personalizadas**:
-- Mínimo: 640×480
-- Máximo: 7680×4320 (8K, limitado por driver Parsec VDD)
-- Cualquier aspecto: 16:9, 16:10, 4:3, 21:9, etc.
+**Resoluciones Personalizadas en el Driver**:
+
+El driver Parsec VDD soporta hasta **5 slots de resolución personalizada** que se configuran desde el menú ⚙️ → *Resoluciones personalizadas...*:
+- Formato por slot: `Ancho × Alto @ Hz`
+- Slot vacío (todos en 0) = ignorado
+- Requiere permisos de Administrador para escribir (la app eleva automáticamente vía UAC)
+- Los cambios se aplican al reiniciar el driver Parsec VDD
 
 #### 2. **Posicionamiento**
 
@@ -65,6 +68,7 @@ Las pantallas virtuales pueden posicionarse relativamente al monitor primario:
 - **Left**: A la izquierda del monitor primario
 - **Above**: Encima del monitor primario
 - **Below**: Debajo del monitor primario
+- **Duplicate**: Captura el monitor primario existente sin crear hardware virtual (no genera monitor nuevo)
 
 **Offsets Personalizados**:
 - `OffsetX`: Desplazamiento horizontal en píxeles (puede ser negativo)

@@ -36,7 +36,7 @@ Screen2: VirtualScreenConfig
 | `StreamRotationDegrees` | 0 | Rotación del frame capturado: 0, 90, 180 o 270 grados |
 | `RotateForPortrait` | false | **Legacy** — migrado a `StreamRotationDegrees`. Se mantiene solo para leer configs antiguas |
 | `MonitorIndex` | -1 | -1=auto (VDD creado), 0=primario, 1+=otros |
-| `VirtualDisplayPlacement` | "right" | right/left/top/bottom |
+| `VirtualDisplayPlacement` | "right" | right / left / top / bottom / **duplicate** |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |
 | `ScreenSecurityEnabled` | false | Activa protección por clave de 6 caracteres para esa pantalla |
 
@@ -151,6 +151,30 @@ Devuelve metadata de runtime (requiere auth si seguridad activa):
 
 ## Resolución del runtime por puerto
 La app escucha en varios puertos a la vez. `ResolveRuntime(HttpContext)` decide qué `ScreenRuntimeContext` usar comparando el `LocalPort` de la conexión entrante con `runtime.Config.Port`. Si ninguno coincide, usa el primero.
+
+## Resoluciones personalizadas del driver Parsec VDD
+
+El driver Parsec VDD soporta hasta **5 slots** de resoluciones personalizadas almacenados en el registro de Windows.
+
+### Registro
+- Ruta: `HKLM\SOFTWARE\Parsec\vdd\{0..4}`
+- Valores por slot: `width` (DWORD), `height` (DWORD), `hz` (DWORD)
+- Requiere permisos de Administrador para escribir.
+
+### Componentes involucrados
+- `Parsec/VddCustomModesStore.cs` — lectura/escritura de los slots
+- `UI/Forms/CustomModesDialog.cs` — diálogo con 5 slots editables (W×H@Hz)
+- `Program.cs` — maneja argumento CLI `--set-custom-modes "<w>x<h>@<hz>;..."` para el flujo UAC
+
+### Argumento CLI UAC
+Cuando el usuario guarda desde `CustomModesDialog` sin permisos de administrador, se relanza el proceso con:
+```
+VirtualWebDisplay.exe --set-custom-modes "1920x1080@60;1280x720@60;..."
+```
+El proceso elevado escribe al registro y sale. El proceso original detecta el éxito y cierra el diálogo.
+
+### `VirtualDisplayPlacement = "duplicate"`
+Cuando `VirtualDisplayPlacement = "duplicate"`, **no se crea ningún monitor virtual**. En su lugar se captura el monitor primario existente en su resolución actual. Útil para transmitir la pantalla principal sin crear hardware virtual.
 
 ## Helpers compartidos relevantes
 - `VirtualDisplayPlacementOptions`: normalización (acepta español e inglés), etiqueta visible y cálculo de posición Win32 del monitor virtual.

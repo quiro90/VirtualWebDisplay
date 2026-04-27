@@ -33,8 +33,9 @@ VirtualWebDisplay es una aplicación .NET 10 para Windows que crea pantallas vir
 graph TB
     subgraph "UI Layer"
         Tray[VirtualDisplayTrayController]
-        Forms[WinForms: ResolutionConfigurationForm, ScreenTabControls, InstallDialog]
+        Forms[WinForms: ResolutionConfigurationForm, ScreenTabControls, CustomModesDialog, InstallDialog]
         Templates[HTML Templates: WebImagePageTemplate, RtcPageTemplate]
+        Theme[FormThemeApplicator: theming centralizado + TryCreateUiFont]
     end
 
     subgraph "Web Layer"
@@ -101,14 +102,14 @@ graph TB
 - **Propósito**: Interfaz gráfica del sistema (tray icon, formularios de configuración, templates web)
 - **Componentes**:
   - `VirtualDisplayTrayController`: Gestiona el icono de la bandeja y el menú contextual
-  - `ResolutionConfigurationForm`: Formulario principal de configuración
-  - `ScreenTabControls`: Controles de tabs para configurar múltiples pantallas
+  - `ResolutionConfigurationForm`: Formulario principal de configuración. Bloquea controles mientras el servicio corre (`SetConfigurationControlsLocked`)
+  - `ScreenTabControls`: Controles de tabs para configurar múltiples pantallas. `SetServiceRunning(bool)` deshabilita todos los controles excepto el botón de Windows Display mientras el servicio está activo
+  - `CustomModesDialog`: Diálogo para editar los 5 slots de resolución personalizada del driver Parsec VDD. Incluye flujo UAC automático
+  - `FormThemeApplicator`: Theming centralizado. `TryCreateUiFont()` centraliza la fuente UI. Soporta `Tag="preserve-color"` en paneles para preservar colores intencionales
   - `InstallDialog`: Diálogo de instalación del driver Parsec VDD
   - `IHtmlTemplate`: Interfaz base para generadores de HTML
   - `WebImagePageTemplate`: Generación HTML modo JPEG polling
   - `RtcPageTemplate`: Generación HTML modo WebRTC
-  - `SecurityPageTemplate`: Generación HTML página de login (Fase 2)
-  - `ViewerLimitPageTemplate`: Generación HTML página de límite de viewers (Fase 2)
 - **Patrones**: STA Threading, Observer (eventos de formularios), Template Method (HTML generators)
 
 #### 2. **Web Layer & Controllers** (Entry Point)
@@ -156,7 +157,8 @@ graph TB
 #### 5. **Parsec Layer** (`Parsec/`)
 - **Propósito**: Interfaz con el driver de pantalla virtual Parsec VDD
 - **Componentes**:
-  - `VirtualDisplayManager`: Crea/destruye pantallas virtuales vía P/Invoke
+  - `VirtualDisplayManager`: Crea/destruye pantallas virtuales vía P/Invoke. URL de descarga del driver: `https://builds.parsec.app/vdd/parsec-vdd-0.45.0.0.exe`
+  - `VddCustomModesStore`: Lee y escribe hasta 5 slots de resolución personalizada en `HKLM\SOFTWARE\Parsec\vdd\{0..4}` (requiere Admin para escribir)
 - **Características**:
   - Código **unsafe** con llamadas Win32 API
   - Keep-alive loop (actualización cada 100ms) para mantener conexión con driver

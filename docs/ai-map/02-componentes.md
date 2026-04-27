@@ -128,6 +128,9 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 - aplicar resolución y posición relativa al monitor principal,
 - eliminar el display al liberar recursos.
 
+### URL de descarga del driver
+`InstallUrl = "https://builds.parsec.app/vdd/parsec-vdd-0.45.0.0.exe"` (descarga directa del instalador oficial).
+
 ### API pública importante
 - `VerifyDriverAvailability()` — static, verifica el driver antes de crear runtimes
 - `TryCreate(VirtualScreenConfig)`
@@ -199,6 +202,83 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 
 ## `VirtualDisplayTrayController.cs`
 **Rol:** gestionar el tray icon y coordinar la UI de configuración.
+
+### Responsabilidades
+- ejecutar el bucle de UI de Windows Forms en un hilo STA dedicado,
+- mostrar el formulario de configuración inicial (`ShowStartupConfiguration`),
+- coordinar acciones de runtime (exit / stop) vía `ConfigureRuntimeActions`,
+- delegar construcción del menú contextual a `TrayMenuBuilder`,
+- delegar la presentación del formulario de configuración a `ConfigurationFormPresenter`,
+- emitir notificaciones balloon tip al arrancar/detener.
+
+### Clases colaboradoras (extraídas)
+| Clase | Responsabilidad |
+|---|---|
+| `UI/TrayIcon/TrayMenuBuilder.cs` | `Build(...)` estático — construye el `ContextMenuStrip` |
+| `UI/TrayIcon/ConfigurationFormPresenter.cs` | Abrir/cerrar `ResolutionConfigurationForm`, notificaciones |
+
+### Métodos clave
+- `ConfigureRuntimeActions(Action exit, Action stop, IReadOnlyList<ScreenRuntimeContext>)`
+- `NotifyServiceStopped()` / `WaitForServiceStartAsync()`
+- `PostToUi(Action)` — despacha al hilo STA seguro
+
+---
+
+## `ResolutionConfigurationForm.cs`
+**Rol:** formulario principal de configuración de pantallas.
+
+### Comportamiento al correr el servicio
+Cuando el servicio está activo (`_wasStarted = true`), `SetConfigurationControlsLocked(true)` deshabilita todos los controles de configuración de ambas tabs excepto el botón de configuración de Windows. Esto garantiza que el usuario no pueda cambiar resolución/placement/modo mientras el driver VDD está en uso.
+
+- `SetConfigurationControlsLocked(bool)` — deshabilita `_enableScreen2Check` y llama `SetServiceRunning` en ambos `ScreenTabControls`
+- Al recibir `NotifyServiceStarted` → bloquea; al recibir `NotifyServiceStopped` → desbloquea
+- El menú de configuración incluye la opción **"Resoluciones personalizadas..."** que abre `CustomModesDialog`
+
+---
+
+## `ScreenTabControls.cs`
+**Rol:** controles de configuración para una pestaña de pantalla.
+
+### Bloqueo mientras el servicio corre
+`SetServiceRunning(bool running)` bloquea/desbloquea todos los controles gestionados (`_managedControls`) mientras el servicio está activo. Solo el botón de configuración de Windows (`_windowsDisplayButton`) permanece habilitado.
+
+---
+
+## `CustomModesDialog.cs`
+**Rol:** diálogo para editar las resoluciones personalizadas del driver Parsec VDD.
+
+### Descripción
+Permite configurar hasta **5 slots** de resolución personalizada (ancho × alto @ Hz) que se escriben en el registro de Windows bajo `HKLM\SOFTWARE\Parsec\vdd\{0..4}`.
+
+### Flujo UAC
+- Si el proceso actual **no** es administrador → relanza la app con `--set-custom-modes "<data>"` vía `Process.Start` con `Verb="runas"`, para elevar permisos solo en esa operación.
+- Si ya es administrador → escribe directamente al registro.
+- En ambos casos de éxito, muestra confirmación y cierra el diálogo.
+
+### Panel de advertencia
+Muestra un panel amarillo advirtiendo que se necesita reiniciar el driver para aplicar los cambios. El panel usa `Tag = "preserve-color"` para que `FormThemeApplicator.ApplyThemeRecursive` no sobreescriba su `BackColor`.
+
+---
+
+## `VddCustomModesStore.cs`
+**Rol:** leer y escribir los modos de resolución personalizados del driver Parsec VDD en el registro de Windows.
+
+### Registro
+- Ruta: `HKLM\SOFTWARE\Parsec\vdd\{0..4}` (5 slots, índice 0-4)
+- Valores por slot: `width` (DWORD), `height` (DWORD), `hz` (DWORD)
+
+### API
+- `Read()` → `List<CustomMode>` (no lanza excepciones; slot vacío = `CustomMode(0,0,0)`)
+- `Write(List<CustomMode>)` → puede lanzar `UnauthorizedAccessException` si no es admin
+- `IsAdmin()` → `bool`
+
+### `CustomMode`
+```csharp
+record CustomMode(int Width, int Height, int Hz);
+```
+Un slot con todos los valores en 0 se considera vacío (no se envía al driver).
+
+---
 
 ### Responsabilidades
 - ejecutar el bucle de UI de Windows Forms en un hilo STA dedicado,

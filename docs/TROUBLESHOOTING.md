@@ -62,22 +62,19 @@ Please install it from https://dotnet.microsoft.com/download
 
 **Solución**:
 
-1. Descargar Parsec VDD:
+1. Descargar Parsec VDD (instalador directo):
    ```
-   https://github.com/nomi-san/parsec-vdd/releases/latest
+   https://builds.parsec.app/vdd/parsec-vdd-0.45.0.0.exe
    ```
 
-2. Extraer ZIP.
+2. Ejecutar el instalador **como Administrador**.
 
-3. Ejecutar `installdriver.bat` **como Administrador**:
-   - Click derecho → "Run as administrator"
-
-4. Verificar instalación en Device Manager:
+3. Verificar instalación en Device Manager:
    ```
    Display adapters > Parsec Virtual Display Adapter
    ```
 
-5. Reiniciar aplicación.
+4. Reiniciar aplicación.
 
 **Alternativa (si el instalador falla)**:
 
