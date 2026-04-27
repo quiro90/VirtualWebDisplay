@@ -35,6 +35,9 @@ internal static class ApplicationLifecycleManager
             KestrelConfigurator.Configure(builder, runtimes, tlsCert);
 
             var app = builder.Build();
+            var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+            runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, loggerFactory)
+                ?? runtimes; // already validated above; re-create with loggers
             singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
             var stopRequested = false;
             var exitRequested = false;

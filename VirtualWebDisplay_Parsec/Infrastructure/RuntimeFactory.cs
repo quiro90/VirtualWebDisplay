@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Localization;
@@ -19,15 +20,16 @@ internal static class RuntimeFactory
     internal static List<ScreenRuntimeContext>? TryCreate(
         VirtualWebDisplaySettings settings,
         string hostName,
-        string localIp)
+        string localIp,
+        ILoggerFactory? loggerFactory = null)
     {
         var runtimes = new List<ScreenRuntimeContext>
         {
-            new("screen1", AppText.Get("Runtime_Screen1"), settings.Screen1, hostName, localIp),
+            new("screen1", AppText.Get("Runtime_Screen1"), settings.Screen1, hostName, localIp, loggerFactory),
         };
 
         if (settings.Screen2.Enabled)
-            runtimes.Add(new ScreenRuntimeContext("screen2", AppText.Get("Runtime_Screen2"), settings.Screen2, hostName, localIp));
+            runtimes.Add(new ScreenRuntimeContext("screen2", AppText.Get("Runtime_Screen2"), settings.Screen2, hostName, localIp, loggerFactory));
 
         if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement)))
         {

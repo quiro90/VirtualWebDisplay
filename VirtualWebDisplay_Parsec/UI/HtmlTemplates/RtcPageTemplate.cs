@@ -3,7 +3,7 @@ using VirtualWebDisplay.Localization;
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
-/// Template para la página de WebRTC (streaming continuo).
+/// HTML template for the WebRTC page (continuous live stream).
 /// </summary>
 public sealed class RtcPageTemplate : IHtmlTemplate
 {

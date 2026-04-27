@@ -7,14 +7,14 @@ using VirtualWebDisplay.UI.Forms;
 namespace VirtualWebDisplay.UI.Theme;
 
 /// <summary>
-/// Aplica la paleta de tema a controles WinForms de forma recursiva.
-/// Centraliza la lógica de theming que antes vivía en ResolutionConfigurationForm.
+/// Applies the theme palette to WinForms controls recursively.
+/// Centralizes theming logic that previously lived in ResolutionConfigurationForm.
 /// </summary>
 internal static class FormThemeApplicator
 {
     /// <summary>
-    /// Resuelve si el modo oscuro está activo según la preferencia seleccionada
-    /// o la configuración del sistema operativo.
+    /// Resolves whether dark mode is active based on the selected preference
+    /// or the operating system setting.
     /// </summary>
     internal static bool ResolveDarkMode(string selectedWindowTheme)
     {
@@ -31,13 +31,13 @@ internal static class FormThemeApplicator
             if (value is int intValue)
                 return intValue == 0;
         }
-        catch { }
+        catch { } // Registry read can fail in restricted environments; safe to ignore — falls back to light mode.
 
         return false;
     }
 
     /// <summary>
-    /// Aplica la paleta de forma recursiva a todos los controles hijos del contenedor raíz.
+    /// Recursively applies the palette to all child controls of the root container.
     /// </summary>
     internal static void ApplyThemeRecursive(Control root, ThemePalette palette)
     {
@@ -126,7 +126,7 @@ internal static class FormThemeApplicator
     }
 
     /// <summary>
-    /// Aplica estilo de botón de barra de título (cerrar, configuración).
+    /// Applies title-bar button style (close, settings).
     /// </summary>
     internal static void StyleTitleButton(Button button, ThemePalette palette)
     {
@@ -137,7 +137,7 @@ internal static class FormThemeApplicator
     }
 
     /// <summary>
-    /// Aplica el tema a un ContextMenuStrip y todos sus ítems y submenús.
+    /// Applies the theme to a ContextMenuStrip and all its items and submenus.
     /// </summary>
     internal static void ApplyThemeToMenu(ContextMenuStrip menu, ThemePalette palette)
     {

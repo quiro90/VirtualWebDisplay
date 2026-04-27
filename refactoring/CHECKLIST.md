@@ -83,10 +83,14 @@ Convención acordada:
 - **Strings al usuario**: siempre via `AppText.resx`, nunca hardcodeados
 
 Pasos:
-- [ ] Identificar comentarios XML doc en español en clases públicas — traducirlos al inglés
-- [ ] Identificar strings hardcodeados en español fuera de recursos (buscar `"` con texto en español en `.cs`) — moverlos a `AppText.resx`
-- [ ] Revisar docstrings bilingues en `VirtualScreenConfig.cs` (ej. `/// contain = mantiene toda la imagen`) — unificar a inglés
-- [ ] Revisar comentarios en `ScreenTabControls.cs` (// Fila 1:, // Fila 2:, etc.) — son comentarios de implementación, mantener en español está bien; solo limpiar si hay mezcla dentro del mismo bloque
+- [x] Identificar comentarios XML doc en español en clases públicas — traducidos al inglés en 8 archivos: `IHtmlTemplate`, `RtcPageTemplate`, `WebImagePageTemplate`, `ThemePalette`, `FormThemeApplicator` (4 docs), `TrayMenuBuilder`, `VirtualDisplayTrayController`, `ConfigurationFormPresenter` (4 docs incluyendo eventos)
+- [x] Identificar strings hardcodeados en español fuera de recursos — encontrados 6 strings en `VirtualDisplayManager.cs` (mensajes de diagnóstico del driver VDD)
+- [x] Mover strings de `VirtualDisplayManager.cs` a recursos — agregadas 7 keys (`VDD_Status_*`) a `AppText.resx` (inglés) y `AppText.es.resx` (español), reemplazadas con `AppText.Get`/`AppText.Format`
+- [x] Audit pre-H: corregido `DateTimeOffset.UtcNow` doble en `ScreenSecurityGate.TryAuthorize` (capturado una vez en `var now`)
+- [x] Audit pre-H: traducida string de excepción en español en `WebRtcStreamService.CreateAnswerAsync` a inglés
+- [x] Audit pre-H: 6 strings hardcodeadas en español en `VirtualDisplayManager` (`TryCreate`, `TryReconfigure`, `ArrangeVirtualDisplay`) migradas a 7 nuevas keys `VDD_Status_*` en ambos resx
+- [x] Revisar docstrings bilingues en `VirtualScreenConfig.cs` — los comentarios XML son en inglés (los que tenían español son comentarios `//` de implementación, que se mantienen en español por convención)
+- [x] Revisar comentarios `// Fila N:` en `ScreenTabControls.cs` — son comentarios de implementación, se mantienen en español ✓
 
 ---
 

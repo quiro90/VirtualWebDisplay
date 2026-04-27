@@ -8,10 +8,10 @@ using VirtualWebDisplay.Localization;
 namespace VirtualWebDisplay.UI.TrayIcon;
 
 /// <summary>
-/// Controlador del ícono de bandeja (system tray) para VirtualWebDisplay.
-/// Responsabilidad: threading del tray, ciclo de vida del servicio y coordinación de UI.
-/// La construcción del menú delega en <see cref="TrayMenuBuilder"/>.
-/// La gestión del formulario delega en <see cref="ConfigurationFormPresenter"/>.
+/// System tray controller for VirtualWebDisplay.
+/// Responsibilities: tray threading, service lifecycle and UI coordination.
+/// Menu construction delegates to <see cref="TrayMenuBuilder"/>.
+/// Form management delegates to <see cref="ConfigurationFormPresenter"/>.
 /// </summary>
 public sealed class VirtualDisplayTrayController : IDisposable
 {

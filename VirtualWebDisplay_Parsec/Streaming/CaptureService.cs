@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -13,6 +14,7 @@ public sealed class CaptureService : BackgroundService
 {
 
     private readonly VirtualScreenConfig _config;
+    private readonly ILogger<CaptureService> _logger;
     private byte[] _currentFrame = [];
     private readonly Lock _frameLock = new();
     private ulong _lastRawHash;
@@ -21,7 +23,11 @@ public sealed class CaptureService : BackgroundService
     private static readonly ImageCodecInfo JpegCodec =
         ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
 
-    public CaptureService(VirtualScreenConfig config) => _config = config;
+    public CaptureService(VirtualScreenConfig config, ILogger<CaptureService> logger)
+    {
+        _config = config;
+        _logger = logger;
+    }
 
     /// <summary>Returns the latest captured frame as a JPEG byte array. Empty if not yet captured.</summary>
     public byte[] GetCurrentFrame()
@@ -75,9 +81,10 @@ public sealed class CaptureService : BackgroundService
                 lock (_frameLock)
                     _currentFrame = ms.ToArray();
             }
-            catch
+            catch (Exception ex)
             {
                 // Capture errors are transient (e.g. screen lock, minimized); keep running.
+                _logger.LogWarning(ex, "Transient capture error on monitor {MonitorIndex}.", _config.MonitorIndex);
             }
 
             var delay = interval - (DateTime.UtcNow - captureStart);

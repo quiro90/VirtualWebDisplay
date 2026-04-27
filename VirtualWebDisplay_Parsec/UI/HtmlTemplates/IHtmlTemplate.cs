@@ -1,12 +1,12 @@
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
-/// Interfaz para templates HTML que generan páginas dinámicamente.
+/// Interface for HTML templates that generate pages dynamically.
 /// </summary>
 public interface IHtmlTemplate
 {
     /// <summary>
-    /// Genera el contenido HTML basado en los parámetros proporcionados.
+    /// Generates the HTML content based on the provided parameters.
     /// </summary>
     string Generate(Dictionary<string, object> parameters);
 }

@@ -3,7 +3,7 @@ using VirtualWebDisplay.Localization;
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
-/// Template para la página de WebImage (imagen JPEG refrescada periódicamente).
+/// HTML template for the WebImage page (periodically refreshed JPEG image).
 /// </summary>
 public sealed class WebImagePageTemplate : IHtmlTemplate
 {

@@ -8,8 +8,8 @@ using VirtualWebDisplay.UI.Forms;
 namespace VirtualWebDisplay.UI.TrayIcon;
 
 /// <summary>
-/// Gestiona la presentación del formulario de configuración desde el tray.
-/// Encapsula la creación, apertura y ciclo de vida de <see cref="ResolutionConfigurationForm"/>.
+/// Manages the presentation of the configuration form from the tray.
+/// Encapsulates creation, opening and lifecycle of <see cref="ResolutionConfigurationForm"/>.
 /// </summary>
 internal sealed class ConfigurationFormPresenter
 {
@@ -36,10 +36,10 @@ internal sealed class ConfigurationFormPresenter
     // ── Startup form ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Crea y muestra el formulario de configuración inicial.
-    /// Los callbacks <paramref name="onConfirmed"/> y <paramref name="onCancelled"/>
-    /// se invocan desde el hilo de UI cuando el usuario decide.
-    /// El bloqueo hasta la decisión es responsabilidad del caller.
+    /// Creates and shows the initial configuration form.
+    /// The <paramref name="onConfirmed"/> and <paramref name="onCancelled"/> callbacks
+    /// are invoked from the UI thread when the user decides.
+    /// Blocking until the decision is the caller's responsibility.
     /// </summary>
     internal void OpenStartupForm(Action onConfirmed, Action onCancelled)
     {
@@ -65,7 +65,7 @@ internal sealed class ConfigurationFormPresenter
     // ── Config dialog ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Muestra el diálogo de configuración. Si el startup form ya está abierto, lo trae al frente.
+    /// Shows the configuration dialog. If the startup form is already open, brings it to front.
     /// </summary>
     internal void ShowConfigurationDialog(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
@@ -119,10 +119,10 @@ internal sealed class ConfigurationFormPresenter
         return form;
     }
 
-    /// <summary>Se dispara cuando el formulario solicita detener el servicio.</summary>
+    /// <summary>Raised when the form requests the service to stop.</summary>
     internal event Action? StopRequested;
 
-    /// <summary>Se dispara cuando el formulario confirma inicio del servicio.</summary>
+    /// <summary>Raised when the form confirms service startup.</summary>
     internal event Action? StartupConfirmed;
 
     // ── Settings persistence ─────────────────────────────────────────────────

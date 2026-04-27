@@ -146,4 +146,19 @@
   <data name="WebRtc_Status_ErrorRetrying" xml:space="preserve"><value>WebRTC error. Retrying...</value></data>
   <data name="WebRtc_Status_NegotiationFailed" xml:space="preserve"><value>WebRTC session negotiation failed.</value></data>
   <data name="WebRtc_Status_StartFailed" xml:space="preserve"><value>WebRTC startup failed. Retrying...</value></data>
+  <data name="VDD_Status_BadMode" xml:space="preserve"><value>The requested resolution is not supported by the virtual display driver.</value></data>
+  <data name="VDD_Status_ApplyFailed" xml:space="preserve"><value>Windows created the virtual monitor but could not apply the requested position/resolution (code {0}).</value></data>
+  <data name="VDD_Status_RefreshFailed" xml:space="preserve"><value>Windows saved partial virtual monitor changes but could not refresh the display topology (code {0}).</value></data>
+  <data name="VDD_Status_DuplicateOk" xml:space="preserve"><value>Virtual monitor in duplicate (clone) mode of primary monitor at {0}x{1}.</value></data>
+  <data name="VDD_Status_ResolutionFallback" xml:space="preserve"><value>Requested resolution {0}x{1} was not available. Applied nearest supported: {2}x{3}, placed to the {4} of the primary monitor.</value></data>
+  <data name="VDD_Status_Ok" xml:space="preserve"><value>Placed to the {0} of the primary monitor at {1}x{2}.</value></data>
+  <data name="VDD_Status_SupportedModes" xml:space="preserve"><value> Supported modes: {0}.</value></data>
+
+  <data name="VDD_Status_VirtualMonitorCreated" xml:space="preserve"><value>Parsec VDD: virtual monitor ready (internal index {0}, {1} total monitors{2}). {3}</value></data>
+  <data name="VDD_Status_VirtualMonitorMonitorIndexSuffix" xml:space="preserve"><value>, Windows MonitorIndex {0}</value></data>
+  <data name="VDD_Status_MonitorNotIdentified" xml:space="preserve"><value>Windows created the virtual monitor but could not automatically identify its screen.</value></data>
+  <data name="VDD_Status_UnexpectedError" xml:space="preserve"><value>Parsec VDD: unexpected error - {0}</value></data>
+  <data name="VDD_Status_NotReadyToReconfigure" xml:space="preserve"><value>The virtual monitor is not ready to be reconfigured yet.</value></data>
+  <data name="VDD_Status_ReconfigureFailed" xml:space="preserve"><value>Could not reconfigure the virtual monitor: {0}</value></data>
+  <data name="VDD_Status_ReadCurrentFailed" xml:space="preserve"><value>Could not read the current virtual monitor configuration; Windows will keep its current layout.</value></data>
 </root>

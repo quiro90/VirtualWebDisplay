@@ -6,8 +6,8 @@ using VirtualWebDisplay.Localization;
 namespace VirtualWebDisplay.UI.TrayIcon;
 
 /// <summary>
-/// Construye el ContextMenuStrip del ícono de bandeja.
-/// Clase estática pura: recibe todo el estado como parámetros y no tiene efectos secundarios.
+/// Builds the tray icon's ContextMenuStrip.
+/// Pure static class: receives all state as parameters and has no side effects.
 /// </summary>
 internal static class TrayMenuBuilder
 {

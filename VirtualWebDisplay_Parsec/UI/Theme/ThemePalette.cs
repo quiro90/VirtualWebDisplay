@@ -3,7 +3,7 @@ using System.Drawing;
 namespace VirtualWebDisplay.UI.Theme;
 
 /// <summary>
-/// Paleta de colores para el tema visual de la aplicación.
+/// Color palette for the application's visual theme.
 /// </summary>
 internal sealed record ThemePalette(
     Color Background,

@@ -69,7 +69,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         if (!string.Equals(setRemoteDescriptionResult.ToString(), "OK", StringComparison.OrdinalIgnoreCase))
         {
             peerConnection.close();
-            throw new InvalidOperationException($"No se pudo aplicar la oferta WebRTC ({setRemoteDescriptionResult}).");
+            throw new InvalidOperationException($"Failed to apply the WebRTC offer ({setRemoteDescriptionResult}).");
         }
 
         var answer = peerConnection.createAnswer(null);

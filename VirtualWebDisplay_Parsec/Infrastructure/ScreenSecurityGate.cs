@@ -89,8 +89,9 @@ public sealed class ScreenSecurityGate
             return SecurityAuthorizeResult.InvalidCode(updatedState.AttemptsRemaining);
         }
 
+        var now = DateTimeOffset.UtcNow;
         var sessionId = Guid.NewGuid().ToString("N");
-        _authorizedSessions.TryAdd(sessionId, DateTimeOffset.UtcNow);
+        _authorizedSessions.TryAdd(sessionId, now);
 
         var cookieOptions = new CookieOptions
         {
@@ -98,7 +99,7 @@ public sealed class ScreenSecurityGate
             IsEssential = true,
             SameSite = SameSiteMode.Lax,
             Secure = context.Request.IsHttps,
-            Expires = DateTimeOffset.UtcNow.Add(SessionTtl),
+            Expires = now.Add(SessionTtl),
         };
 
         context.Response.Cookies.Append(cookieName, sessionId, cookieOptions);
