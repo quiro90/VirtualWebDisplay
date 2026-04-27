@@ -4,7 +4,7 @@ namespace VirtualWebDisplay.Configuration.Models;
 
 public sealed class VirtualWebDisplaySettings
 {
-    public string UiLanguage { get; set; } = "es";
+    public string UiLanguage { get; set; } = "en";
     public string WindowTheme { get; set; } = WindowThemeOptions.System;
     public VirtualScreenConfig Screen1 { get; set; } = CreateScreen1Defaults();
     public VirtualScreenConfig Screen2 { get; set; } = CreateScreen2Defaults();

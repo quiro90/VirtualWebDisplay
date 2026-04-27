@@ -34,6 +34,7 @@ public sealed class ResolutionConfigurationForm : Form
     private readonly ToolStripSeparator _configurationMenuSeparator;
     private readonly ToolStripMenuItem _aboutMenuItem;
     private readonly bool _isInitialStartup;
+    private readonly AppearanceSettingsStore? _appearanceStore;
 
     private string _selectedLanguageCode;
     private string _selectedWindowTheme;
@@ -55,10 +56,12 @@ public sealed class ResolutionConfigurationForm : Form
         bool isInitialStartup,
         string localIp,
         bool hasStarted = false,
-        IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
+        IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null,
+        AppearanceSettingsStore? appearanceStore = null)
     {
         _isInitialStartup = isInitialStartup;
         _wasStarted = hasStarted;
+        _appearanceStore = appearanceStore;
 
         var uiFont = TryCreateUiFont();
         if (uiFont is not null)
@@ -384,13 +387,24 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _selectedLanguageCode = AppText.NormalizeLanguage(languageCode);
         AppText.ApplyCulture(_selectedLanguageCode);
+        SaveAppearanceIfAvailable();
         ApplyLocalization();
     }
 
     private void SelectTheme(string theme)
     {
         _selectedWindowTheme = WindowThemeOptions.Normalize(theme);
+        SaveAppearanceIfAvailable();
         ApplyTheme();
+    }
+
+    private void SaveAppearanceIfAvailable()
+    {
+        _appearanceStore?.Save(new AppearanceSettings
+        {
+            UiLanguage = _selectedLanguageCode,
+            WindowTheme = _selectedWindowTheme,
+        });
     }
 
     private void ApplyTheme()

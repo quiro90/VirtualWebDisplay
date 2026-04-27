@@ -16,6 +16,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 {
     private readonly VirtualWebDisplaySettings _settings;
     private readonly VirtualScreenSettingsStore _settingsStore;
+    private readonly AppearanceSettingsStore _appearanceStore;
     private readonly string _localIp;
     private readonly Thread _uiThread;
     private readonly ManualResetEventSlim _ready = new(false);
@@ -38,10 +39,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
         return stream is not null ? new Icon(stream) : SystemIcons.Application;
     }
 
-    public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore, string localIp)
+    public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore, AppearanceSettingsStore appearanceStore, string localIp)
     {
         _settings = settings;
         _settingsStore = settingsStore;
+        _appearanceStore = appearanceStore;
         _localIp = localIp;
         _uiThread = new Thread(RunUiThread)
         {
@@ -208,7 +210,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private ResolutionConfigurationForm CreateConfigurationForm(bool isInitialStartup, bool hasStarted)
     {
         var screenRuntimes = hasStarted ? _screenRuntimes : null;
-        var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted, screenRuntimes);
+        var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted, screenRuntimes, _appearanceStore);
 
         form.ConfigurationSaved += ApplySelection;
         form.RestartRequested += RestartApplication;
@@ -222,6 +224,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         selection.Screen1.CopyTo(_settings.Screen1);
         selection.Screen2.CopyTo(_settings.Screen2);
+        _settings.UiLanguage = selection.UiLanguage;
+        _settings.WindowTheme = selection.WindowTheme;
         _settings.EnsureValid();
         _settingsStore.Save(_settings);
     }

@@ -11,10 +11,16 @@ using VirtualWebDisplay.UI.Forms;
 using VirtualWebDisplay.UI.HtmlTemplates;
 using VirtualWebDisplay.UI.TrayIcon;
 
+var appearanceStore = new AppearanceSettingsStore();
+var appearance = appearanceStore.Load();
+AppText.ApplyCulture(appearance.UiLanguage);
+
 var settingsStore = new VirtualScreenSettingsStore();
 var settings = settingsStore.Load();
 settings.EnsureValid();
-AppText.ApplyCulture(settings.UiLanguage);
+// Sync appearance into settings so the form opens with the correct values.
+settings.UiLanguage = appearance.UiLanguage;
+settings.WindowTheme = appearance.WindowTheme;
 
 using var singleInstance = SingleInstanceManager.CreateForCurrentExecutable();
 if (!singleInstance.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
@@ -32,7 +38,7 @@ var builder = WebApplication.CreateBuilder(args);
 var localIp = NetworkAddressHelper.DetectLocalIp();
 var hostName = Dns.GetHostName();
 
-using var tray = new VirtualDisplayTrayController(settings, settingsStore, localIp);
+using var tray = new VirtualDisplayTrayController(settings, settingsStore, appearanceStore, localIp);
 
 // Instanciar los templates HTML
 var webImageTemplate = new WebImagePageTemplate();
@@ -45,7 +51,11 @@ if (!autoStart && !tray.ShowStartupConfiguration())
     return;
 
 settings.EnsureValid();
-AppText.ApplyCulture(settings.UiLanguage);
+// Reload appearance — the user may have changed language/theme during startup configuration.
+appearance = appearanceStore.Load();
+AppText.ApplyCulture(appearance.UiLanguage);
+settings.UiLanguage = appearance.UiLanguage;
+settings.WindowTheme = appearance.WindowTheme;
 
 // Crear runtimes solo para las pantallas habilitadas.
 // Cada pantalla usa su puerto configurado individualmente (no se calculan puertos dinámicamente).

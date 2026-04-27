@@ -1,13 +1,12 @@
+using System.Globalization;
 using System.Text.Json;
 using VirtualWebDisplay.Configuration.Models;
 
 namespace VirtualWebDisplay.Configuration;
 
-public sealed class VirtualScreenSettingsStore
+public sealed class AppearanceSettingsStore
 {
-    public const string DirectoryName = ".virtualwebdisplay";
-    public const string FileName = "virtualscreen.user.json";
-    private const string LegacySectionName = "VirtualScreen";
+    public const string FileName = "ui-preferences.user.json";
 
     private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
 
@@ -15,15 +14,15 @@ public sealed class VirtualScreenSettingsStore
 
     public string FilePath => _filePath;
 
-    public VirtualScreenSettingsStore(string? filePath = null)
+    public AppearanceSettingsStore(string? filePath = null)
     {
         _filePath = filePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            DirectoryName,
+            VirtualScreenSettingsStore.DirectoryName,
             FileName);
     }
 
-    public VirtualWebDisplaySettings Load()
+    public AppearanceSettings Load()
     {
         if (!File.Exists(_filePath))
             return CreateDefaults();
@@ -31,23 +30,11 @@ public sealed class VirtualScreenSettingsStore
         try
         {
             var json = File.ReadAllText(_filePath);
-            var settings = JsonSerializer.Deserialize<VirtualWebDisplaySettings>(json);
+            var settings = JsonSerializer.Deserialize<AppearanceSettings>(json);
             if (settings is not null)
             {
                 settings.EnsureValid();
                 return settings;
-            }
-
-            var payload = JsonSerializer.Deserialize<Dictionary<string, VirtualScreenConfig>>(json);
-            if (payload is not null && payload.TryGetValue(LegacySectionName, out var legacyConfig) && legacyConfig is not null)
-            {
-                var migrated = new VirtualWebDisplaySettings
-                {
-                    Screen1 = legacyConfig,
-                    Screen2 = VirtualWebDisplaySettings.CreateScreen2Defaults(),
-                };
-                migrated.EnsureValid();
-                return migrated;
             }
 
             return CreateDefaults();
@@ -58,17 +45,29 @@ public sealed class VirtualScreenSettingsStore
         }
     }
 
-    public void Save(VirtualWebDisplaySettings settings)
+    public void Save(AppearanceSettings settings)
     {
         settings.EnsureValid();
         var json = JsonSerializer.Serialize(settings, WriteOptions);
         UserProfileFileHelper.WriteAtomic(_filePath, json);
     }
 
-    private static VirtualWebDisplaySettings CreateDefaults()
+    private static AppearanceSettings CreateDefaults()
     {
-        var defaults = new VirtualWebDisplaySettings();
+        var defaults = new AppearanceSettings
+        {
+            UiLanguage = DetectSystemLanguage(),
+        };
         defaults.EnsureValid();
         return defaults;
+    }
+
+    /// <summary>
+    /// Returns "es" for any Spanish locale (es-ES, es-MX, es-AR, etc.), "en" for everything else.
+    /// </summary>
+    private static string DetectSystemLanguage()
+    {
+        var twoLetter = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return string.Equals(twoLetter, "es", StringComparison.OrdinalIgnoreCase) ? "es" : "en";
     }
 }
