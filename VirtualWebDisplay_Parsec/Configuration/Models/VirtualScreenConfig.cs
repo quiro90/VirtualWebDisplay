@@ -19,8 +19,8 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public string TransmissionMethod { get; set; } = TransmissionModeOptions.Rtc;
 
-    /// <summary>Capture interval in seconds. E.g. 0.1, 0.15, 0.2</summary>
-    public double CaptureIntervalSeconds { get; set; } = 0.25;
+    /// <summary>Capture interval in seconds. E.g. 0.008 = 8ms (~125 FPS)</summary>
+    public double CaptureIntervalSeconds { get; set; } = 0.008;
 
     /// <summary>JPEG quality 1-100. Lower = faster transfer (better for e-ink).</summary>
     public int JpegQuality { get; set; } = 40;

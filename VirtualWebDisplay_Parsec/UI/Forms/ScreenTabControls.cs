@@ -147,7 +147,7 @@ public sealed class ScreenTabControls
             Left = 14,
             Top = currentTop + 18,
             Width = 72,
-            Minimum = 3M,
+            Minimum = 1M,
             Maximum = 500M,
             DecimalPlaces = 0,
             Increment = 1M,
