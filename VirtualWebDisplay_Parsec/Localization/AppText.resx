@@ -51,6 +51,8 @@
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Actualizar cada (ms):</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
+  <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Numero de receptores permitidos:</value></data>
+
   <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Seguridad de pantalla (pedir clave)</value></data>
   <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Mostrar</value></data>
   <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Ocultar</value></data>
@@ -89,6 +91,9 @@
   <data name="Program_Security_InvalidCode_Error" xml:space="preserve"><value>Clave invalida.</value></data>
   <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Demasiados intentos. Espera {0} segundos.</value></data>
   <data name="Program_Security_MissingCode_Error" xml:space="preserve"><value>Debes ingresar la clave para continuar.</value></data>
+
+  <data name="Program_ViewerLimit_Full_Message" xml:space="preserve"><value>Se configuro un maximo de espectadores</value></data>
+  <data name="Program_ViewerLimit_Full_Error" xml:space="preserve"><value>Se configuro un maximo de espectadores</value></data>
 
   <data name="Security_Page_Title" xml:space="preserve"><value>Acceso protegido - {0}</value></data>
   <data name="Security_Page_Heading" xml:space="preserve"><value>Pantalla protegida</value></data>

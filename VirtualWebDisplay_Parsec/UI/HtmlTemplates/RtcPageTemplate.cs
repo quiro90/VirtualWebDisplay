@@ -18,6 +18,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
         var statusDisconnectedRetrying = AppText.Get("WebRtc_Status_DisconnectedRetrying");
         var statusErrorRetrying = AppText.Get("WebRtc_Status_ErrorRetrying");
         var statusNegotiationFailed = AppText.Get("WebRtc_Status_NegotiationFailed");
+        var statusViewerLimitFull = AppText.Get("Program_ViewerLimit_Full_Error");
         var statusStartFailed = AppText.Get("WebRtc_Status_StartFailed");
 
         return $$"""
@@ -229,6 +230,13 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type })
                         });
+
+                        if (response.status === 429) {
+                            var payload = await response.json().catch(function () { return {}; });
+                            setStatus(payload.error || '{{statusViewerLimitFull}}');
+                            pc.close();
+                            return;
+                        }
 
                         if (!response.ok)
                             throw new Error('{{statusNegotiationFailed}}');

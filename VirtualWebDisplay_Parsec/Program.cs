@@ -212,6 +212,58 @@ static string BuildSecurityPageHtml(ScreenRuntimeContext runtime, HttpContext co
         """;
 }
 
+static string ResolveViewerKey(HttpContext context, ScreenRuntimeContext runtime)
+{
+    var cookieName = SecurityCookieName(runtime);
+    if (runtime.SecurityGate.Enabled
+        && context.Request.Cookies.TryGetValue(cookieName, out var sessionId)
+        && !string.IsNullOrWhiteSpace(sessionId))
+        return sessionId;
+    return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+}
+
+static string BuildViewerLimitPageHtml(ScreenRuntimeContext runtime)
+{
+    var title = AppText.Format("Security_Page_Title", runtime.DisplayName);
+    var message = AppText.Get("Program_ViewerLimit_Full_Message");
+    return $$"""
+        <!DOCTYPE html>
+        <html lang="{{AppText.HtmlLang}}">
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>{{WebUtility.HtmlEncode(title)}}</title>
+            <style>
+                html, body {
+                    margin: 0; width: 100%; height: 100%;
+                    font-family: Segoe UI, Arial, sans-serif;
+                    background: radial-gradient(circle at top, #1a1f2a 0%, #0c1018 60%, #06090f 100%);
+                    color: #f5f8ff;
+                }
+                .wrapper { min-height: 100%; display: grid; place-items: center; padding: 20px; }
+                .card {
+                    width: min(420px, 92vw);
+                    background: rgba(8, 12, 18, 0.85);
+                    border: 1px solid rgba(255,255,255,0.08);
+                    border-radius: 14px;
+                    padding: 24px;
+                    box-shadow: 0 20px 45px rgba(0,0,0,0.45);
+                    text-align: center;
+                }
+                h1 { margin: 0; font-size: 20px; }
+            </style>
+        </head>
+        <body>
+            <main class="wrapper">
+                <section class="card">
+                    <h1>&#128683; {{WebUtility.HtmlEncode(message)}}</h1>
+                </section>
+            </main>
+        </body>
+        </html>
+        """;
+}
+
 static async Task DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext> runtimes)
 {
     foreach (var runtime in runtimes.Reverse())
@@ -398,7 +450,27 @@ try
     app.MapGet("/", (HttpContext ctx) =>
     {
         var runtime = ResolveRuntime(ctx);
-        if (!IsAuthorized(ctx, runtime))
+        var isAuthorized = IsAuthorized(ctx, runtime);
+
+        if (!runtime.ViewerLimiter.IsUnlimited)
+        {
+            if (TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod))
+            {
+                var canContinue = isAuthorized
+                    ? runtime.ViewerLimiter.TryRegisterPolling(ResolveViewerKey(ctx, runtime))
+                    : runtime.ViewerLimiter.CanAcceptViewer();
+
+                if (!canContinue)
+                    return Results.Content(BuildViewerLimitPageHtml(runtime), "text/html");
+            }
+            else
+            {
+                if (!runtime.ViewerLimiter.CanAcceptViewer())
+                    return Results.Content(BuildViewerLimitPageHtml(runtime), "text/html");
+            }
+        }
+
+        if (!isAuthorized)
             return Results.Content(BuildSecurityPageHtml(runtime, ctx), "text/html");
 
         var browserImageFit = BrowserImageFit(runtime.Config.BrowserImageFit);
@@ -433,6 +505,15 @@ try
         if (!IsAuthorized(ctx, runtime))
             return UnauthorizedResult(runtime);
 
+        if (!runtime.ViewerLimiter.IsUnlimited)
+        {
+            var viewerKey = ResolveViewerKey(ctx, runtime);
+            if (!runtime.ViewerLimiter.TryRegisterPolling(viewerKey))
+                return Results.Json(
+                    new { error = AppText.Get("Program_ViewerLimit_Full_Error") },
+                    statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
         var frame = runtime.CaptureService.GetCurrentFrame();
         if (frame.Length == 0)
             return Results.StatusCode((int)HttpStatusCode.ServiceUnavailable);
@@ -449,6 +530,11 @@ try
 
         if (!TransmissionModeOptions.IsRtc(runtime.Config.TransmissionMethod))
             return Results.BadRequest(new { error = AppText.Get("Program_WebRtcDisabled_Error") });
+
+        if (!runtime.ViewerLimiter.CanAcceptWebRtc())
+            return Results.Json(
+                new { error = AppText.Get("Program_ViewerLimit_Full_Error") },
+                statusCode: StatusCodes.Status429TooManyRequests);
 
         if (!string.Equals(offer.Type, "offer", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(offer.Sdp))
             return Results.BadRequest(new { error = AppText.Get("Program_WebRtcInvalidOffer_Error") });
@@ -467,6 +553,15 @@ try
             return;
         }
 
+        if (!runtime.ViewerLimiter.TryEnterMjpeg())
+        {
+            ctx.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            await ctx.Response.WriteAsJsonAsync(new { error = AppText.Get("Program_ViewerLimit_Full_Error") });
+            return;
+        }
+
+        try
+        {
         ctx.Response.StatusCode = (int)HttpStatusCode.OK;
         ctx.Response.Headers.CacheControl = "no-store, no-cache";
         ctx.Response.Headers.Pragma = "no-cache";
@@ -492,6 +587,11 @@ try
             await ctx.Response.Body.WriteAsync(frame, token);
             await ctx.Response.WriteAsync("\r\n", token);
             await ctx.Response.Body.FlushAsync(token);
+        }
+        }
+        finally
+        {
+            runtime.ViewerLimiter.ExitMjpeg();
         }
     });
 

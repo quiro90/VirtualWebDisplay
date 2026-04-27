@@ -29,9 +29,10 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         _logger = logger;
     }
 
+    public int ActivePeerCount => _peers.Count;
+
     public async Task<WebRtcSessionAnswer> CreateAnswerAsync(WebRtcSessionOffer offer, CancellationToken cancellationToken)
-    {
-        var peerId = Guid.NewGuid();
+    {        var peerId = Guid.NewGuid();
         var peerConnection = new RTCPeerConnection(PeerConfiguration);
         var iceGatheringComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         RTCDataChannel? framesChannel = null;

@@ -30,6 +30,8 @@ public sealed class ScreenTabControls
     private readonly ComboBox _streamRotationCombo;
     private readonly Label _fitLabel;
     private readonly ComboBox _browserImageFitCombo;
+    private readonly Label _maxViewersLabel;
+    private readonly NumericUpDown _maxViewersInput;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
@@ -191,6 +193,19 @@ public sealed class ScreenTabControls
 
         currentTop += 54;
 
+        // Fila 5: Numero de receptores permitidos
+        _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
+        _maxViewersInput = new NumericUpDown
+        {
+            Left = 300,
+            Top = currentTop,
+            Width = 60,
+            Minimum = 0,
+            Maximum = 99,
+        };
+
+        currentTop += 28;
+
         _screenSecurityCheckBox = new CheckBox
         {
             Left = 14,
@@ -252,6 +267,8 @@ public sealed class ScreenTabControls
             _streamRotationCombo,
             _fitLabel,
             _browserImageFitCombo,
+            _maxViewersLabel,
+            _maxViewersInput,
             _screenSecurityCheckBox,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton,
@@ -274,6 +291,7 @@ public sealed class ScreenTabControls
         _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
         _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
         _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
+        _maxViewersInput.ValueChanged += (_, _) => UpdateState();
         _screenSecurityCheckBox.CheckedChanged += (_, _) => UpdateState();
     }
 
@@ -292,6 +310,7 @@ public sealed class ScreenTabControls
         _captureIntervalLabel.Text = AppText.Get("Tab_Label_CaptureIntervalMs");
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
+        _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
         _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
@@ -318,6 +337,7 @@ public sealed class ScreenTabControls
         config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
         config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
         config.JpegQuality = _jpegQualitySlider.Value;
+        config.MaxViewers = (int)_maxViewersInput.Value;
         config.ScreenSecurityEnabled = _screenSecurityCheckBox.Checked;
         config.StreamRotationDegrees = ((StreamRotationItem)_streamRotationCombo.SelectedItem!).Degrees;
         config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
@@ -335,6 +355,7 @@ public sealed class ScreenTabControls
         _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
         _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
         _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
+        _maxViewersInput.Value = Math.Clamp(config.MaxViewers, 0, 99);
         _screenSecurityCheckBox.Checked = config.ScreenSecurityEnabled;
 
         var validDegrees = new[] { 0, 90, 180, 270 };

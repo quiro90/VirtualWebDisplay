@@ -18,6 +18,8 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         CaptureService = new CaptureService(config);
         WebRtcStreamService = new WebRtcStreamService(CaptureService, config, NullLogger<WebRtcStreamService>.Instance);
         SecurityGate = new ScreenSecurityGate(config.ScreenSecurityEnabled);
+        ViewerLimiter = new ViewerLimiter(config.MaxViewers);
+        ViewerLimiter.GetWebRtcCount = () => WebRtcStreamService.ActivePeerCount;
         HostUrl = NetworkAddressHelper.BuildAccessUrl(hostName, config.Port);
         IpUrl = NetworkAddressHelper.BuildAccessUrl(localIp, config.Port);
     }
@@ -29,6 +31,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
     public CaptureService CaptureService { get; }
     public WebRtcStreamService WebRtcStreamService { get; }
     public ScreenSecurityGate SecurityGate { get; }
+    public ViewerLimiter ViewerLimiter { get; }
     public string HostUrl { get; }
     public string IpUrl { get; }
 

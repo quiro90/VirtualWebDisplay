@@ -31,6 +31,12 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public bool ScreenSecurityEnabled { get; set; }
 
+    /// <summary>
+    /// Maximum simultaneous viewers allowed for this screen.
+    /// 0 = unlimited.
+    /// </summary>
+    public int MaxViewers { get; set; }
+
     public int Port { get; set; } = 8000;
 
     /// <summary>Legacy: migrado a StreamRotationDegrees. Se mantiene para leer configs guardadas antiguas.</summary>
@@ -77,6 +83,7 @@ public sealed class VirtualScreenConfig
         CaptureIntervalSeconds = CaptureIntervalSeconds,
         JpegQuality = JpegQuality,
         ScreenSecurityEnabled = ScreenSecurityEnabled,
+        MaxViewers = MaxViewers,
         Port = Port,
         RotateForPortrait = RotateForPortrait,
         StreamRotationDegrees = StreamRotationDegrees,
@@ -98,6 +105,7 @@ public sealed class VirtualScreenConfig
         target.CaptureIntervalSeconds = CaptureIntervalSeconds;
         target.JpegQuality = JpegQuality;
         target.ScreenSecurityEnabled = ScreenSecurityEnabled;
+        target.MaxViewers = MaxViewers;
         target.Port = Port;
         target.RotateForPortrait = RotateForPortrait;
         target.StreamRotationDegrees = StreamRotationDegrees;
