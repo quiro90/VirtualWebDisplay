@@ -101,6 +101,9 @@ public sealed class ResolutionConfigurationForm : Form
         _titleLabel.MouseDown += TitleBar_MouseDown;
 
         _configurationMenu = new ContextMenuStrip();
+        _configurationMenu.ShowImageMargin = false;
+        _configurationMenu.ShowCheckMargin = false;
+        _configurationMenu.Padding = Padding.Empty;
         _languageMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_Language"));
         _windowStyleMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_WindowStyle"));
         _configurationMenu.Items.AddRange([_languageMenuItem, _windowStyleMenuItem]);
@@ -324,6 +327,20 @@ public sealed class ResolutionConfigurationForm : Form
         AddThemeItem(WindowThemeOptions.System, AppText.Get("Form_Config_WindowStyle_System"));
         AddThemeItem(WindowThemeOptions.Light, AppText.Get("Form_Config_WindowStyle_Light"));
         AddThemeItem(WindowThemeOptions.Dark, AppText.Get("Form_Config_WindowStyle_Dark"));
+
+        if (_languageMenuItem.DropDown is ToolStripDropDownMenu languageMenu)
+        {
+            languageMenu.ShowImageMargin = false;
+            languageMenu.ShowCheckMargin = false;
+            languageMenu.Padding = Padding.Empty;
+        }
+
+        if (_windowStyleMenuItem.DropDown is ToolStripDropDownMenu windowStyleMenu)
+        {
+            windowStyleMenu.ShowImageMargin = false;
+            windowStyleMenu.ShowCheckMargin = true;
+            windowStyleMenu.Padding = Padding.Empty;
+        }
     }
 
     private void AddThemeItem(string theme, string text)
@@ -374,10 +391,14 @@ public sealed class ResolutionConfigurationForm : Form
 
         _configurationMenu.BackColor = palette.Panel;
         _configurationMenu.ForeColor = palette.Foreground;
+        _configurationMenu.Renderer = new ThemedMenuRenderer(palette.Panel, palette.Border, palette.Button, palette.Foreground);
         foreach (ToolStripMenuItem root in _configurationMenu.Items)
         {
             root.BackColor = palette.Panel;
             root.ForeColor = palette.Foreground;
+            root.DropDown.BackColor = palette.Panel;
+            root.DropDown.ForeColor = palette.Foreground;
+            root.DropDown.Renderer = new ThemedMenuRenderer(palette.Panel, palette.Border, palette.Button, palette.Foreground);
             foreach (ToolStripItem child in root.DropDownItems)
             {
                 child.BackColor = palette.Panel;
@@ -422,7 +443,9 @@ public sealed class ResolutionConfigurationForm : Form
                         foregroundColor: palette.Foreground,
                         borderColor: palette.Border,
                         selectionBackgroundColor: palette.TitleButton,
-                        selectionForegroundColor: palette.TitleForeground);
+                        selectionForegroundColor: palette.TitleForeground,
+                        buttonColor: palette.Button,
+                        arrowColor: palette.ButtonText);
                     break;
                 case ThemedNumericUpDown themedNumericUpDown:
                     themedNumericUpDown.ApplyPalette(
@@ -543,9 +566,9 @@ public sealed class ResolutionConfigurationForm : Form
             Input: Color.White,
             Link: Color.FromArgb(17, 92, 203),
             LinkActive: Color.FromArgb(8, 69, 156),
-            TitleBackground: Color.FromArgb(31, 43, 62),
-            TitleForeground: Color.White,
-            TitleButton: Color.FromArgb(45, 60, 84));
+            TitleBackground: Color.FromArgb(246, 249, 254),
+            TitleForeground: Color.FromArgb(28, 36, 48),
+            TitleButton: Color.FromArgb(228, 236, 247));
 
         public static ThemePalette Dark() => new(
             Background: Color.FromArgb(20, 24, 31),
@@ -560,5 +583,38 @@ public sealed class ResolutionConfigurationForm : Form
             TitleBackground: Color.FromArgb(15, 19, 24),
             TitleForeground: Color.FromArgb(242, 245, 250),
             TitleButton: Color.FromArgb(34, 44, 56));
+    }
+
+    private sealed class ThemedMenuRenderer(Color background, Color border, Color selectedBackground, Color foreground) : ToolStripProfessionalRenderer
+    {
+        protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
+        {
+            using var brush = new SolidBrush(background);
+            e.Graphics.FillRectangle(brush, e.AffectedBounds);
+        }
+
+        protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+        {
+            using var brush = new SolidBrush(background);
+            e.Graphics.FillRectangle(brush, e.AffectedBounds);
+        }
+
+        protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
+        {
+            var bounds = new Rectangle(Point.Empty, e.Item.Size);
+            var itemBackColor = e.Item.Selected ? selectedBackground : background;
+            using var brush = new SolidBrush(itemBackColor);
+            using var borderPen = new Pen(border);
+            e.Graphics.FillRectangle(brush, bounds);
+            e.Graphics.DrawRectangle(borderPen, 0, 0, bounds.Width - 1, bounds.Height - 1);
+            e.Item.ForeColor = foreground;
+        }
+
+        protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
+        {
+            using var pen = new Pen(border);
+            var bounds = new Rectangle(0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
+            e.Graphics.DrawRectangle(pen, bounds);
+        }
     }
 }
