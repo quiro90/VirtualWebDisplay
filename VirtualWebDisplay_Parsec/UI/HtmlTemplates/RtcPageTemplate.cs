@@ -248,16 +248,21 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                     window.addEventListener('resize', syncCanvasSize);
                     syncCanvasSize();
 
-                    if ('wakeLock' in navigator) {
-                        var wakeLock = null;
-                        function acquireWakeLock() {
-                            navigator.wakeLock.request('screen').then(function (lock) { wakeLock = lock; }).catch(function () {});
+                    function startKeepAliveSignal() {
+                        function ping() {
+                            fetch('/keepalive?t=' + Date.now(), {
+                                method: 'GET',
+                                cache: 'no-store',
+                                keepalive: true,
+                                credentials: 'same-origin'
+                            }).catch(function () {});
                         }
-                        acquireWakeLock();
-                        document.addEventListener('visibilitychange', function () {
-                            if (document.visibilityState === 'visible') acquireWakeLock();
-                        });
+
+                        ping();
+                        setInterval(ping, 10000);
                     }
+
+                    startKeepAliveSignal();
 
                     connect().catch(function () {
                         setStatus('{{statusStartFailed}}');

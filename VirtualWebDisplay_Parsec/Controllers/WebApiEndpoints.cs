@@ -33,6 +33,15 @@ internal static class WebApiEndpoints
         app.MapGet("/mjpeg", (HttpContext ctx) =>
             CaptureHandler.HandleMjpeg(ctx, runtimes));
 
+        app.MapGet("/keepalive", (HttpContext ctx) =>
+        {
+            var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+            if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
+                return RuntimeAccessHelper.UnauthorizedResult(runtime);
+
+            return Results.NoContent();
+        });
+
         app.MapPost("/webrtc/offer", (HttpContext ctx, WebRtcSessionOffer offer, CancellationToken ct) =>
             WebRtcHandler.HandleOffer(ctx, offer, runtimes, ct));
 

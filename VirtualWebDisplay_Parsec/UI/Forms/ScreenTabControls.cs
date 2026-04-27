@@ -408,8 +408,10 @@ public sealed class ScreenTabControls
         {
             if (_serviceRunning)
             {
-                // Mientras el servicio corre, solo el botón de Windows Display queda activo
-                control.Enabled = control == _windowsDisplayButton;
+                // Mientras el servicio corre, bloquea configuración pero permite ver/copiar el código activo.
+                control.Enabled = control == _windowsDisplayButton
+                    || control == _screenSecurityCodeTextBox
+                    || control == _screenSecurityCodeToggleButton;
             }
             else
             {
