@@ -103,7 +103,7 @@
   <data name="Form_Config_Menu_CustomModes" xml:space="preserve"><value>Resoluciones personalizadas...</value></data>
   <data name="CustomModes_Title" xml:space="preserve"><value>Resoluciones personalizadas (Parsec VDD)</value></data>
   <data name="CustomModes_Info" xml:space="preserve"><value>Hasta 5 resoluciones personalizadas. Dejá un slot vacío para eliminarlo. Guardar requiere permisos de administrador.</value></data>
-  <data name="CustomModes_Range" xml:space="preserve"><value>A/Al: 300–4200 | Hz: 24–244</value></data>
+  <data name="CustomModes_DriverWarning" xml:space="preserve"><value>Las resoluciones personalizadas deben ser aceptadas por su controlador de Windows. Si no son aceptadas, no aparecen.</value></data>
   <data name="CustomModes_Reset" xml:space="preserve"><value>Resetear</value></data>
   <data name="CustomModes_Save" xml:space="preserve"><value>Guardar</value></data>
   <data name="CustomModes_Saved" xml:space="preserve"><value>Resoluciones guardadas. Estarán disponibles la próxima vez que se cree un display virtual.</value></data>

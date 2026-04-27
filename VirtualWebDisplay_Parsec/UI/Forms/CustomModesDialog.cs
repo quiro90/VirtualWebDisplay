@@ -47,7 +47,7 @@ public sealed class CustomModesDialog : Form
 
         FormBorderStyle = FormBorderStyle.None;
         StartPosition   = FormStartPosition.CenterParent;
-        ClientSize      = new Size(460, 326);
+        ClientSize      = new Size(460, 356);
         MaximizeBox     = false;
         MinimizeBox     = false;
         ShowInTaskbar   = false;
@@ -100,13 +100,7 @@ public sealed class CustomModesDialog : Form
         var headerW    = new Label { Text = "W",     Left = 78,  Top = 88, Width = 72,  Height = 20, TextAlign = ContentAlignment.MiddleCenter, Font = new Font(Font, FontStyle.Bold) };
         var headerH    = new Label { Text = "H",     Left = 174, Top = 88, Width = 72,  Height = 20, TextAlign = ContentAlignment.MiddleCenter, Font = new Font(Font, FontStyle.Bold) };
         var headerHz   = new Label { Text = "Hz",    Left = 270, Top = 88, Width = 56,  Height = 20, TextAlign = ContentAlignment.MiddleCenter, Font = new Font(Font, FontStyle.Bold) };
-        var headerRange = new Label
-        {
-            Text      = AppText.Get("CustomModes_Range"),
-            Left      = 340, Top = 88, Width = 110, Height = 20,
-            ForeColor = Color.Gray,
-        };
-        Controls.AddRange([headerSlot, headerW, headerH, headerHz, headerRange]);
+        Controls.AddRange([headerSlot, headerW, headerH, headerHz]);
 
         // ── Slots ─────────────────────────────────────────────────────────
         _slots = new (TextBox, TextBox, TextBox)[Slots];
@@ -152,7 +146,35 @@ public sealed class CustomModesDialog : Form
         };
         _saveButton.Click += SaveButton_Click;
 
-        Controls.AddRange([_titleBarPanel, _infoLabel, _resetButton, _saveButton]);
+        // ── Advertencia driver ────────────────────────────────────────────
+        var warningTop = ClientSize.Height - 78;
+        var warningPanel = new Panel
+        {
+            Left      = 16, Top = warningTop,
+            Width     = ClientSize.Width - 32, Height = 28,
+            BackColor = Color.FromArgb(255, 251, 180),
+            Anchor    = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+        };
+        var warningEmoji = new Label
+        {
+            Text      = "⚠",
+            Left      = 6, Top = 0,
+            Width     = 22, Height = 28,
+            TextAlign = ContentAlignment.MiddleCenter,
+            ForeColor = Color.FromArgb(120, 80, 0),
+            Font      = new Font(Font.FontFamily, 11, FontStyle.Regular),
+        };
+        var warningText = new Label
+        {
+            Text      = AppText.Get("CustomModes_DriverWarning"),
+            Left      = 30, Top = 0,
+            Width     = warningPanel.Width - 36, Height = 28,
+            TextAlign = ContentAlignment.MiddleLeft,
+            ForeColor = Color.FromArgb(100, 60, 0),
+        };
+        warningPanel.Controls.AddRange([warningEmoji, warningText]);
+
+        Controls.AddRange([_titleBarPanel, _infoLabel, warningPanel, _resetButton, _saveButton]);
 
         AcceptButton = _saveButton;
         CancelButton = _closeButton;
