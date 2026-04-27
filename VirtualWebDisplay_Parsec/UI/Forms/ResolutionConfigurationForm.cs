@@ -31,6 +31,8 @@ public sealed class ResolutionConfigurationForm : Form
     private readonly ContextMenuStrip _configurationMenu;
     private readonly ToolStripMenuItem _languageMenuItem;
     private readonly ToolStripMenuItem _windowStyleMenuItem;
+    private readonly ToolStripSeparator _configurationMenuSeparator;
+    private readonly ToolStripMenuItem _aboutMenuItem;
     private readonly bool _isInitialStartup;
 
     private string _selectedLanguageCode;
@@ -107,7 +109,10 @@ public sealed class ResolutionConfigurationForm : Form
         _configurationMenu.Padding = Padding.Empty;
         _languageMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_Language"));
         _windowStyleMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_WindowStyle"));
-        _configurationMenu.Items.AddRange([_languageMenuItem, _windowStyleMenuItem]);
+        _configurationMenuSeparator = new ToolStripSeparator();
+        _aboutMenuItem = new ToolStripMenuItem(AppText.Get("Form_Config_Menu_About"));
+        _aboutMenuItem.Click += (_, _) => ShowAboutDialog();
+        _configurationMenu.Items.AddRange([_languageMenuItem, _windowStyleMenuItem, _configurationMenuSeparator, _aboutMenuItem]);
 
         _configurationButton = new Button
         {
@@ -326,6 +331,7 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _languageMenuItem.Text = AppText.Get("Form_Config_Menu_Language");
         _windowStyleMenuItem.Text = AppText.Get("Form_Config_Menu_WindowStyle");
+        _aboutMenuItem.Text = AppText.Get("Form_Config_Menu_About");
 
         _languageMenuItem.DropDownItems.Clear();
         foreach (var language in AppText.SupportedLanguages)
@@ -412,10 +418,14 @@ public sealed class ResolutionConfigurationForm : Form
         _configurationMenu.BackColor = palette.Panel;
         _configurationMenu.ForeColor = palette.Foreground;
         _configurationMenu.Renderer = new ThemedMenuRenderer(palette.Panel, palette.Border, palette.Button, palette.Foreground);
-        foreach (ToolStripMenuItem root in _configurationMenu.Items)
+        foreach (ToolStripItem rootItem in _configurationMenu.Items)
         {
-            root.BackColor = palette.Panel;
-            root.ForeColor = palette.Foreground;
+            rootItem.BackColor = palette.Panel;
+            rootItem.ForeColor = palette.Foreground;
+
+            if (rootItem is not ToolStripMenuItem root)
+                continue;
+
             root.DropDown.BackColor = palette.Panel;
             root.DropDown.ForeColor = palette.Foreground;
             root.DropDown.Renderer = new ThemedMenuRenderer(palette.Panel, palette.Border, palette.Button, palette.Foreground);
@@ -449,6 +459,13 @@ public sealed class ResolutionConfigurationForm : Form
         }
 
         return false;
+    }
+
+    private void ShowAboutDialog()
+    {
+        var dark = ResolveDarkMode();
+        var palette = dark ? ThemePalette.Dark() : ThemePalette.Light();
+        AboutDialog.Show(this, palette.Background, palette.Foreground, palette.Panel, palette.Border);
     }
 
     private static void ApplyThemeRecursive(Control root, ThemePalette palette)
