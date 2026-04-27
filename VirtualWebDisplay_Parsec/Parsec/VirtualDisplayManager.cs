@@ -13,7 +13,7 @@ namespace VirtualWebDisplay.Parsec;
 /// </summary>
 public sealed class VirtualDisplayManager : IDisposable
 {
-    public const string InstallUrl = "https://parsec.app/downloads";
+    public const string InstallUrl = "https://builds.parsec.app/vdd/parsec-vdd-0.45.0.0.exe";
 
     private const string AdapterGuid = "{00b41627-04c4-429e-a26e-0265cf50c8fa}";
 

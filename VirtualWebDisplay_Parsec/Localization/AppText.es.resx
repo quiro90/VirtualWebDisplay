@@ -100,7 +100,7 @@
   <data name="About_Message" xml:space="preserve"><value>Virtual Web Display fue creado para retransmitir un escritorio virtual a cualquier otro dispositivo conectado a la misma red local, de una forma simple y directa.</value></data>
   <data name="About_Footer" xml:space="preserve"><value>Gracias por elegir Virtual Web Display.</value></data>
 
-  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Instalador oficial:</value></data>
+  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Recomendamos bajar el driver VDD 0.45.0.0:</value></data>
   <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Abrir página de descarga</value></data>
   <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copiar URL</value></data>
   <data name="InstallDialog_Copied" xml:space="preserve"><value>Copiada</value></data>

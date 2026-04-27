@@ -99,7 +99,7 @@
   <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Code</value></data>
   <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply the new changes.</value></data>
 
-  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Official installer:</value></data>
+  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>We recommend downloading VDD driver 0.45.0.0:</value></data>
   <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Open download page</value></data>
   <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copy URL</value></data>
   <data name="InstallDialog_Copied" xml:space="preserve"><value>Copied</value></data>
