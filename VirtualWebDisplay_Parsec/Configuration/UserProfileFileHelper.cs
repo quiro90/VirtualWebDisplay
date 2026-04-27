@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace VirtualWebDisplay.Configuration;
 
 /// <summary>
@@ -5,6 +7,39 @@ namespace VirtualWebDisplay.Configuration;
 /// </summary>
 internal static class UserProfileFileHelper
 {
+    /// <summary>Opciones de serialización JSON compartidas por todos los stores.</summary>
+    internal static readonly JsonSerializerOptions JsonWriteOptions = new() { WriteIndented = true };
+
+    /// <summary>
+    /// Devuelve la ruta completa de un fichero de configuración dentro del directorio de perfil
+    /// <c>~/.virtualwebdisplay/{fileName}</c>.
+    /// </summary>
+    internal static string GetFilePath(string fileName) =>
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            VirtualScreenSettingsStore.DirectoryName,
+            fileName);
+
+    /// <summary>
+    /// Lee y deserializa <typeparamref name="T"/> desde <paramref name="filePath"/>.
+    /// Devuelve <c>null</c> si el fichero no existe o si ocurre cualquier error de I/O o JSON.
+    /// </summary>
+    internal static T? TryDeserialize<T>(string filePath) where T : class
+    {
+        if (!File.Exists(filePath))
+            return null;
+
+        try
+        {
+            var json = File.ReadAllText(filePath);
+            return JsonSerializer.Deserialize<T>(json);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>
     /// Writes <paramref name="content"/> to <paramref name="filePath"/> atomically using a
     /// temp file, then marks both the parent directory and the file as hidden on Windows.

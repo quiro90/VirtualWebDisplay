@@ -8,47 +8,31 @@ public sealed class AppearanceSettingsStore
 {
     public const string FileName = "ui-preferences.user.json";
 
-    private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
-
     private readonly string _filePath;
 
     public string FilePath => _filePath;
 
     public AppearanceSettingsStore(string? filePath = null)
     {
-        _filePath = filePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            VirtualScreenSettingsStore.DirectoryName,
-            FileName);
+        _filePath = filePath ?? UserProfileFileHelper.GetFilePath(FileName);
     }
 
     public AppearanceSettings Load()
     {
-        if (!File.Exists(_filePath))
-            return CreateDefaults();
-
-        try
+        var settings = UserProfileFileHelper.TryDeserialize<AppearanceSettings>(_filePath);
+        if (settings is not null)
         {
-            var json = File.ReadAllText(_filePath);
-            var settings = JsonSerializer.Deserialize<AppearanceSettings>(json);
-            if (settings is not null)
-            {
-                settings.EnsureValid();
-                return settings;
-            }
+            settings.EnsureValid();
+            return settings;
+        }
 
-            return CreateDefaults();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
-        {
-            return CreateDefaults();
-        }
+        return CreateDefaults();
     }
 
     public void Save(AppearanceSettings settings)
     {
         settings.EnsureValid();
-        var json = JsonSerializer.Serialize(settings, WriteOptions);
+        var json = JsonSerializer.Serialize(settings, UserProfileFileHelper.JsonWriteOptions);
         UserProfileFileHelper.WriteAtomic(_filePath, json);
     }
 

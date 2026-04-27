@@ -9,59 +9,43 @@ public sealed class VirtualScreenSettingsStore
     public const string FileName = "virtualscreen.user.json";
     private const string LegacySectionName = "VirtualScreen";
 
-    private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
-
     private readonly string _filePath;
 
     public string FilePath => _filePath;
 
     public VirtualScreenSettingsStore(string? filePath = null)
     {
-        _filePath = filePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            DirectoryName,
-            FileName);
+        _filePath = filePath ?? UserProfileFileHelper.GetFilePath(FileName);
     }
 
     public VirtualWebDisplaySettings Load()
     {
-        if (!File.Exists(_filePath))
-            return CreateDefaults();
-
-        try
+        var settings = UserProfileFileHelper.TryDeserialize<VirtualWebDisplaySettings>(_filePath);
+        if (settings is not null)
         {
-            var json = File.ReadAllText(_filePath);
-            var settings = JsonSerializer.Deserialize<VirtualWebDisplaySettings>(json);
-            if (settings is not null)
-            {
-                settings.EnsureValid();
-                return settings;
-            }
-
-            var payload = JsonSerializer.Deserialize<Dictionary<string, VirtualScreenConfig>>(json);
-            if (payload is not null && payload.TryGetValue(LegacySectionName, out var legacyConfig) && legacyConfig is not null)
-            {
-                var migrated = new VirtualWebDisplaySettings
-                {
-                    Screen1 = legacyConfig,
-                    Screen2 = VirtualWebDisplaySettings.CreateScreen2Defaults(),
-                };
-                migrated.EnsureValid();
-                return migrated;
-            }
-
-            return CreateDefaults();
+            settings.EnsureValid();
+            return settings;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+
+        var legacy = UserProfileFileHelper.TryDeserialize<Dictionary<string, VirtualScreenConfig>>(_filePath);
+        if (legacy is not null && legacy.TryGetValue(LegacySectionName, out var legacyConfig) && legacyConfig is not null)
         {
-            return CreateDefaults();
+            var migrated = new VirtualWebDisplaySettings
+            {
+                Screen1 = legacyConfig,
+                Screen2 = VirtualWebDisplaySettings.CreateScreen2Defaults(),
+            };
+            migrated.EnsureValid();
+            return migrated;
         }
+
+        return CreateDefaults();
     }
 
     public void Save(VirtualWebDisplaySettings settings)
     {
         settings.EnsureValid();
-        var json = JsonSerializer.Serialize(settings, WriteOptions);
+        var json = JsonSerializer.Serialize(settings, UserProfileFileHelper.JsonWriteOptions);
         UserProfileFileHelper.WriteAtomic(_filePath, json);
     }
 

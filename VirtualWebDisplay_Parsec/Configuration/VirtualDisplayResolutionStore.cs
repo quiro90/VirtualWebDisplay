@@ -10,39 +10,23 @@ public sealed class VirtualDisplayResolutionStore
 {
     public const string FileName = "virtualscreen.display.json";
 
-    private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
-
     private readonly string _filePath;
 
     public VirtualDisplayResolutionStore(string? filePath = null)
     {
-        _filePath = filePath ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            VirtualScreenSettingsStore.DirectoryName,
-            FileName);
+        _filePath = filePath ?? UserProfileFileHelper.GetFilePath(FileName);
     }
 
     /// <summary>Carga el mapa de resoluciones. Clave: id del runtime ("screen1", "screen2").</summary>
     public Dictionary<string, (int Width, int Height)> Load()
     {
-        if (!File.Exists(_filePath))
+        var raw = UserProfileFileHelper.TryDeserialize<Dictionary<string, ResolutionEntry>>(_filePath);
+        if (raw is null)
             return new();
 
-        try
-        {
-            var json = File.ReadAllText(_filePath);
-            var raw = JsonSerializer.Deserialize<Dictionary<string, ResolutionEntry>>(json);
-            if (raw is null)
-                return new();
-
-            return raw
-                .Where(kv => kv.Value.Width > 0 && kv.Value.Height > 0)
-                .ToDictionary(kv => kv.Key, kv => (kv.Value.Width, kv.Value.Height));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
-        {
-            return new();
-        }
+        return raw
+            .Where(kv => kv.Value.Width > 0 && kv.Value.Height > 0)
+            .ToDictionary(kv => kv.Key, kv => (kv.Value.Width, kv.Value.Height));
     }
 
     /// <summary>Guarda el mapa de resoluciones.</summary>
@@ -52,7 +36,7 @@ public sealed class VirtualDisplayResolutionStore
             kv => kv.Key,
             kv => new ResolutionEntry { Width = kv.Value.Width, Height = kv.Value.Height });
 
-        var json = JsonSerializer.Serialize(raw, WriteOptions);
+        var json = JsonSerializer.Serialize(raw, UserProfileFileHelper.JsonWriteOptions);
         UserProfileFileHelper.WriteAtomic(_filePath, json);
     }
 
