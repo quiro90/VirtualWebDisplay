@@ -43,13 +43,19 @@ Configuración persistida
     -> VirtualWebDisplaySettings  (Screen1 + Screen2)
     -> VirtualScreenConfig        (config de una pantalla)
 
-Arranque
-    -> Program.cs
+Arranque (Program.cs — composition root ~50 líneas)
     -> valida instancia única (SingleInstanceManager)
-    -> carga settings
+    -> carga settings (VirtualScreenSettingsStore)
     -> muestra UI inicial (VirtualDisplayTrayController)
-    -> verifica Parsec VDD
-    -> crea runtimes por pantalla habilitada
+    -> obtiene TLS cert (LocalCertificateProvider)
+    -> ApplicationLifecycleManager.RunAsync(...)
+        -> RuntimeFactory.TryCreate(...)     — verifica driver Parsec VDD, construye runtimes
+        -> KestrelConfigurator.Configure(...)  — asigna puertos HTTP/HTTPS a Kestrel
+        -> RuntimeStartupHelper.StartRuntimesAsync(...)
+        -> WebApiEndpoints.Map(app, runtimes) — registra endpoints HTTP
+        -> await app.RunAsync()
+        -> RuntimeCleanupHelper (al salir)
+        -> bucle stop/restart coordinado con tray
 
 Runtime por pantalla
     -> ScreenRuntimeContext
@@ -58,10 +64,17 @@ Runtime por pantalla
         -> WebRtcStreamService     (emisión WebRTC)
     -> ViewerLimiter          (cupo de viewers por pantalla)
 
+Endpoints HTTP (Controllers/)
+    -> WebApiEndpoints.cs          — orquestador, delega en handlers
+    -> Handlers/AuthHandler.cs     — POST /auth/login
+    -> Handlers/IndexHandler.cs    — GET /
+    -> Handlers/CaptureHandler.cs  — GET /cap, GET /mjpeg
+    -> Handlers/WebRtcHandler.cs   — POST /webrtc/offer
+
 Acceso desde navegador/dispositivo
     -> HTTP local por puerto dedicado por pantalla
-  -> si el cupo (`MaxViewers`) ya fue alcanzado, muestra mensaje y no continúa
-  -> si `ScreenSecurityEnabled=true` y todavía hay cupo, muestra login por clave (cookie HTTP-only)
+    -> si el cupo (`MaxViewers`) ya fue alcanzado, muestra mensaje y no continúa
+    -> si `ScreenSecurityEnabled=true` y hay cupo, muestra login por clave (cookie HTTP-only)
     -> página HTML según modo (WebImage o Rtc)
     -> consumo de frames JPEG
 ```

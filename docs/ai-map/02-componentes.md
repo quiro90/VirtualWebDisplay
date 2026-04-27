@@ -1,31 +1,91 @@
 ﻿# Mapeo por componentes
 
 ## `Program.cs`
-**Rol:** composición y arranque de toda la aplicación.
+**Rol:** composition root puro (~50 líneas, top-level statements).
 
 ### Responsabilidades
-- garantizar instancia única con `SingleInstanceManager`,
+- inicializar `AppearanceSettingsStore` y aplicar cultura/idioma (`AppText.ApplyCulture`),
 - cargar configuración con `VirtualScreenSettingsStore`,
-- abrir la UI inicial del tray (`VirtualDisplayTrayController`),
+- garantizar instancia única con `SingleInstanceManager`,
 - detectar IP/hostname local con `NetworkAddressHelper`,
-- verificar disponibilidad del driver virtual (`VirtualDisplayManager.VerifyDriverAvailability()`),
-- crear `ScreenRuntimeContext` por cada pantalla habilitada,
-- exponer endpoints HTTP,
-- generar HTML cliente para `WebImage` y `WebRTC`.
+- instanciar `VirtualDisplayTrayController` y mostrar UI inicial,
+- obtener certificado TLS local (`LocalCertificateProvider.GetOrCreate`),
+- delegar el ciclo de vida completo a `ApplicationLifecycleManager.RunAsync(...)`.
 
-### Funciones clave
-- `ShowInstallDialog(...)`
-- `BrowserImageFit(string? fit)` — normaliza a `fill`, `cover` o `contain`
-- `BuildWebImagePage(string title, string browserImageFit, int intervalMs)`
-- `BuildRtcPage(string title, string browserImageFit)`
-- `DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext>)`
-- `ResolveRuntime(HttpContext)` — resuelve el runtime según el puerto local de la conexión
+### Ya NO contiene
+- construcción de runtimes (→ `RuntimeFactory`),
+- configuración de Kestrel (→ `KestrelConfigurator`),
+- bucle while de stop/restart (→ `ApplicationLifecycleManager`),
+- registro de endpoints HTTP (→ `WebApiEndpoints` + Handlers),
+- P/Invoke de cursor (→ `CursorNativeMethods`).
 
-### HTML embebido
-Las páginas HTML del cliente están embebidas como strings interpolados. Ambas páginas:
-- usan `object-fit` configurado por `BrowserImageFit` (`fill` = estirar, `cover` = recortar, `contain` = barras),
-- usan `width: 100vw; height: 100vh` para ocupar toda la pantalla del cliente,
-- son responsivas a cambios de viewport con `syncViewport()`.
+---
+
+## `Infrastructure/ApplicationLifecycleManager.cs`
+**Rol:** gestionar el ciclo de vida completo de la aplicación (bucle principal).
+
+### Responsabilidades
+- iterar el bucle `while(keepRunning)`,
+- llamar a `RuntimeFactory.TryCreate(...)` para construir runtimes,
+- crear y configurar `WebApplication` vía `KestrelConfigurator`,
+- arrancar runtimes con `RuntimeStartupHelper`,
+- coordinar acciones del tray (exit / stop),
+- registrar endpoints con `WebApiEndpoints.Map`,
+- limpiar recursos con `RuntimeCleanupHelper` en el bloque `finally`,
+- gestionar el flujo stop → esperar → reiniciar con recarga de apariencia.
+
+---
+
+## `Infrastructure/RuntimeFactory.cs`
+**Rol:** construir la lista de `ScreenRuntimeContext` activos y verificar el driver.
+
+### Responsabilidades
+- construir `ScreenRuntimeContext` para Screen1 y (si está habilitada) Screen2,
+- verificar que el driver Parsec VDD está instalado cuando se requieren pantallas no duplicadas,
+- mostrar `InstallDialog` y retornar `null` si el driver falta.
+
+---
+
+## `Infrastructure/KestrelConfigurator.cs`
+**Rol:** configurar puertos HTTP y HTTPS en Kestrel por runtime.
+
+### API pública
+- `Configure(WebApplicationBuilder builder, IReadOnlyList<ScreenRuntimeContext> runtimes, X509Certificate2 tlsCert)` — registra `ListenAnyIP(port)` y `ListenAnyIP(port+1, UseHttps)` por cada runtime.
+
+---
+
+## `Infrastructure/Interop/CursorNativeMethods.cs`
+**Rol:** encapsular todos los P/Invoke relacionados con el cursor de Windows.
+
+### Contiene
+- structs `POINT`, `CURSORINFO`, `ICONINFO`,
+- imports de `GetCursorInfo`, `GetIconInfo`, `DrawIcon`, `DestroyIcon`, `GetCursorPos`,
+- constante `CURSOR_SHOWING`.
+
+---
+
+## `Controllers/WebApiEndpoints.cs`
+**Rol:** orquestador de endpoints HTTP — registra rutas y delega en handlers.
+
+### Endpoints registrados
+| Ruta | Handler |
+|---|---|
+| `POST /auth/login` | `AuthHandler` |
+| `GET /` | `IndexHandler` |
+| `GET /cap`, `GET /mjpeg` | `CaptureHandler` |
+| `POST /webrtc/offer` | `WebRtcHandler` |
+
+---
+
+## `Controllers/Handlers/`
+**Rol:** un handler por grupo de endpoints, cada uno con responsabilidad única.
+
+| Archivo | Responsabilidad |
+|---|---|
+| `AuthHandler.cs` | Validar clave y emitir cookie HTTP-only |
+| `IndexHandler.cs` | Servir la página HTML raíz según modo (WebImage / Rtc) |
+| `CaptureHandler.cs` | Servir frames JPEG (`/cap`) y stream MJPEG (`/mjpeg`) |
+| `WebRtcHandler.cs` | Negociar oferta SDP WebRTC (`/webrtc/offer`) |
 
 ---
 
@@ -90,8 +150,8 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 ### Responsabilidades
 - resolver qué monitor capturar (`MonitorIndex`),
 - copiar la pantalla con `Graphics.CopyFromScreen`,
-- dibujar el cursor encima si está visible,
-- rotar si `RotateForPortrait` está activo,
+- dibujar el cursor encima si está visible (via `CursorNativeMethods`),
+- rotar si `StreamRotationDegrees` está configurado,
 - codificar a JPEG con la calidad configurada (`JpegQuality`),
 - respetar el intervalo de captura (`CaptureIntervalSeconds`),
 - guardar en memoria el último frame.
@@ -102,6 +162,7 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 
 ### Notas
 - hereda de `BackgroundService`,
+- todo el P/Invoke de cursor está delegado a `Infrastructure/Interop/CursorNativeMethods.cs`,
 - comparte el último frame por referencia para que `/cap`, `/mjpeg` y `WebRtcStreamService` reutilicen la misma captura sin duplicar memoria,
 - tanto `WebImage` como `Rtc` usan los mismos parámetros `CaptureIntervalSeconds` y `JpegQuality`.
 
@@ -131,37 +192,26 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 ---
 
 ## `VirtualDisplayTrayController.cs`
-**Rol:** gestionar el tray icon y el formulario de configuración de pantallas.
+**Rol:** gestionar el tray icon y coordinar la UI de configuración.
 
 ### Responsabilidades
 - ejecutar el bucle de UI de Windows Forms en un hilo STA dedicado,
 - mostrar el formulario de configuración inicial (`ShowStartupConfiguration`),
-- construir el menú contextual del tray,
-- actualizar el texto del tray con el estado de los runtimes,
-- mostrar balloon tips al arrancar y al guardar,
-- persistir cambios de configuración vía `VirtualScreenSettingsStore`.
+- coordinar acciones de runtime (exit / stop) vía `ConfigureRuntimeActions`,
+- delegar construcción del menú contextual a `TrayMenuBuilder`,
+- delegar la presentación del formulario de configuración a `ConfigurationFormPresenter`,
+- emitir notificaciones balloon tip al arrancar/detener.
 
-### Clase interna: `ResolutionConfigurationForm`
-Form embebido dentro de `VirtualDisplayTrayController` que contiene dos tabs (Pantalla 1 / Pantalla 2), cada una con `ScreenTabControls` que expone:
-- combo de perfil de resolución
-- inputs de ancho/alto (habilitados solo en perfil personalizado)
-- botón de rotación ↕
-- combo de posición del monitor virtual (derecha/izquierda/arriba/abajo)
-- input de puerto (editable solo en el arranque inicial)
-- combo de modo de transmisión (WebImage / WebRTC)
-- input de intervalo de captura (segundos)
-- slider de calidad JPEG
-- combo de rotación de imagen (0° / 90° / 180° / 270°)
-- **combo de ajuste de imagen** (`BrowserImageFit`): Estirar/Recortar/Contener
+### Clases colaboradoras (extraídas)
+| Clase | Responsabilidad |
+|---|---|
+| `UI/TrayIcon/TrayMenuBuilder.cs` | `Build(...)` estático — construye el `ContextMenuStrip` |
+| `UI/TrayIcon/ConfigurationFormPresenter.cs` | Abrir/cerrar `ResolutionConfigurationForm`, notificaciones |
 
-### Método clave
-- `ConfigureRuntimeActions(Action exitRequested, IReadOnlyList<ScreenRuntimeContext>)`
-- `UpdateStatus(string status)`
+### Métodos clave
+- `ConfigureRuntimeActions(Action exit, Action stop, IReadOnlyList<ScreenRuntimeContext>)`
+- `NotifyServiceStopped()` / `WaitForServiceStartAsync()`
 - `PostToUi(Action)` — despacha al hilo STA seguro
-
-### Copia y clonado de config
-- La copia entre configs se hace directamente vía `VirtualScreenConfig.CopyTo(target)`, inlineado en `ApplySelection`.
-- El clonado del par Screen1+Screen2 se hace inline en `ResolutionConfigurationForm` con `settings.Screen1.Clone()` / `settings.Screen2.Clone()`.
 
 ---
 

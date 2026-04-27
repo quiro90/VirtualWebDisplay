@@ -34,32 +34,23 @@ El campo `BrowserImageFit` ya existía en `VirtualScreenConfig` pero no tenía c
 - `_portInput.Enabled` como estado implícito reemplazado por campo explícito `_portEditable` en `ScreenTabControls`.
 - Fallbacks muertos en `Initialize` eliminados: `config.Width > 0 ? config.Width : config.CustomWidth` y `w > 0 ? w : 1080` — `EnsureValid` ya garantiza `Width > 0` antes de construir el form.
 
-### 8. Limpieza del campo legacy `RotateForPortrait` tras migración
-`MigrateRotation` en `VirtualWebDisplaySettings` migraba el valor a `StreamRotationDegrees` pero nunca reseteaba `RotateForPortrait`. Esto provocaba que el campo legacy persistiera como `true` en el JSON en cada save posterior, aunque ya no tuviese efecto.
-Fix: `config.RotateForPortrait = false` se ejecuta siempre al final de `MigrateRotation`, limpiando el campo en el próximo guardado.
+### 9. Refactoring SOLID de Program.cs y clases de infraestructura
+`Program.cs` pasó de ~685 líneas (monolítico) a ~50 líneas (composition root puro).
+Se extrajeron 16 clases con responsabilidad única:
+- `Infrastructure/RuntimeFactory.cs`, `KestrelConfigurator.cs`, `ApplicationLifecycleManager.cs`
+- `Infrastructure/Interop/CursorNativeMethods.cs`
+- `Controllers/Handlers/` — 4 handlers (Auth, Index, Capture, WebRtc)
+- `UI/Theme/` — ThemePalette, ThemedMenuRenderer, FormThemeApplicator
+- `UI/Forms/SettingsFormValidator.cs`
+- `UI/TrayIcon/TrayMenuBuilder.cs`, `ConfigurationFormPresenter.cs`
 
 ---
 
 ## Deuda técnica vigente, ordenada por prioridad
 
-## Alta prioridad
-
-### A. HTML cliente embebido en `Program.cs`
-Las páginas de `WebImage` y `Rtc` están definidas como strings interpolados grandes en el entry point.
-
-#### Riesgo
-- `Program.cs` mezcla bootstrapping, servidor y frontend,
-- hace más difícil evolucionar la UI web independientemente,
-- complica testing o reutilización de las páginas.
-
-#### Limpieza futura sugerida
-Mover las plantillas a una clase generadora dedicada o archivos estáticos embebidos.
-
----
-
 ## Prioridad media
 
-### B. `VirtualScreenConfig.Clone()` y `CopyTo()` manuales campo a campo
+### A. `VirtualScreenConfig.Clone()` y `CopyTo()` manuales campo a campo
 Ambos métodos enumeran todas las propiedades a mano. Si se agrega un campo nuevo a `VirtualScreenConfig`, es fácil olvidar actualizarlos — especialmente `Clone()`, que no genera error de compilación si falta un campo.
 
 #### Limpieza futura sugerida
@@ -67,7 +58,7 @@ Reemplazar con un mecanismo de copia automática (record, AutoMapper, reflexión
 
 ---
 
-### C. Servicios acoplados al modelo mutable
+### B. Servicios acoplados al modelo mutable
 `CaptureService` y `WebRtcStreamService` leen directamente `VirtualScreenConfig` mutable.
 
 #### Riesgo
@@ -79,7 +70,7 @@ Separar configuración editable de snapshot de runtime aplicado.
 
 ---
 
-### D. Mezcla de idioma técnico y de negocio
+### C. Mezcla de idioma técnico y de negocio
 El código combina nombres y mensajes en inglés y español.
 
 #### Impacto
@@ -89,20 +80,7 @@ No rompe funcionalidad, pero aumenta fricción documental y consistencia interna
 
 ## Baja prioridad
 
-### E. `Program.cs` concentra demasiadas responsabilidades
-Actualmente actúa como:
-- bootstrapper,
-- compositor de runtimes,
-- fábrica de páginas HTML,
-- definición de endpoints,
-- control de errores de arranque.
-
-#### Limpieza futura sugerida
-Separar en piezas pequeñas: startup/runtime bootstrap, route mapping, page rendering.
-
----
-
-### F. Uso intensivo de sleeps y sondeo
+### D. Uso intensivo de sleeps y sondeo
 Hay varios `Thread.Sleep` y polling ligero para detectar el monitor virtual o esperar frames.
 
 #### Nota
