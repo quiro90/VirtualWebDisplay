@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.Parsec;
 
@@ -89,14 +90,11 @@ public sealed class VirtualDisplayManager : IDisposable
     {
         if (!DriverApi.OpenHandle(AdapterGuid, out var handle))
         {
-            return (false,
-                "No se encontró el adaptador de Parsec Virtual Display instalado o accesible.\n" +
-                $"Descargá e instalá Parsec desde: {InstallUrl}\n" +
-                "Asegurate de instalar la versión de escritorio que incluye el Virtual Display Driver (VDD).");
+            return (false, AppText.Get("Parsec_Driver_NotFound"));
         }
 
         DriverApi.CloseHandle(handle);
-        return (true, "Parsec VDD detectado correctamente.");
+        return (true, AppText.Get("Parsec_Driver_Detected"));
     }
 
     public (bool ok, string message) TryCreate(VirtualScreenConfig config)
@@ -114,8 +112,7 @@ public sealed class VirtualDisplayManager : IDisposable
             if (!DriverApi.AddDisplay(_handle, out _displayIdx))
             {
                 Reset();
-                return (false,
-                    "El driver de Parsec VDD está instalado, pero no se pudo crear el display virtual automáticamente.");
+                return (false, AppText.Get("Parsec_Driver_CreateDisplayFailed"));
             }
 
             StartKeepAlive();

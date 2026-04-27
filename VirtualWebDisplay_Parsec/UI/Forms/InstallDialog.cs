@@ -30,7 +30,7 @@ public static class InstallDialog
                     MaximizeBox = false,
                     MinimizeBox = false,
                     ShowInTaskbar = true,
-                    ClientSize = new Size(620, 230),
+                    ClientSize = new Size(620, 252),
                 };
 
                 var messageLabel = new Label
@@ -39,7 +39,7 @@ public static class InstallDialog
                     Left = 20,
                     Top = 18,
                     Width = 580,
-                    Height = 110,
+                    Height = 126,
                     Text = message,
                 };
 
@@ -47,14 +47,14 @@ public static class InstallDialog
                 {
                     AutoSize = true,
                     Left = 20,
-                    Top = 132,
+                    Top = 148,
                     Text = AppText.Get("InstallDialog_OfficialInstaller"),
                 };
 
                 var urlBox = new TextBox
                 {
                     Left = 20,
-                    Top = 154,
+                    Top = 170,
                     Width = 460,
                     ReadOnly = true,
                     Text = installUrl,
@@ -63,7 +63,7 @@ public static class InstallDialog
                 var openButton = new Button
                 {
                     Left = 490,
-                    Top = 152,
+                    Top = 168,
                     Width = 110,
                     Height = 28,
                     Text = AppText.Get("InstallDialog_OpenDownload"),
@@ -72,7 +72,7 @@ public static class InstallDialog
                 var copyButton = new Button
                 {
                     Left = 374,
-                    Top = 192,
+                    Top = 208,
                     Width = 110,
                     Height = 28,
                     Text = AppText.Get("InstallDialog_CopyUrl"),
@@ -81,7 +81,7 @@ public static class InstallDialog
                 var okButton = new Button
                 {
                     Left = 490,
-                    Top = 192,
+                    Top = 208,
                     Width = 110,
                     Height = 28,
                     Text = AppText.Get("InstallDialog_Close"),

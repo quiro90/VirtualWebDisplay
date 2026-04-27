@@ -104,7 +104,10 @@
   <data name="Program_SingleInstanceCloseFailed_Message" xml:space="preserve"><value>The previous VirtualWebDisplay instance could not be closed for relaunch.</value></data>
   <data name="Program_SingleInstanceCloseFailed_Title" xml:space="preserve"><value>VirtualWebDisplay - Relaunch failed</value></data>
   <data name="Program_DriverMissing_Title" xml:space="preserve"><value>VirtualWebDisplay - Missing Parsec VDD</value></data>
-  <data name="Program_DriverMissing_MessageSuffix" xml:space="preserve"><value>This version requires Parsec VDD to create and capture the virtual monitor.</value></data>
+  <data name="Program_DriverMissing_MessageSuffix" xml:space="preserve"><value>This version requires Parsec VDD to create and capture the virtual monitor. Install the Parsec desktop app that includes the Virtual Display Driver (VDD). You can open or copy the official URL below.</value></data>
+  <data name="Parsec_Driver_NotFound" xml:space="preserve"><value>No installed or accessible Parsec Virtual Display adapter was found.</value></data>
+  <data name="Parsec_Driver_Detected" xml:space="preserve"><value>Parsec VDD detected successfully.</value></data>
+  <data name="Parsec_Driver_CreateDisplayFailed" xml:space="preserve"><value>Parsec VDD is installed, but the virtual monitor could not be created automatically.</value></data>
   <data name="Program_DisplayError_Title" xml:space="preserve"><value>VirtualWebDisplay - Error on {0}</value></data>
   <data name="Program_MonitorNotDetected_Message" xml:space="preserve"><value>Windows virtual monitor could not be identified for {0}.</value></data>
   <data name="Program_MonitorNotDetected_Title" xml:space="preserve"><value>VirtualWebDisplay - Virtual monitor not detected</value></data>
