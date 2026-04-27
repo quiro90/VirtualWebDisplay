@@ -37,6 +37,7 @@ Las páginas HTML del cliente están embebidas como strings interpolados. Ambas 
 - `VirtualDisplayManager` (monitor Win32)
 - `CaptureService` (captura JPEG)
 - `WebRtcStreamService` (emisión WebRTC)
+- `ViewerLimiter` (control de receptores simultáneos por pantalla)
 - URLs de acceso (`HostUrl`, `IpUrl`)
 
 ### Métodos clave
@@ -46,6 +47,8 @@ Las páginas HTML del cliente están embebidas como strings interpolados. Ambas 
 
 ### Nota
 Es la unidad operativa principal por pantalla. Si en el futuro se agrega una tercera pantalla, el patrón ya existe aquí.
+
+`ViewerLimiter` resuelve el cupo total por pantalla combinando tres casos: polling de `WebImage`, conexiones persistentes `MJPEG` y peers `WebRTC`.
 
 ---
 

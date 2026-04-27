@@ -24,7 +24,8 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 - Cada runtime tiene:
   - `VirtualDisplayManager` para crear/reconfigurar el monitor virtual,
   - `CaptureService` para capturar JPEGs del monitor,
-  - `WebRtcStreamService` para retransmitir frames por `WebRTC DataChannel`.
+  - `WebRtcStreamService` para retransmitir frames por `WebRTC DataChannel`,
+  - `ViewerLimiter` para limitar receptores simultáneos por pantalla.
 - `VirtualDisplayTrayController` expone configuración y control desde el tray (incluye `ResolutionConfigurationForm` embebida).
 - `VirtualScreenSettingsStore` guarda la configuración del usuario en `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`.
 
@@ -36,6 +37,7 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 | `VirtualDisplayManager.cs` | Crear/destruir monitor virtual vía Win32 |
 | `CaptureService.cs` | Captura periódica + codificación JPEG |
 | `WebRtcStreamService.cs` | Negociación WebRTC + emisión de frames |
+| `ViewerLimiter.cs` | Control de cupo de viewers por pantalla |
 | `VirtualDisplayTrayController.cs` | Tray icon + formulario de configuración |
 | `VirtualScreenSettingsStore.cs` | Carga y persistencia de JSON de usuario |
 | `VirtualWebDisplaySettings.cs` | Objeto raíz de configuración (Screen1 + Screen2) |

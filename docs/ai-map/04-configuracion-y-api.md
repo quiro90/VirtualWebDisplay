@@ -131,6 +131,13 @@ Reglas:
 - límite: 5 intentos por cliente/IP, ventana de 45 segundos.
 - al superar límite: `429` con tiempo de espera.
 
+## Límite de receptores por pantalla
+- `VirtualScreenConfig.MaxViewers` define el máximo simultáneo por pantalla.
+- `0` significa sin límite.
+- si el cupo ya fue alcanzado, `GET /` devuelve una página informativa y no llega a mostrar login aunque `ScreenSecurityEnabled=true`.
+- `GET /cap`, `GET /mjpeg` y `POST /webrtc/offer` responden `429` cuando ya no se puede aceptar otro viewer.
+- `ViewerLimiter` contabiliza polling activo de `WebImage`, conexiones `MJPEG` abiertas y peers `WebRTC` activos.
+
 ### `GET /config`
 Devuelve metadata de runtime (requiere auth si seguridad activa):
 ```json
@@ -149,6 +156,8 @@ La app escucha en varios puertos a la vez. `ResolveRuntime(HttpContext)` decide 
 - `VirtualDisplayPlacementOptions`: normalización (acepta español e inglés), etiqueta visible y cálculo de posición Win32 del monitor virtual.
 - `NetworkAddressHelper`: detección de IP local y construcción de URLs HTTP de acceso.
 - `TransmissionModeOptions`: constantes, normalización, validación de rangos (`CaptureIntervalSeconds`, `JpegQuality`).
+- `ScreenSecurityGate`: login por clave, cookie HTTP-only y rate limit por IP.
+- `ViewerLimiter`: cupo de viewers y expiración de viewers por polling.
 
 ## Convenciones útiles para futuras IAs
 
@@ -157,6 +166,7 @@ La app escucha en varios puertos a la vez. `ResolveRuntime(HttpContext)` decide 
 - **captura, cursor o rotación** -> `CaptureService.cs`
 - **negociación WebRTC** -> `WebRtcStreamService.cs` y `BuildRtcPage(...)` en `Program.cs`
 - **HTML servido al navegador / ajuste visual** -> `BuildWebImagePage` / `BuildRtcPage` en `Program.cs`
+- **seguridad por clave o cupo de viewers** -> `Program.cs`, `ScreenSecurityGate.cs`, `ViewerLimiter.cs`
 - **UI/configuración del tray** -> `VirtualDisplayTrayController.cs`
 - **defaults, JSON o migración** -> `VirtualScreenSettingsStore.cs` y `VirtualWebDisplaySettings.cs`
 - **perfiles de dispositivos o resoluciones** -> `VirtualDisplayProfiles.cs`

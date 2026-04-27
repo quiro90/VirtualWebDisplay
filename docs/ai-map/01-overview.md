@@ -56,10 +56,12 @@ Runtime por pantalla
         -> VirtualDisplayManager   (monitor Win32)
         -> CaptureService          (captura JPEG periódica)
         -> WebRtcStreamService     (emisión WebRTC)
+    -> ViewerLimiter          (cupo de viewers por pantalla)
 
 Acceso desde navegador/dispositivo
     -> HTTP local por puerto dedicado por pantalla
-    -> si `ScreenSecurityEnabled=true`, primero login por clave (cookie HTTP-only)
+  -> si el cupo (`MaxViewers`) ya fue alcanzado, muestra mensaje y no continúa
+  -> si `ScreenSecurityEnabled=true` y todavía hay cupo, muestra login por clave (cookie HTTP-only)
     -> página HTML según modo (WebImage o Rtc)
     -> consumo de frames JPEG
 ```
