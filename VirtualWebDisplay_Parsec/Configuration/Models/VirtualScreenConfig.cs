@@ -25,6 +25,12 @@ public sealed class VirtualScreenConfig
     /// <summary>JPEG quality 1-100. Lower = faster transfer (better for e-ink).</summary>
     public int JpegQuality { get; set; } = 40;
 
+    /// <summary>
+    /// Enables password protection for this screen.
+    /// When enabled, the web host requires a runtime-generated access code.
+    /// </summary>
+    public bool ScreenSecurityEnabled { get; set; }
+
     public int Port { get; set; } = 8000;
 
     /// <summary>Legacy: migrado a StreamRotationDegrees. Se mantiene para leer configs guardadas antiguas.</summary>
@@ -70,6 +76,7 @@ public sealed class VirtualScreenConfig
         TransmissionMethod = TransmissionMethod,
         CaptureIntervalSeconds = CaptureIntervalSeconds,
         JpegQuality = JpegQuality,
+        ScreenSecurityEnabled = ScreenSecurityEnabled,
         Port = Port,
         RotateForPortrait = RotateForPortrait,
         StreamRotationDegrees = StreamRotationDegrees,
@@ -90,6 +97,7 @@ public sealed class VirtualScreenConfig
         target.TransmissionMethod = TransmissionMethod;
         target.CaptureIntervalSeconds = CaptureIntervalSeconds;
         target.JpegQuality = JpegQuality;
+        target.ScreenSecurityEnabled = ScreenSecurityEnabled;
         target.Port = Port;
         target.RotateForPortrait = RotateForPortrait;
         target.StreamRotationDegrees = StreamRotationDegrees;

@@ -17,6 +17,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         DisplayManager = new VirtualDisplayManager();
         CaptureService = new CaptureService(config);
         WebRtcStreamService = new WebRtcStreamService(CaptureService, config, NullLogger<WebRtcStreamService>.Instance);
+        SecurityGate = new ScreenSecurityGate(config.ScreenSecurityEnabled);
         HostUrl = NetworkAddressHelper.BuildAccessUrl(hostName, config.Port);
         IpUrl = NetworkAddressHelper.BuildAccessUrl(localIp, config.Port);
     }
@@ -27,6 +28,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
     public VirtualDisplayManager DisplayManager { get; }
     public CaptureService CaptureService { get; }
     public WebRtcStreamService WebRtcStreamService { get; }
+    public ScreenSecurityGate SecurityGate { get; }
     public string HostUrl { get; }
     public string IpUrl { get; }
 

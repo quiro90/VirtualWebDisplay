@@ -30,10 +30,15 @@ public sealed class ScreenTabControls
     private readonly ComboBox _streamRotationCombo;
     private readonly Label _fitLabel;
     private readonly ComboBox _browserImageFitCombo;
+    private readonly CheckBox _screenSecurityCheckBox;
+    private readonly TextBox _screenSecurityCodeTextBox;
+    private readonly Button _screenSecurityCodeToggleButton;
     private readonly Control[] _managedControls;
     private readonly string _localIp;
     private readonly LinkLabel _httpUrlLink;
     private readonly Button _windowsDisplayButton;
+    private string _runtimeSecurityCode = string.Empty;
+    private bool _showSecurityCode;
 
     public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config, string localIp)
     {
@@ -186,6 +191,41 @@ public sealed class ScreenTabControls
 
         currentTop += 54;
 
+        _screenSecurityCheckBox = new CheckBox
+        {
+            Left = 14,
+            Top = currentTop,
+            Width = 320,
+            Text = AppText.Get("Tab_Label_ScreenSecurity"),
+        };
+
+        currentTop += 24;
+
+        _screenSecurityCodeTextBox = new TextBox
+        {
+            Left = 34,
+            Top = currentTop,
+            Width = 200,
+            ReadOnly = true,
+            PlaceholderText = AppText.Get("Tab_SecurityCode_Pending"),
+        };
+
+        _screenSecurityCodeToggleButton = new Button
+        {
+            Left = 240,
+            Top = currentTop - 1,
+            Width = 32,
+            Height = 24,
+            Text = "👁",
+        };
+        _screenSecurityCodeToggleButton.Click += (_, _) =>
+        {
+            _showSecurityCode = !_showSecurityCode;
+            UpdateState();
+        };
+
+        currentTop += 30;
+
         _httpUrlLink = new LinkLabel
         {
             Left = 14,
@@ -212,6 +252,9 @@ public sealed class ScreenTabControls
             _streamRotationCombo,
             _fitLabel,
             _browserImageFitCombo,
+            _screenSecurityCheckBox,
+            _screenSecurityCodeTextBox,
+            _screenSecurityCodeToggleButton,
         ];
 
         TabPage.Controls.AddRange(_managedControls);
@@ -231,6 +274,7 @@ public sealed class ScreenTabControls
         _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
         _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
         _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
+        _screenSecurityCheckBox.CheckedChanged += (_, _) => UpdateState();
     }
 
     public TabPage TabPage { get; }
@@ -248,12 +292,22 @@ public sealed class ScreenTabControls
         _captureIntervalLabel.Text = AppText.Get("Tab_Label_CaptureIntervalMs");
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
+        _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
+        _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
 
         RefreshTransmissionOptions();
         RefreshPlacementOptions();
         RefreshRotationOptions();
         RefreshBrowserFitOptions();
+        UpdateState();
+    }
+
+    public void SetRuntimeSecurityCode(string? securityCode)
+    {
+        _runtimeSecurityCode = (securityCode ?? string.Empty).Trim().ToUpperInvariant();
+        _showSecurityCode = false;
+        UpdateState();
     }
 
     public VirtualScreenConfig BuildConfig(bool alwaysEnabled)
@@ -264,6 +318,7 @@ public sealed class ScreenTabControls
         config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
         config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
         config.JpegQuality = _jpegQualitySlider.Value;
+        config.ScreenSecurityEnabled = _screenSecurityCheckBox.Checked;
         config.StreamRotationDegrees = ((StreamRotationItem)_streamRotationCombo.SelectedItem!).Degrees;
         config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
         config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
@@ -280,6 +335,7 @@ public sealed class ScreenTabControls
         _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
         _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
         _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
+        _screenSecurityCheckBox.Checked = config.ScreenSecurityEnabled;
 
         var validDegrees = new[] { 0, 90, 180, 270 };
         var degrees = validDegrees.Contains(config.StreamRotationDegrees) ? config.StreamRotationDegrees : 0;
@@ -312,6 +368,46 @@ public sealed class ScreenTabControls
 
         var port = (int)_portInput.Value;
         _httpUrlLink.Text = $"http://{_localIp}:{port}";
+
+        UpdateSecurityCodePreview(enabled);
+    }
+
+    private void UpdateSecurityCodePreview(bool tabEnabled)
+    {
+        if (!tabEnabled)
+        {
+            _showSecurityCode = false;
+            _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
+            _screenSecurityCodeTextBox.Text = AppText.Get("Tab_SecurityCode_Disabled");
+            _screenSecurityCodeToggleButton.Enabled = false;
+            _screenSecurityCodeToggleButton.Text = "👁";
+            return;
+        }
+
+        if (!_screenSecurityCheckBox.Checked)
+        {
+            _showSecurityCode = false;
+            _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
+            _screenSecurityCodeTextBox.Text = AppText.Get("Tab_SecurityCode_Disabled");
+            _screenSecurityCodeToggleButton.Enabled = false;
+            _screenSecurityCodeToggleButton.Text = "👁";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_runtimeSecurityCode))
+        {
+            _showSecurityCode = false;
+            _screenSecurityCodeTextBox.UseSystemPasswordChar = false;
+            _screenSecurityCodeTextBox.Text = AppText.Get("Tab_SecurityCode_Pending");
+            _screenSecurityCodeToggleButton.Enabled = false;
+            _screenSecurityCodeToggleButton.Text = "👁";
+            return;
+        }
+
+        _screenSecurityCodeTextBox.Text = _runtimeSecurityCode;
+        _screenSecurityCodeTextBox.UseSystemPasswordChar = !_showSecurityCode;
+        _screenSecurityCodeToggleButton.Enabled = true;
+        _screenSecurityCodeToggleButton.Text = _showSecurityCode ? "🙈" : "👁";
     }
 
     private static void OpenUrl(string url)

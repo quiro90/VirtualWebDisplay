@@ -51,6 +51,11 @@
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Fit:</value></data>
+  <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Screen security (require access code)</value></data>
+  <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Show</value></data>
+  <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="Tab_SecurityCode_Pending" xml:space="preserve"><value>Code is generated after startup</value></data>
+  <data name="Tab_SecurityCode_Disabled" xml:space="preserve"><value>Security disabled</value></data>
   <data name="Tab_BrowserFit_Fill" xml:space="preserve"><value>Stretch (fill)</value></data>
   <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Crop (cover)</value></data>
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
@@ -62,6 +67,7 @@
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
   <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
+  <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Code</value></data>
   <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply new values.</value></data>
 
   <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Official installer:</value></data>
@@ -80,6 +86,17 @@
   <data name="Program_MonitorNotDetected_Title" xml:space="preserve"><value>VirtualWebDisplay - Virtual monitor not detected</value></data>
   <data name="Program_WebRtcDisabled_Error" xml:space="preserve"><value>WebRTC is not enabled for the current transmission method.</value></data>
   <data name="Program_WebRtcInvalidOffer_Error" xml:space="preserve"><value>Invalid WebRTC offer.</value></data>
+  <data name="Program_Security_InvalidCode_Error" xml:space="preserve"><value>Invalid access code.</value></data>
+  <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Too many attempts. Wait {0} seconds.</value></data>
+  <data name="Program_Security_MissingCode_Error" xml:space="preserve"><value>You must enter the access code to continue.</value></data>
+
+  <data name="Security_Page_Title" xml:space="preserve"><value>Protected access - {0}</value></data>
+  <data name="Security_Page_Heading" xml:space="preserve"><value>Protected screen</value></data>
+  <data name="Security_Page_Description" xml:space="preserve"><value>Enter the 6-character access code to view this screen.</value></data>
+  <data name="Security_Page_Input_Placeholder" xml:space="preserve"><value>Access code</value></data>
+  <data name="Security_Page_Submit" xml:space="preserve"><value>Enter</value></data>
+  <data name="Security_Page_Attempts" xml:space="preserve"><value>Attempts left: {0}</value></data>
+  <data name="Security_Page_Wait" xml:space="preserve"><value>Temporarily blocked. Retry in {0}s.</value></data>
 
   <data name="Transmission_WebImage" xml:space="preserve"><value>Web image</value></data>
   <data name="Transmission_WebRtc" xml:space="preserve"><value>WebRTC</value></data>

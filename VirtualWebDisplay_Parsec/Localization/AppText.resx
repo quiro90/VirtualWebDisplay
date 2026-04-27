@@ -51,6 +51,11 @@
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Actualizar cada (ms):</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
+  <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Seguridad de pantalla (pedir clave)</value></data>
+  <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Mostrar</value></data>
+  <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Ocultar</value></data>
+  <data name="Tab_SecurityCode_Pending" xml:space="preserve"><value>La clave se genera al iniciar</value></data>
+  <data name="Tab_SecurityCode_Disabled" xml:space="preserve"><value>Seguridad desactivada</value></data>
   <data name="Tab_BrowserFit_Fill" xml:space="preserve"><value>Estirar (llenar)</value></data>
   <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Recortar (cover)</value></data>
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contener (barras)</value></data>
@@ -62,6 +67,7 @@
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Salir</value></data>
   <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
   <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
+  <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Clave</value></data>
   <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuracion guardada. Usa 'Reiniciar' desde el icono de bandeja para aplicar los nuevos valores.</value></data>
 
   <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Instalador oficial:</value></data>
@@ -80,6 +86,17 @@
   <data name="Program_MonitorNotDetected_Title" xml:space="preserve"><value>VirtualWebDisplay - Monitor virtual no detectado</value></data>
   <data name="Program_WebRtcDisabled_Error" xml:space="preserve"><value>WebRTC no esta habilitado para el metodo de retransmision actual.</value></data>
   <data name="Program_WebRtcInvalidOffer_Error" xml:space="preserve"><value>Oferta WebRTC invalida.</value></data>
+  <data name="Program_Security_InvalidCode_Error" xml:space="preserve"><value>Clave invalida.</value></data>
+  <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Demasiados intentos. Espera {0} segundos.</value></data>
+  <data name="Program_Security_MissingCode_Error" xml:space="preserve"><value>Debes ingresar la clave para continuar.</value></data>
+
+  <data name="Security_Page_Title" xml:space="preserve"><value>Acceso protegido - {0}</value></data>
+  <data name="Security_Page_Heading" xml:space="preserve"><value>Pantalla protegida</value></data>
+  <data name="Security_Page_Description" xml:space="preserve"><value>Ingresa la clave de 6 caracteres para ver el contenido.</value></data>
+  <data name="Security_Page_Input_Placeholder" xml:space="preserve"><value>Clave</value></data>
+  <data name="Security_Page_Submit" xml:space="preserve"><value>Ingresar</value></data>
+  <data name="Security_Page_Attempts" xml:space="preserve"><value>Intentos restantes: {0}</value></data>
+  <data name="Security_Page_Wait" xml:space="preserve"><value>Bloqueado temporalmente. Reintenta en {0}s.</value></data>
 
   <data name="Transmission_WebImage" xml:space="preserve"><value>Imagen web</value></data>
   <data name="Transmission_WebRtc" xml:space="preserve"><value>WebRTC</value></data>

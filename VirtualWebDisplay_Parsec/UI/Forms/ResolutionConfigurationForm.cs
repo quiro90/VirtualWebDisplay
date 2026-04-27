@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.UI.Forms;
@@ -34,7 +35,12 @@ public sealed class ResolutionConfigurationForm : Form
         ? AppText.Get("Form_Config_Accept_Restart")
         : (_isInitialStartup ? AppText.Get("Form_Config_Accept_Start") : AppText.Get("Form_Config_Accept_Save"));
 
-    public ResolutionConfigurationForm(VirtualWebDisplaySettings settings, bool isInitialStartup, string localIp, bool hasStarted = false)
+    public ResolutionConfigurationForm(
+        VirtualWebDisplaySettings settings,
+        bool isInitialStartup,
+        string localIp,
+        bool hasStarted = false,
+        IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
     {
         _isInitialStartup = isInitialStartup;
         _wasStarted = hasStarted;
@@ -44,7 +50,7 @@ public sealed class ResolutionConfigurationForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = isInitialStartup;
-        ClientSize = new Size(520, 446);
+        ClientSize = new Size(520, 506);
 
         var workingCopy = new VirtualWebDisplaySettings
         {
@@ -88,7 +94,7 @@ public sealed class ResolutionConfigurationForm : Form
             Left = 18,
             Top = 54,
             Width = 484,
-            Height = 300,
+                Height = 360,
         };
 
         _screen1Controls = new ScreenTabControls(AppText.Get("Form_Config_Tab_Screen1"), allowDisable: false, isInitialStartup, workingCopy.Screen1, localIp);
@@ -100,7 +106,7 @@ public sealed class ResolutionConfigurationForm : Form
         _acceptButton = new Button
         {
             Left = 326,
-            Top = 364,
+            Top = 426,
             Width = 84,
             Height = 28,
             Text = AcceptButtonText,
@@ -110,7 +116,7 @@ public sealed class ResolutionConfigurationForm : Form
         _cancelButton = new Button
         {
             Left = 418,
-            Top = 364,
+            Top = 426,
             Width = 84,
             Height = 28,
             Text = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
@@ -122,15 +128,34 @@ public sealed class ResolutionConfigurationForm : Form
         CancelButton = _cancelButton;
 
         ApplyLocalization();
+        ApplyRuntimeSecurityCodes(screenRuntimes);
     }
 
-    public void NotifyStartupCompleted()
+    public void NotifyStartupCompleted(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
     {
         if (!_isInitialStartup || _wasStarted)
+        {
+            ApplyRuntimeSecurityCodes(screenRuntimes);
             return;
+        }
 
         _wasStarted = true;
         _acceptButton.Text = AcceptButtonText;
+        ApplyRuntimeSecurityCodes(screenRuntimes);
+    }
+
+    private void ApplyRuntimeSecurityCodes(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes)
+    {
+        var screen1Code = screenRuntimes?
+            .FirstOrDefault(runtime => string.Equals(runtime.Id, "screen1", StringComparison.OrdinalIgnoreCase))?
+            .SecurityGate.AccessCode;
+
+        var screen2Code = screenRuntimes?
+            .FirstOrDefault(runtime => string.Equals(runtime.Id, "screen2", StringComparison.OrdinalIgnoreCase))?
+            .SecurityGate.AccessCode;
+
+        _screen1Controls.SetRuntimeSecurityCode(screen1Code);
+        _screen2Controls.SetRuntimeSecurityCode(screen2Code);
     }
 
     private void AcceptButton_Click(object? sender, EventArgs e)

@@ -101,7 +101,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             _contextMenu = BuildContextMenu();
             _notifyIcon.ContextMenuStrip = _contextMenu;
 
-            _startupForm?.NotifyStartupCompleted();
+            _startupForm?.NotifyStartupCompleted(_screenRuntimes);
         });
 
         var summary = string.Join(" | ", _screenRuntimes.Select(runtime => $"{runtime.DisplayName}: {runtime.HostUrl}"));
@@ -114,9 +114,16 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
             _notifyIcon.BalloonTipTitle = AppText.Get("Tray_BalloonTitle");
             _notifyIcon.BalloonTipText = string.Join("\n", _screenRuntimes.Select(runtime =>
-                string.Equals(runtime.HostUrl, runtime.IpUrl, StringComparison.OrdinalIgnoreCase)
+            {
+                var locationText = string.Equals(runtime.HostUrl, runtime.IpUrl, StringComparison.OrdinalIgnoreCase)
                     ? $"{runtime.DisplayName}: {runtime.HostUrl}"
-                    : $"{runtime.DisplayName}: {runtime.HostUrl} | {runtime.IpUrl}"));
+                    : $"{runtime.DisplayName}: {runtime.HostUrl} | {runtime.IpUrl}";
+
+                if (!runtime.SecurityGate.Enabled)
+                    return locationText;
+
+                return $"{locationText} | {AppText.Get("Tray_SecurityCode_Label")}: {runtime.SecurityGate.AccessCode}";
+            }));
             _notifyIcon.ShowBalloonTip(5000);
         });
     }
@@ -204,7 +211,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     private ResolutionConfigurationForm CreateConfigurationForm(bool isInitialStartup, bool hasStarted)
     {
-        var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted);
+        var screenRuntimes = hasStarted ? _screenRuntimes : null;
+        var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted, screenRuntimes);
 
         form.ConfigurationApplied += ApplySelection;
         form.RestartRequested += RestartApplication;
