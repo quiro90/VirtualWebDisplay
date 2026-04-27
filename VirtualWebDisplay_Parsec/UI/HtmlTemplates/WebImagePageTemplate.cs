@@ -11,6 +11,12 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
     {
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
         var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
+        var backgroundSize = browserImageFit switch
+        {
+            "contain" => "contain",
+            "cover" => "cover",
+            _ => "100% 100%",
+        };
         var intervalMsObj = parameters.GetValueOrDefault("intervalMs", 250);
         var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
         var touchInputEnabledObj = parameters.GetValueOrDefault("touchInputEnabled", false);
@@ -38,6 +44,9 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                         background: #000;
                         overflow: hidden;
                         touch-action: manipulation;
+                        -webkit-user-select: none;
+                        user-select: none;
+                        -webkit-touch-callout: none;
                         -webkit-tap-highlight-color: transparent;
                     }
 
@@ -46,16 +55,22 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                         inset: 0;
                         width: var(--vw);
                         height: var(--vh);
-                        object-fit: {{browserImageFit}};
-                        object-position: center center;
+                        background-position: center center;
+                        background-repeat: no-repeat;
+                        background-size: {{backgroundSize}};
                         display: block;
                         image-rendering: auto;
-                        background: #000;
+                        background-color: #000;
+                        touch-action: none;
+                        -webkit-user-drag: none;
+                        -webkit-touch-callout: none;
+                        -webkit-user-select: none;
+                        user-select: none;
                     }
                 </style>
             </head>
             <body>
-                <img id="screen" src="/cap" alt="">
+                <div id="screen" aria-label="screen" role="img"></div>
 
                 <script>
                 (function () {
@@ -81,7 +96,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                     function next() {
                         var pre = new Image();
                         pre.onload = function () {
-                            img.src = this.src;
+                            img.style.backgroundImage = "url('" + this.src + "')";
                             setTimeout(next, INTERVAL);
                         };
                         pre.onerror = function () {
@@ -92,6 +107,19 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
 
                     syncViewport();
                     next();
+
+                    function preventNative(e) {
+                        e.preventDefault();
+                    }
+
+                    // iOS Safari: evita drag-and-drop/long-press sobre <img>
+                    img.addEventListener('dragstart', preventNative, { passive: false });
+                    img.addEventListener('contextmenu', preventNative, { passive: false });
+                    img.addEventListener('touchstart', preventNative, { passive: false });
+                    img.addEventListener('touchmove', preventNative, { passive: false });
+                    img.addEventListener('touchend', preventNative, { passive: false });
+                    document.addEventListener('gesturestart', preventNative, { passive: false });
+                    document.addEventListener('gesturechange', preventNative, { passive: false });
 
                     function startKeepAliveSignal() {
                         function ping() {

@@ -155,9 +155,9 @@ internal static class TouchInputScriptHelper
                 }
 
                 // Registrar listeners
-                document.addEventListener('touchstart', handleTouchStart, false);
-                document.addEventListener('touchmove', handleTouchMove, false);
-                document.addEventListener('touchend', handleTouchEnd, false);
+                document.addEventListener('touchstart', handleTouchStart, { passive: false });
+                document.addEventListener('touchmove', handleTouchMove, { passive: false });
+                document.addEventListener('touchend', handleTouchEnd, { passive: false });
 
                 renderStatsPanel();
 
