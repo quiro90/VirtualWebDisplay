@@ -1,18 +1,15 @@
 using System.Diagnostics;
-using System.Drawing;
 using System.Net;
-using System.Text.Json;
 using System.Windows.Forms;
-using VirtualWebDisplay.UI.TrayIcon;
-using VirtualWebDisplay.UI.Forms;
-using VirtualWebDisplay.UI.HtmlTemplates;
 using VirtualWebDisplay.Configuration;
-using VirtualWebDisplay.Configuration.Models;
-using VirtualWebDisplay.Parsec;
-using VirtualWebDisplay.Streaming;
-using VirtualWebDisplay.Streaming.Models;
+using VirtualWebDisplay.Controllers;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.Parsec;
+using VirtualWebDisplay.Streaming.Models;
+using VirtualWebDisplay.UI.Forms;
+using VirtualWebDisplay.UI.HtmlTemplates;
+using VirtualWebDisplay.UI.TrayIcon;
 
 var settingsStore = new VirtualScreenSettingsStore();
 var settings = settingsStore.Load();
@@ -40,255 +37,8 @@ using var tray = new VirtualDisplayTrayController(settings, settingsStore, local
 // Instanciar los templates HTML
 var webImageTemplate = new WebImagePageTemplate();
 var rtcTemplate = new RtcPageTemplate();
-
-static string BrowserImageFit(string? fit) =>
-    fit?.Trim().ToLowerInvariant() switch
-    {
-        "contain" => "contain",
-        "fill" => "fill",
-        _ => "cover",
-    };
-
-static string SecurityCookieName(ScreenRuntimeContext runtime) => $"vwd_auth_{runtime.Id}";
-
-static string BuildSecurityPageHtml(ScreenRuntimeContext runtime, HttpContext context)
-{
-    var state = runtime.SecurityGate.GetClientWindowState(context);
-    var title = AppText.Format("Security_Page_Title", runtime.DisplayName);
-    var heading = AppText.Get("Security_Page_Heading");
-    var description = AppText.Get("Security_Page_Description");
-    var submitText = AppText.Get("Security_Page_Submit");
-    var inputPlaceholder = AppText.Get("Security_Page_Input_Placeholder");
-    var initialStatus = state.RetryAfterSeconds > 0
-        ? AppText.Format("Security_Page_Wait", state.RetryAfterSeconds)
-        : AppText.Format("Security_Page_Attempts", state.AttemptsRemaining);
-
-    var submitTextJs = JsonSerializer.Serialize(submitText);
-    var inputPlaceholderJs = JsonSerializer.Serialize(inputPlaceholder);
-
-    return $$"""
-        <!DOCTYPE html>
-        <html lang="{{AppText.HtmlLang}}">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{{WebUtility.HtmlEncode(title)}}</title>
-            <style>
-                html, body {
-                    margin: 0;
-                    width: 100%;
-                    height: 100%;
-                    font-family: Segoe UI, Arial, sans-serif;
-                    background: radial-gradient(circle at top, #1a1f2a 0%, #0c1018 60%, #06090f 100%);
-                    color: #f5f8ff;
-                }
-
-                .wrapper {
-                    min-height: 100%;
-                    display: grid;
-                    place-items: center;
-                    padding: 20px;
-                }
-
-                .card {
-                    width: min(420px, 92vw);
-                    background: rgba(8, 12, 18, 0.85);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
-                    border-radius: 14px;
-                    padding: 24px;
-                    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
-                }
-
-                h1 {
-                    margin: 0 0 10px;
-                    font-size: 22px;
-                }
-
-                p {
-                    margin: 0 0 16px;
-                    line-height: 1.45;
-                    color: rgba(245, 248, 255, 0.82);
-                }
-
-                form {
-                    display: flex;
-                    gap: 10px;
-                }
-
-                input {
-                    flex: 1;
-                    border: 1px solid rgba(255, 255, 255, 0.22);
-                    background: rgba(0, 0, 0, 0.28);
-                    color: #fff;
-                    border-radius: 10px;
-                    padding: 10px 12px;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    outline: none;
-                }
-
-                input:focus {
-                    border-color: #8ec5ff;
-                    box-shadow: 0 0 0 2px rgba(142, 197, 255, 0.25);
-                }
-
-                button {
-                    border: 0;
-                    border-radius: 10px;
-                    padding: 10px 14px;
-                    background: #2f8fef;
-                    color: #fff;
-                    font-weight: 600;
-                    cursor: pointer;
-                }
-
-                button:disabled {
-                    opacity: 0.65;
-                    cursor: not-allowed;
-                }
-
-                #status {
-                    margin-top: 12px;
-                    min-height: 20px;
-                    font-size: 13px;
-                    color: #ffd08a;
-                }
-            </style>
-        </head>
-        <body>
-            <main class="wrapper">
-                <section class="card">
-                    <h1>{{WebUtility.HtmlEncode(heading)}}</h1>
-                    <p>{{WebUtility.HtmlEncode(description)}}</p>
-
-                    <form id="authForm" autocomplete="off">
-                        <input id="code" maxlength="6" placeholder="" required />
-                        <button id="submit" type="submit">{{WebUtility.HtmlEncode(submitText)}}</button>
-                    </form>
-                    <div id="status">{{WebUtility.HtmlEncode(initialStatus)}}</div>
-                </section>
-            </main>
-
-            <script>
-                (function () {
-                    var form = document.getElementById('authForm');
-                    var code = document.getElementById('code');
-                    var submit = document.getElementById('submit');
-                    var status = document.getElementById('status');
-
-                    submit.textContent = {{submitTextJs}};
-                    code.setAttribute('placeholder', {{inputPlaceholderJs}});
-
-                    form.addEventListener('submit', async function (event) {
-                        event.preventDefault();
-                        submit.disabled = true;
-
-                        try {
-                            var response = await fetch('/auth/login', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ code: (code.value || '').trim().toUpperCase() })
-                            });
-
-                            var payload = await response.json().catch(function () { return {}; });
-                            if (response.ok) {
-                                location.reload();
-                                return;
-                            }
-
-                            status.textContent = payload.error || 'Error';
-                        }
-                        catch {
-                            status.textContent = 'Error de conexion.';
-                        }
-                        finally {
-                            submit.disabled = false;
-                        }
-                    });
-                })();
-            </script>
-        </body>
-        </html>
-        """;
-}
-
-static string ResolveViewerKey(HttpContext context, ScreenRuntimeContext runtime)
-{
-    var cookieName = SecurityCookieName(runtime);
-    if (runtime.SecurityGate.Enabled
-        && context.Request.Cookies.TryGetValue(cookieName, out var sessionId)
-        && !string.IsNullOrWhiteSpace(sessionId))
-        return sessionId;
-    return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-}
-
-static string BuildViewerLimitPageHtml(ScreenRuntimeContext runtime)
-{
-    var title = AppText.Format("Security_Page_Title", runtime.DisplayName);
-    var message = AppText.Get("Program_ViewerLimit_Full_Message");
-    return $$"""
-        <!DOCTYPE html>
-        <html lang="{{AppText.HtmlLang}}">
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{{WebUtility.HtmlEncode(title)}}</title>
-            <style>
-                html, body {
-                    margin: 0; width: 100%; height: 100%;
-                    font-family: Segoe UI, Arial, sans-serif;
-                    background: radial-gradient(circle at top, #1a1f2a 0%, #0c1018 60%, #06090f 100%);
-                    color: #f5f8ff;
-                }
-                .wrapper { min-height: 100%; display: grid; place-items: center; padding: 20px; }
-                .card {
-                    width: min(420px, 92vw);
-                    background: rgba(8, 12, 18, 0.85);
-                    border: 1px solid rgba(255,255,255,0.08);
-                    border-radius: 14px;
-                    padding: 24px;
-                    box-shadow: 0 20px 45px rgba(0,0,0,0.45);
-                    text-align: center;
-                }
-                h1 { margin: 0; font-size: 20px; }
-            </style>
-        </head>
-        <body>
-            <main class="wrapper">
-                <section class="card">
-                    <h1>&#128683; {{WebUtility.HtmlEncode(message)}}</h1>
-                </section>
-            </main>
-        </body>
-        </html>
-        """;
-}
-
-static async Task DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext> runtimes)
-{
-    foreach (var runtime in runtimes.Reverse())
-        await runtime.DisposeAsync();
-}
-
-static async Task WaitForVirtualDisplaysRemovalAsync(IReadOnlyCollection<string> deviceNames, TimeSpan timeout)
-{
-    if (deviceNames.Count == 0)
-        return;
-
-    var deadline = DateTime.UtcNow + timeout;
-    while (DateTime.UtcNow < deadline)
-    {
-        var remaining = Screen.AllScreens
-            .Select(screen => screen.DeviceName)
-            .Where(name => deviceNames.Contains(name, StringComparer.OrdinalIgnoreCase))
-            .ToArray();
-
-        if (remaining.Length == 0)
-            return;
-
-        await Task.Delay(120);
-    }
-}
+var securityPageTemplate = new SecurityPageTemplate();
+var viewerLimitPageTemplate = new ViewerLimitPageTemplate();
 var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
 
 if (!autoStart && !tray.ShowStartupConfiguration())
@@ -367,7 +117,7 @@ try
         var (ok, vddStatus) = runtime.DisplayManager.TryCreate(runtime.Config);
         if (!ok)
         {
-            await DisposeRuntimesAsync(runtimes);
+            await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
             InstallDialog.Show(
                 AppText.Format("Program_DisplayError_Title", runtime.DisplayName),
                 vddStatus + "\n\n" + AppText.Get("Program_DriverMissing_MessageSuffix"),
@@ -379,7 +129,7 @@ try
             runtime.Config.MonitorIndex = virtualMonitorIndex;
         else if (runtime.Config.MonitorIndex < 0)
         {
-            await DisposeRuntimesAsync(runtimes);
+            await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
             MessageBox.Show(
                 vddStatus + "\n\n" + AppText.Format("Program_MonitorNotDetected_Message", runtime.DisplayName),
                 AppText.Get("Program_MonitorNotDetected_Title"),
@@ -400,29 +150,14 @@ try
         },
         runtimes);
 
-    ScreenRuntimeContext ResolveRuntime(HttpContext context) =>
-        runtimes.FirstOrDefault(runtime => runtime.Config.Port == context.Connection.LocalPort) ?? runtimes[0];
-
-    bool IsAuthorized(HttpContext context, ScreenRuntimeContext runtime) =>
-        !runtime.SecurityGate.Enabled || runtime.SecurityGate.IsAuthorized(context, SecurityCookieName(runtime));
-
-    IResult UnauthorizedResult(ScreenRuntimeContext runtime)
-    {
-        if (runtime.SecurityGate.Enabled)
-            return Results.Json(
-                new { error = AppText.Get("Program_Security_MissingCode_Error") },
-                statusCode: StatusCodes.Status401Unauthorized);
-
-        return Results.Unauthorized();
-    }
 
     app.MapPost("/auth/login", (HttpContext ctx, SecurityLoginRequest request) =>
     {
-        var runtime = ResolveRuntime(ctx);
+        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
         if (!runtime.SecurityGate.Enabled)
             return Results.Ok(new { authorized = true });
 
-        var result = runtime.SecurityGate.TryAuthorize(ctx, SecurityCookieName(runtime), request.Code);
+        var result = runtime.SecurityGate.TryAuthorize(ctx, RuntimeAccessHelper.SecurityCookieName(runtime), request.Code);
         if (result.Authorized)
             return Results.Ok(new { authorized = true });
 
@@ -449,31 +184,31 @@ try
 
     app.MapGet("/", (HttpContext ctx) =>
     {
-        var runtime = ResolveRuntime(ctx);
-        var isAuthorized = IsAuthorized(ctx, runtime);
+        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        var isAuthorized = RuntimeAccessHelper.IsAuthorized(ctx, runtime);
 
         if (!runtime.ViewerLimiter.IsUnlimited)
         {
             if (TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod))
             {
                 var canContinue = isAuthorized
-                    ? runtime.ViewerLimiter.TryRegisterPolling(ResolveViewerKey(ctx, runtime))
+                    ? runtime.ViewerLimiter.TryRegisterPolling(RuntimeAccessHelper.ResolveViewerKey(ctx, runtime))
                     : runtime.ViewerLimiter.CanAcceptViewer();
 
                 if (!canContinue)
-                    return Results.Content(BuildViewerLimitPageHtml(runtime), "text/html");
+                    return Results.Content(viewerLimitPageTemplate.Generate(runtime), "text/html");
             }
             else
             {
                 if (!runtime.ViewerLimiter.CanAcceptViewer())
-                    return Results.Content(BuildViewerLimitPageHtml(runtime), "text/html");
+                    return Results.Content(viewerLimitPageTemplate.Generate(runtime), "text/html");
             }
         }
 
         if (!isAuthorized)
-            return Results.Content(BuildSecurityPageHtml(runtime, ctx), "text/html");
+            return Results.Content(securityPageTemplate.Generate(runtime, ctx), "text/html");
 
-        var browserImageFit = BrowserImageFit(runtime.Config.BrowserImageFit);
+        var browserImageFit = RuntimeAccessHelper.NormalizeBrowserImageFit(runtime.Config.BrowserImageFit);
 
         string html;
         if (TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod))
@@ -501,13 +236,13 @@ try
 
     app.MapGet("/cap", (HttpContext ctx) =>
     {
-        var runtime = ResolveRuntime(ctx);
-        if (!IsAuthorized(ctx, runtime))
-            return UnauthorizedResult(runtime);
+        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
+            return RuntimeAccessHelper.UnauthorizedResult(runtime);
 
         if (!runtime.ViewerLimiter.IsUnlimited)
         {
-            var viewerKey = ResolveViewerKey(ctx, runtime);
+            var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, runtime);
             if (!runtime.ViewerLimiter.TryRegisterPolling(viewerKey))
                 return Results.Json(
                     new { error = AppText.Get("Program_ViewerLimit_Full_Error") },
@@ -524,9 +259,9 @@ try
 
     app.MapPost("/webrtc/offer", async (HttpContext ctx, WebRtcSessionOffer offer, CancellationToken cancellationToken) =>
     {
-        var runtime = ResolveRuntime(ctx);
-        if (!IsAuthorized(ctx, runtime))
-            return UnauthorizedResult(runtime);
+        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
+            return RuntimeAccessHelper.UnauthorizedResult(runtime);
 
         if (!TransmissionModeOptions.IsRtc(runtime.Config.TransmissionMethod))
             return Results.BadRequest(new { error = AppText.Get("Program_WebRtcDisabled_Error") });
@@ -545,8 +280,8 @@ try
 
     app.MapGet("/mjpeg", async (HttpContext ctx) =>
     {
-        var runtime = ResolveRuntime(ctx);
-        if (!IsAuthorized(ctx, runtime))
+        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
         {
             ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await ctx.Response.WriteAsJsonAsync(new { error = AppText.Get("Program_Security_MissingCode_Error") });
@@ -605,9 +340,9 @@ try
 
     app.MapGet("/config", (HttpContext ctx) =>
     {
-        var runtime = ResolveRuntime(ctx);
-        if (!IsAuthorized(ctx, runtime))
-            return UnauthorizedResult(runtime);
+        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
+            return RuntimeAccessHelper.UnauthorizedResult(runtime);
 
         return Results.Json(new
         {
@@ -655,11 +390,11 @@ finally
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToArray();
 
-    await DisposeRuntimesAsync(runtimes);
+    await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
 
     if (restartRequested)
     {
-        await WaitForVirtualDisplaysRemovalAsync(createdVirtualDeviceNames, TimeSpan.FromSeconds(6));
+        await RuntimeCleanupHelper.WaitForVirtualDisplaysRemovalAsync(createdVirtualDeviceNames, TimeSpan.FromSeconds(6));
         await Task.Delay(200);
     }
 
@@ -681,5 +416,3 @@ if (restartRequested)
 // Forzar la terminación del proceso una vez que todo el cleanup completó.
 // SIPSorcery y Kestrel pueden dejar threads internos que impiden la salida natural.
 Environment.Exit(0);
-
-public sealed record SecurityLoginRequest(string? Code);

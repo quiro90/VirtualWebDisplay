@@ -73,7 +73,7 @@ dotnet restore VirtualWebDisplay_Parsec.csproj
 Asegurarse que la estructura de carpetas sea:
 
 ```
-VirtualWebDisplay/
+VirtualWebDisplay_Parsec/
 ├── UI/
 │   ├── TrayIcon/
 │   │   └── VirtualDisplayTrayController.cs
@@ -84,7 +84,9 @@ VirtualWebDisplay/
 │   └── HtmlTemplates/
 │       ├── IHtmlTemplate.cs
 │       ├── WebImagePageTemplate.cs
-│       └── RtcPageTemplate.cs
+│       ├── RtcPageTemplate.cs
+│       ├── SecurityPageTemplate.cs              ← Fase 2
+│       └── ViewerLimitPageTemplate.cs           ← Fase 2
 ├── Configuration/
 │   ├── Models/
 │   │   ├── VirtualScreenConfig.cs
@@ -105,7 +107,11 @@ VirtualWebDisplay/
 │   ├── ScreenRuntimeContext.cs
 │   ├── NetworkAddressHelper.cs
 │   ├── LocalCertificateProvider.cs
-│   └── SingleInstanceManager.cs
+│   ├── SingleInstanceManager.cs
+│   ├── RuntimeAccessHelper.cs                  ← Fase 2
+│   └── RuntimeCleanupHelper.cs                 ← Fase 2
+├── Controllers/
+│   └── SecurityLoginRequest.cs                 ← Fase 2
 ├── Program.cs
 └── VirtualWebDisplay_Parsec.csproj
 ```

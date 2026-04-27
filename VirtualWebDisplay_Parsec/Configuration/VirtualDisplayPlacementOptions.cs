@@ -2,8 +2,6 @@
 
 namespace VirtualWebDisplay.Configuration;
 
-using System.Drawing;
-
 public static class VirtualDisplayPlacementOptions
 {
     public const string Right = "right";

@@ -1,13 +1,10 @@
 ﻿using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 
 namespace VirtualWebDisplay.Parsec;
-
-using System.Drawing;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 /// <summary>
 /// Manages a Parsec Virtual Display by talking directly to the installed driver.
@@ -93,9 +90,9 @@ public sealed class VirtualDisplayManager : IDisposable
         if (!DriverApi.OpenHandle(AdapterGuid, out var handle))
         {
             return (false,
-                "No se encontrÃ³ el adaptador de Parsec Virtual Display instalado o accesible.\n" +
-                $"DescargÃ¡ e instalÃ¡ Parsec desde: {InstallUrl}\n" +
-                "Asegurate de instalar la versiÃ³n de escritorio que incluye el Virtual Display Driver (VDD).");
+                "No se encontró el adaptador de Parsec Virtual Display instalado o accesible.\n" +
+                $"Descargá e instalá Parsec desde: {InstallUrl}\n" +
+                "Asegurate de instalar la versión de escritorio que incluye el Virtual Display Driver (VDD).");
         }
 
         DriverApi.CloseHandle(handle);
@@ -118,7 +115,7 @@ public sealed class VirtualDisplayManager : IDisposable
             {
                 Reset();
                 return (false,
-                    "El driver de Parsec VDD estÃ¡ instalado, pero no se pudo crear el display virtual automÃ¡ticamente.");
+                    "El driver de Parsec VDD está instalado, pero no se pudo crear el display virtual automáticamente.");
             }
 
             StartKeepAlive();
@@ -153,19 +150,19 @@ public sealed class VirtualDisplayManager : IDisposable
             }
             else
             {
-                arrangeStatus = "Windows creÃ³ el monitor virtual, pero no se pudo identificar su pantalla automÃ¡ticamente.";
+                arrangeStatus = "Windows creó el monitor virtual, pero no se pudo identificar su pantalla automáticamente.";
             }
 
             IsActive = true;
             return (true,
-                $"Parsec VDD: monitor virtual listo (Ã­ndice interno {_displayIdx}, {Screen.AllScreens.Length} monitores totales" +
+                $"Parsec VDD: monitor virtual listo (índice interno {_displayIdx}, {Screen.AllScreens.Length} monitores totales" +
                 (WindowsMonitorIndex is int idx ? $", MonitorIndex Windows {idx}" : string.Empty) +
                 "). " + arrangeStatus);
         }
         catch (Exception ex)
         {
             Reset();
-            return (false, $"Parsec VDD: error inesperado â€” {ex.Message}");
+            return (false, $"Parsec VDD: error inesperado - {ex.Message}");
         }
     }
 
@@ -235,7 +232,7 @@ public sealed class VirtualDisplayManager : IDisposable
     public (bool ok, string message) TryReconfigure(VirtualScreenConfig config)
     {
         if (!IsActive || string.IsNullOrWhiteSpace(WindowsDeviceName))
-            return (false, "El monitor virtual todavÃ­a no estÃ¡ listo para reconfigurarse.");
+            return (false, "El monitor virtual todavía no está listo para reconfigurarse.");
 
         try
         {
@@ -257,7 +254,7 @@ public sealed class VirtualDisplayManager : IDisposable
     {
         var currentMode = CreateDevMode();
         if (!EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref currentMode))
-            return (false, "No se pudo leer la configuraciÃ³n actual del monitor virtual; queda con la disposiciÃ³n que asigne Windows.");
+            return (false, "No se pudo leer la configuración actual del monitor virtual; queda con la disposición que asigne Windows.");
 
         var primaryBounds = Screen.PrimaryScreen?.Bounds
             ?? Screen.AllScreens.FirstOrDefault(s => s.Primary)?.Bounds
@@ -265,7 +262,7 @@ public sealed class VirtualDisplayManager : IDisposable
 
         var isDuplicate = VirtualDisplayPlacementOptions.IsDuplicate(config.VirtualDisplayPlacement);
 
-        // En modo duplicado se fuerza la resoluciÃ³n del monitor principal.
+        // En modo duplicado se fuerza la resolución del monitor principal.
         var requestedWidth  = isDuplicate ? primaryBounds.Width  : config.Width;
         var requestedHeight = isDuplicate ? primaryBounds.Height : config.Height;
 
@@ -283,28 +280,28 @@ public sealed class VirtualDisplayManager : IDisposable
             var supportedModes = GetSupportedModes(deviceName);
             var supportedText = supportedModes.Count == 0
                 ? string.Empty
-                : $" Modos soportados: {string.Join(", ", supportedModes.Select(m => $"{m.dmPelsWidth}Ã—{m.dmPelsHeight}").Distinct())}.";
+                : $" Modos soportados: {string.Join(", ", supportedModes.Select(m => $"{m.dmPelsWidth}x{m.dmPelsHeight}").Distinct())}.";
             var reason = result == DISP_CHANGE_BADMODE
-                ? "La resoluciÃ³n pedida no estÃ¡ soportada por el driver del monitor virtual."
-                : $"Windows creÃ³ el monitor virtual pero no permitiÃ³ aplicarle posiciÃ³n/resoluciÃ³n (cÃ³digo {result}).";
+                ? "La resolución pedida no está soportada por el driver del monitor virtual."
+                : $"Windows creó el monitor virtual pero no permitió aplicarle posición/resolución (código {result}).";
             return (false, reason + supportedText);
         }
 
         result = ChangeDisplaySettingsEx(null, IntPtr.Zero, IntPtr.Zero, 0, IntPtr.Zero);
         if (result != DISP_CHANGE_SUCCESSFUL)
-            return (false, $"Windows guardÃ³ cambios parciales del monitor virtual, pero no pudo refrescar la topologÃ­a (cÃ³digo {result}).");
+            return (false, $"Windows guardó cambios parciales del monitor virtual, pero no pudo refrescar la topología (código {result}).");
 
         if (isDuplicate)
-            return (true, $"Monitor virtual en modo duplicado (clone) del monitor principal con resoluciÃ³n {config.Width}Ã—{config.Height}.");
+            return (true, $"Monitor virtual en modo duplicado (clone) del monitor principal con resolución {config.Width}x{config.Height}.");
 
         if (config.Width != requestedWidth || config.Height != requestedHeight)
         {
             return (true,
-                $"La resoluciÃ³n solicitada {requestedWidth}Ã—{requestedHeight} no estaba disponible. " +
-                $"Se aplicÃ³ la mÃ¡s cercana soportada: {config.Width}Ã—{config.Height}, ubicada a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal.");
+                $"La resolución solicitada {requestedWidth}x{requestedHeight} no estaba disponible. " +
+                $"Se aplicó la más cercana soportada: {config.Width}x{config.Height}, ubicada a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal.");
         }
 
-        return (true, $"Ubicado a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal con resoluciÃ³n {config.Width}Ã—{config.Height}.");
+        return (true, $"Ubicado a la {NormalizePlacementLabel(config.VirtualDisplayPlacement)} del monitor principal con resolución {config.Width}x{config.Height}.");
     }
 
     private static List<DEVMODE> GetSupportedModes(string deviceName)

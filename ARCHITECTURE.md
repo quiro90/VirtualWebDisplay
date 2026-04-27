@@ -98,27 +98,35 @@ graph TB
 ### Responsabilidades por Capa
 
 #### 1. **UI Layer** (`UI/`)
-- **Propósito**: Interfaz gráfica del sistema (tray icon, formularios de configuración)
+- **Propósito**: Interfaz gráfica del sistema (tray icon, formularios de configuración, templates web)
 - **Componentes**:
   - `VirtualDisplayTrayController`: Gestiona el icono de la bandeja y el menú contextual
   - `ResolutionConfigurationForm`: Formulario principal de configuración
   - `ScreenTabControls`: Controles de tabs para configurar múltiples pantallas
   - `InstallDialog`: Diálogo de instalación del driver Parsec VDD
-  - `IHtmlTemplate`, `WebImagePageTemplate`, `RtcPageTemplate`: Generación de HTML para cliente web
-- **Patrones**: STA Threading, Observer (eventos de formularios)
+  - `IHtmlTemplate`: Interfaz base para generadores de HTML
+  - `WebImagePageTemplate`: Generación HTML modo JPEG polling
+  - `RtcPageTemplate`: Generación HTML modo WebRTC
+  - `SecurityPageTemplate`: Generación HTML página de login (Fase 2)
+  - `ViewerLimitPageTemplate`: Generación HTML página de límite de viewers (Fase 2)
+- **Patrones**: STA Threading, Observer (eventos de formularios), Template Method (HTML generators)
 
-#### 2. **Web Layer** (Entry Point)
-- **Propósito**: Servidor HTTP/HTTPS que expone la aplicación vía web
+#### 2. **Web Layer & Controllers** (Entry Point)
+- **Propósito**: Servidor HTTP/HTTPS que expone la aplicación vía web, con helpers de acceso y autorización
 - **Componentes**:
-  - `Program.cs`: Punto de entrada, configuración de Kestrel, mapeo de endpoints
+  - `Program.cs`: Punto de entrada, configuración de Kestrel, mapeo de endpoints (418 líneas)
+  - `Controllers/SecurityLoginRequest.cs`: Modelo para deserialización POST /auth/login
+  - `UI/HtmlTemplates/SecurityPageTemplate.cs`: Genera página HTML de login
+  - `UI/HtmlTemplates/ViewerLimitPageTemplate.cs`: Genera página HTML cuando límite de viewers alcanzado
 - **Endpoints**:
   - `GET /`: Página principal (template HTML según modo de transmisión)
   - `GET /cap`: Imagen JPEG actual (captura de pantalla)
+  - `POST /auth/login`: Autenticación con código de 6 dígitos
   - `POST /webrtc/offer`: Negociación WebRTC (recibe offer, devuelve answer)
   - `GET /mjpeg`: Stream MJPEG continuo (solo modo JPEG)
   - `GET /cert`: Descarga certificado SSL autofirmado
   - `GET /config`: Descarga configuración JSON actual
-- **Patrones**: MVC (minimal), Dependency Injection
+- **Patrones**: MVC (minimal), Dependency Injection, Template Method (SecurityPageTemplate, ViewerLimitPageTemplate)
 
 #### 3. **Configuration Layer** (`Configuration/`)
 - **Propósito**: Gestión de configuración persistente y modelos de datos
@@ -155,13 +163,21 @@ graph TB
 - **Patrones**: Adapter (interfaz para driver externo), Disposable
 
 #### 6. **Infrastructure Layer** (`Infrastructure/`)
-- **Propósito**: Servicios transversales y utilidades
+- **Propósito**: Servicios transversales, utilidades y helpers de acceso
 - **Componentes**:
   - `ScreenRuntimeContext`: Contenedor que agrega DisplayManager + CaptureService + WebRtcStreamService
   - `NetworkAddressHelper`: Obtiene dirección IP local
   - `LocalCertificateProvider`: Genera/obtiene certificado SSL autofirmado
   - `SingleInstanceManager`: Previene múltiples instancias de la aplicación (mutex)
-- **Patrones**: Facade (ScreenRuntimeContext), Singleton (SingleInstanceManager)
+  - `RuntimeAccessHelper`: Helpers estáticos para resolución runtime, autorización, cookies, normalización de config
+  - `RuntimeCleanupHelper`: Helpers estáticos para disposal ordenado y waits de remoción de displays
+- **Métodos Principales** (RuntimeAccessHelper):
+  - `ResolveRuntime(HttpContext, IReadOnlyList<ScreenRuntimeContext>)`: Encuentra runtime por puerto local
+  - `IsAuthorized(HttpContext, ScreenRuntimeContext)`: Verifica autorización del cliente
+  - `SecurityCookieName(ScreenRuntimeContext)`: Genera nombre de cookie autofirmado
+  - `ResolveViewerKey(HttpContext, ScreenRuntimeContext)`: Obtiene clave de viewer (cookie o IP)
+  - `NormalizeBrowserImageFit(string?)`: Normaliza "fill"/"cover"/"contain"
+- **Patrones**: Facade (ScreenRuntimeContext), Singleton (SingleInstanceManager), Static Helpers (RuntimeAccessHelper, RuntimeCleanupHelper)
 
 ---
 

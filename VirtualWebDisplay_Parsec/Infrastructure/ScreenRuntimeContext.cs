@@ -5,8 +5,6 @@ using VirtualWebDisplay.Streaming;
 
 namespace VirtualWebDisplay.Infrastructure;
 
-using Microsoft.Extensions.Logging.Abstractions;
-
 public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 {
     public ScreenRuntimeContext(string id, string displayName, VirtualScreenConfig config, string hostName, string localIp)

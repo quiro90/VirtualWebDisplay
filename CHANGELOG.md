@@ -7,6 +7,75 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ---
 
+## [1.1.0] - 2026-04-26
+
+### 🔧 Mantenimiento - Fase 1-2 Higiene y Reorganización
+
+Refactorización incremental enfocada en higiene estructural y optimización de Program.cs.
+
+### ✨ Added
+
+#### Fase 1: Higiene Estructural
+
+- **RuntimeAccessHelper.cs** (`Infrastructure/`): Helpers estáticos para acceso, autorización y normalización
+  - 6 métodos: `ResolveRuntime()`, `IsAuthorized()`, `SecurityCookieName()`, `ResolveViewerKey()`, `NormalizeBrowserImageFit()`, `UnauthorizedResult()`
+  - Centraliza lógica de autorización dispersa en endpoints
+
+- **RuntimeCleanupHelper.cs** (`Infrastructure/`): Helpers estáticos para limpieza ordenada
+  - 2 métodos: `DisposeRuntimesAsync()`, `WaitForVirtualDisplaysRemovalAsync()`
+  - Asegura disposal reverso y espera ordenada de remoción de displays
+
+#### Fase 2: Reorganización de Program.cs
+
+- **SecurityPageTemplate.cs** (`UI/HtmlTemplates/`): Template de página de login (170 líneas)
+  - Generador de HTML responsivo con formulario de código 6-dígitos
+  - Estilos dark modernos con validación JS
+
+- **ViewerLimitPageTemplate.cs** (`UI/HtmlTemplates/`): Template de página de límite (51 líneas)
+  - Generador de HTML para cuando límite de viewers es alcanzado
+
+- **SecurityLoginRequest.cs** (`Controllers/`): Model de deserialización
+  - Record para POST `/auth/login` con código
+
+### 🔄 Changed
+
+#### Program.cs Optimización
+
+- **Reducción**: 685 → 418 líneas (39% reduction, 267 líneas removidas)
+- **Métodos extraídos**: 4 static methods movidos a RuntimeAccessHelper + RuntimeCleanupHelper
+- **Templates extraídos**: 2 bloques HTML (~245 líneas) movidos a SecurityPageTemplate + ViewerLimitPageTemplate
+- **Endpoints refactorizados**: Ahora delegan a helpers en lugar de lógica inline
+
+#### Limpieza de Imports
+
+- **ScreenRuntimeContext.cs**: 1 duplicate using eliminado
+- **CaptureService.cs**: 4 duplicate usings eliminados  
+- **WebRtcStreamService.cs**: 2 duplicate usings eliminados
+- **VirtualDisplayManager.cs**: 3 duplicate usings eliminados
+- **VirtualDisplayPlacementOptions.cs**: 1 duplicate using eliminado
+
+#### Correcciones de Encoding
+
+- **VirtualDisplayManager.cs**: 20+ caracteres mojibake restaurados a UTF-8
+  - Mensajes de error con acentos españoles corregidos
+  - Ejemplo: "Ã³" → "ó", "encontró" restaurado, "versión" restaurado
+
+### ✅ Fixed
+
+- Imports duplicados tras refactorings anteriores
+- Encoding dañado en mensajes de usuario (mojibake UTF-8)
+- Resolución de runtime no centralizada (ahora en RuntimeAccessHelper)
+- Cleanup de runtimes no ordenado (ahora garantiza disposal reverso)
+
+### 📊 Verificación
+
+- ✅ Compilación exitosa: 0 errores, 2 pre-existing SYSLIB0057 warnings (no nuevos)
+- ✅ DLL generado: 0.21 MB
+- ✅ Smoke test: Arranque validado sin regresos
+- ✅ Integración: Todos los helpers llamados correctamente en 8 endpoints
+
+---
+
 ## [1.0.0] - 2024-01-XX
 
 ### 🎉 Versión Inicial - Refactorización Completa

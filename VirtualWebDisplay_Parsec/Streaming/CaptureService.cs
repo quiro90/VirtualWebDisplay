@@ -2,15 +2,11 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 
 namespace VirtualWebDisplay.Streaming;
-
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-using System.Windows.Forms;
 
 public sealed class CaptureService : BackgroundService
 {

@@ -1,101 +1,77 @@
-# 📊 Estado de la Refactorización
+# 📊 Estado de la Refactorización - Fase 1-2
 
-## ✅ COMPLETADO AL 100%
+## ✅ FASES 0-2 COMPLETADAS
 
-### Fase 1: Extracción de Clases Anidadas ✅
-- [x] ScreenTabControls extraída → `UI/Forms/ScreenTabControls.cs`
-- [x] ResolutionConfigurationForm extraída → `UI/Forms/ResolutionConfigurationForm.cs`
-- [x] VirtualDisplayTrayController movido y simplificado → `UI/TrayIcon/VirtualDisplayTrayController.cs`
-- [x] Archivo original VirtualDisplayTrayController.cs eliminado
+### Fase 0: Diagnóstico ✅
+- [x] Revisar arquitectura y documentación existente.
+- [x] Identificar puntos de concentración de responsabilidades.
+- [x] Detectar duplicidades y residuos de organización.
 
-### Fase 2: Templates HTML ✅
-- [x] IHtmlTemplate creado → `UI/HtmlTemplates/IHtmlTemplate.cs`
-- [x] WebImagePageTemplate creado → `UI/HtmlTemplates/WebImagePageTemplate.cs`
-- [x] RtcPageTemplate creado → `UI/HtmlTemplates/RtcPageTemplate.cs`
-- [x] InstallDialog creado → `UI/Forms/InstallDialog.cs`
-- [x] Program.cs actualizado para usar templates
-- [x] Program.cs actualizado para usar InstallDialog.Show()
+## Fase 1: Higiene Estructural ✅
+- [x] Limpiar imports duplicados y ordenarlos por archivo.
+- [x] Corregir textos con codificación dañada en mensajes de usuario.
+- [x] Verificar compilación sin regresiones funcionales.
 
-### Fase 3: Estructura de Carpetas ✅
-- [x] Carpetas creadas:
-  - Configuration/Models/
-  - Parsec/
-  - Streaming/Models/
-  - Infrastructure/
+### Archivos Modificados Fase 1
+- [x] `ScreenRuntimeContext.cs` - Removed 1 duplicate using
+- [x] `CaptureService.cs` - Removed 4 duplicate usings
+- [x] `WebRtcStreamService.cs` - Removed 2 duplicate usings + format fixes
+- [x] `VirtualDisplayManager.cs` - Removed 3 duplicates + fixed 20+ mojibake lines
+- [x] `VirtualDisplayPlacementOptions.cs` - Removed 1 duplicate using
 
-### Fase 4: Reorganización de Archivos ✅
+## Fase 2: Reorganización de Program.cs ✅
+- [x] Extraer templates de seguridad/límite a UI/HtmlTemplates (SecurityPageTemplate, ViewerLimitPageTemplate).
+- [x] Extraer helpers de acceso/autorización a Infrastructure (RuntimeAccessHelper).
+- [x] Extraer helpers de limpieza de runtimes a Infrastructure (RuntimeCleanupHelper).
+- [x] Reducir el tamaño de Program.cs manteniendo mismos endpoints y flujo (685 → 418 líneas).
+- [x] Verificar compilación y arranque (Smoke test exitoso).
 
-#### Configuration/Models/ ✅
-- [x] VirtualScreenConfig.cs
-- [x] VirtualWebDisplaySettings.cs
+### Archivos Creados Fase 2
+- [x] `Infrastructure/RuntimeAccessHelper.cs` (46 líneas, 6 métodos)
+- [x] `Infrastructure/RuntimeCleanupHelper.cs` (32 líneas, 2 métodos)
+- [x] `UI/HtmlTemplates/SecurityPageTemplate.cs` (170 líneas)
+- [x] `UI/HtmlTemplates/ViewerLimitPageTemplate.cs` (51 líneas)
+- [x] `Controllers/SecurityLoginRequest.cs` (1 línea)
 
-#### Configuration/ ✅
-- [x] VirtualScreenSettingsStore.cs
-- [x] VirtualDisplayProfiles.cs
-- [x] TransmissionModeOptions.cs
-- [x] VirtualDisplayPlacementOptions.cs
+## Fase 3: Orden de Capa Web (PENDIENTE)
+- [ ] Definir estrategia de mapeo de endpoints por módulos (Auth, Stream, Config).
+- [ ] Reutilizar carpeta Controllers o crear carpeta Endpoints consistente.
+- [ ] Mantener rutas y contratos HTTP existentes.
 
-#### Parsec/ ✅
-- [x] VirtualDisplayManager.cs
+## Fase 4: Modularización de UI Forms (PENDIENTE)
+- [ ] Separar ResolutionConfigurationForm en partials por responsabilidad.
+- [ ] Separar ScreenTabControls en partials por responsabilidad.
+- [ ] Mantener localización y tema sin cambios funcionales.
 
-#### Streaming/ ✅
-- [x] CaptureService.cs
-- [x] WebRtcStreamService.cs
+## Fase 5: Configuración y Copias (PENDIENTE)
+- [ ] Reducir duplicación entre Clone y CopyTo de VirtualScreenConfig.
+- [ ] Agregar prueba de cobertura de propiedades copiada.
 
-#### Streaming/Models/ ✅
-- [x] WebRtcSessionOffer.cs
-- [x] WebRtcSessionAnswer.cs
-
-#### Infrastructure/ ✅
-- [x] ScreenRuntimeContext.cs
-- [x] NetworkAddressHelper.cs
-- [x] LocalCertificateProvider.cs
-- [x] SingleInstanceManager.cs
-
-### Fase 5: Actualización de Imports ✅
-- [x] Program.cs
-- [x] VirtualDisplayTrayController.cs
-- [x] ResolutionConfigurationForm.cs
-- [x] ScreenTabControls.cs
-- [x] VirtualDisplayManager.cs
-- [x] Todos los archivos actualizados
-
-### Fase 6: Limpieza ✅
-- [x] Archivos antiguos eliminados de la raíz (13 archivos)
-- [x] Duplicados eliminados
-
-### Fase 7: Compilación Final ✅
-- [x] ✅ **COMPILACIÓN EXITOSA**
-- [x] Sin errores
-- [x] Sin warnings
+## Fase 6: Hardening Técnico (PENDIENTE)
+- [ ] Migrar carga de certificados a API recomendada (evitar warning SYSLIB0057).
+- [ ] Revisar puntos de polling/sleeps para encapsulado y documentación.
 
 ---
 
 ## 📈 Progreso Total
 
-**Archivos Refactorizados**: 21/21  
-**Porcentaje Completado**: ✅ **100%**
+| Fase | Status | Completitud |
+|------|--------|-------------|
+| Fase 0: Diagnóstico | ✅ Completo | 100% |
+| Fase 1: Higiene | ✅ Completo | 100% |
+| Fase 2: Reorganización | ✅ Completo | 100% |
+| Fase 3: Web Layer | ⏳ Pendiente | 0% |
+| Fase 4: UI Forms | ⏳ Pendiente | 0% |
+| Fase 5: Config | ⏳ Pendiente | 0% |
+| Fase 6: Hardening | ⏳ Pendiente | 0% |
 
----
-
-## 🎊 REFACTORIZACIÓN COMPLETADA
-
-✅ Todos los archivos reorganizados
-✅ Namespaces correctos implementados
-✅ Imports actualizados
-✅ Compilación exitosa
-✅ Funcionalidad preservada
-
-**Estado**: ✅ COMPLETADO
-**Fecha de finalización**: 2024-01-26
+**Porcentaje Total Completado**: 43% (3 de 7 fases)
 
 ---
 
 ## 🎯 Próximos Pasos
 
-1. Mover archivos de Configuration/ con namespaces actualizados
-2. Mover archivos de Parsec/ con namespaces actualizados
-3. Mover archivos de Streaming/ con namespaces actualizados
-4. Mover archivos de Infrastructure/ con namespaces actualizados
-5. Actualizar imports en todos los archivos
-6. Compilación y testing final
+1. **Fase 3**: Organizar endpoints en Controllers/Endpoints por módulo (Auth, Stream, Config)
+2. **Fase 4**: Refactorizar ResolutionConfigurationForm y ScreenTabControls en partials
+3. **Fase 5**: Deduplicar Clone/CopyTo en VirtualScreenConfig
+4. **Fase 6**: Modernizar certificados y limpiar sleeps/polling

@@ -7,8 +7,6 @@ using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Streaming.Models;
 
 namespace VirtualWebDisplay.Streaming;
-using Microsoft.Extensions.Logging;
-using SIPSorcery.Net;
 
 public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 {
@@ -32,7 +30,8 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     public int ActivePeerCount => _peers.Count;
 
     public async Task<WebRtcSessionAnswer> CreateAnswerAsync(WebRtcSessionOffer offer, CancellationToken cancellationToken)
-    {        var peerId = Guid.NewGuid();
+    {
+        var peerId = Guid.NewGuid();
         var peerConnection = new RTCPeerConnection(PeerConfiguration);
         var iceGatheringComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         RTCDataChannel? framesChannel = null;
@@ -110,7 +109,8 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
                     if (frame.Length > 0 && !ReferenceEquals(frame, lastFrame))
                     {
                         lastFrame = frame;
-                        var frameId = ++_frameId;foreach (var peerEntry in _peers.ToArray())
+                        var frameId = ++_frameId;
+                        foreach (var peerEntry in _peers.ToArray())
                             peerEntry.Value.TrySendFrame(frame, frameId);
                     }
                 }
@@ -118,7 +118,8 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
                 await Task.Delay(10, stoppingToken);
             }
             catch (OperationCanceledException)
-            {break;
+            {
+                break;
             }
             catch (Exception ex)
             {

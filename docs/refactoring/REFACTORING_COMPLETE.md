@@ -1,67 +1,44 @@
-# 🎉 REFACTORIZACIÓN COMPLETADA AL 100%
+# 🎉 REFACTORIZACIÓN FASE 1-2: HIGIENE Y REORGANIZACIÓN
 
-## ✅ MISIÓN CUMPLIDA
+## ✅ STATUS: COMPLETADAS FASES 0-2
 
-La refactorización completa de **VirtualWebDisplay** ha sido finalizada exitosamente.
-
----
-
-## 📊 RESUMEN EJECUTIVO
-
-### Archivos Reorganizados: **21/21** ✅
-
-#### UI/ (7 archivos)
-✅ `UI/Forms/ScreenTabControls.cs`
-✅ `UI/Forms/ResolutionConfigurationForm.cs`
-✅ `UI/Forms/InstallDialog.cs`
-✅ `UI/TrayIcon/VirtualDisplayTrayController.cs`
-✅ `UI/HtmlTemplates/IHtmlTemplate.cs`
-✅ `UI/HtmlTemplates/WebImagePageTemplate.cs`
-✅ `UI/HtmlTemplates/RtcPageTemplate.cs`
-
-#### Configuration/ (8 archivos)
-✅ `Configuration/Models/VirtualScreenConfig.cs`
-✅ `Configuration/Models/VirtualWebDisplaySettings.cs`
-✅ `Configuration/VirtualScreenSettingsStore.cs`
-✅ `Configuration/VirtualDisplayProfiles.cs`
-✅ `Configuration/TransmissionModeOptions.cs`
-✅ `Configuration/VirtualDisplayPlacementOptions.cs`
-
-#### Parsec/ (1 archivo)
-✅ `Parsec/VirtualDisplayManager.cs`
-
-#### Streaming/ (4 archivos)
-✅ `Streaming/CaptureService.cs`
-✅ `Streaming/WebRtcStreamService.cs`
-✅ `Streaming/Models/WebRtcSessionOffer.cs`
-✅ `Streaming/Models/WebRtcSessionAnswer.cs`
-
-#### Infrastructure/ (4 archivos)
-✅ `Infrastructure/ScreenRuntimeContext.cs`
-✅ `Infrastructure/NetworkAddressHelper.cs`
-✅ `Infrastructure/LocalCertificateProvider.cs`
-✅ `Infrastructure/SingleInstanceManager.cs`
-
-#### Raíz (1 archivo)
-✅ `Program.cs` (refactorizado)
+La refactorización incremental de **VirtualWebDisplay** continúa con éxito. Fases 1-2 enfocadas en higiene estructural y reorganización de Program.cs.
 
 ---
 
-## 📈 MÉTRICAS FINALES
+## 📊 RESUMEN EJECUTIVO - FASE 1-2
+
+### Cambios Aplicados: **9 archivos** ✅
+
+#### Archivos Creados (Fase 2) - 5 nuevos
+✅ `Infrastructure/RuntimeAccessHelper.cs` - Helpers de acceso y autorizaci\u00f3n (46 líneas)
+✅ `Infrastructure/RuntimeCleanupHelper.cs` - Helpers de cleanup y disposal (32 líneas)
+✅ `UI/HtmlTemplates/SecurityPageTemplate.cs` - Template HTML login (170 líneas)
+✅ `UI/HtmlTemplates/ViewerLimitPageTemplate.cs` - Template HTML límite viewers (51 líneas)
+✅ `Controllers/SecurityLoginRequest.cs` - Model para /auth/login (1 línea)
+
+#### Archivos Limpios (Fase 1) - 4 modificados
+✅ `Infrastructure/ScreenRuntimeContext.cs` - Removed duplicate using
+✅ `Streaming/CaptureService.cs` - Removed 4 duplicate usings
+✅ `Streaming/WebRtcStreamService.cs` - Removed 2 duplicate usings + format fixes
+✅ `Parsec/VirtualDisplayManager.cs` - Removed duplicates + fixed 20+ mojibake lines
+
+---
+
+## 📈 MÉTRICAS FINALES - FASE 1-2
 
 | Métrica | Antes | Después | Mejora |
 |---------|-------|---------|--------|
-| **Program.cs** | 620 líneas | 164 líneas | **↓ 73.5%** |
-| **VirtualDisplayTrayController** | 850 líneas | 250 líneas | **↓ 70.6%** |
-| **Archivos en raíz** | 15 archivos | 1 archivo | **↓ 93.3%** |
-| **Clases anidadas** | 2 clases | 0 clases | **✅ Eliminadas** |
-| **HTML embebido** | 456 líneas | 0 líneas | **✅ Eliminado** |
-| **Carpetas organizadas** | 0 | 7 carpetas | **✅ Creadas** |
-| **Archivos nuevos** | - | 9 archivos | **✅ Extraídos** |
-| **Compilación** | ✅ OK | ✅ OK | **✅ Sin errores** |
+| **Program.cs** | 685 líneas | 418 líneas | **↓ 39.0% (-267 líneas)** |
+| **Imports duplicados** | 9 líneas | 0 líneas | **✅ Eliminados** |
+| **Mojibake en mensajes** | 20+ chars | UTF-8 correcto | **✅ Corregido** |
+| **Archivos nuevos** | - | 5 archivos | **✅ Extraídos** |
+| **Helper methods** | inline | 6 métodos RuntimeAccessHelper | **✅ Externalizados** |
+| **HTML templates** | embedded | 2 templates en classes | **✅ Organizados** |
+| **Compilación** | ✅ OK | ✅ OK (0 errors) | **✅ Sin regresos** |
 
-**Total de líneas refactorizadas**: ~1,926 líneas
-**Reducción de complejidad**: ~70%
+**Total de líneas refactorizadas**: ~350 líneas
+**Compilación**: Clean (0 errors, 2 pre-existing SYSLIB0057 warnings)
 
 ---
 
@@ -147,25 +124,79 @@ VirtualWebDisplay_Parsec/
 
 ---
 
-## 🔍 CAMBIOS PRINCIPALES APLICADOS
+## 🔍 CAMBIOS PRINCIPALES APLICADOS - FASE 1-2
 
-### ✅ Extracción de Clases
-- **ScreenTabControls**: Extraída de VirtualDisplayTrayController
-- **ResolutionConfigurationForm**: Extraída de VirtualDisplayTrayController
-- **InstallDialog**: Extraída de Program.cs
-- **WebRtcSessionOffer/Answer**: Extraídas de WebRtcStreamService
+### ✅ Fase 1: Higiene Estructural
 
-### ✅ Templates HTML
-- **WebImagePageTemplate**: Template para imagen JPEG refrescada
-- **RtcPageTemplate**: Template para streaming WebRTC
-- **IHtmlTemplate**: Interfaz común para templates
+#### Imports Duplicados Eliminados
+- **ScreenRuntimeContext.cs**: Removido 1 using duplicado
+- **CaptureService.cs**: Removidos 4 usings duplicados
+- **WebRtcStreamService.cs**: Removidos 2 usings duplicados
+- **VirtualDisplayManager.cs**: Removidos 3 usings duplicados
+- **VirtualDisplayPlacementOptions.cs**: Removido 1 using duplicado
 
-### ✅ Reorganización Completa
-- **13 archivos** movidos de raíz a carpetas organizadas
-- **13 archivos antiguos** eliminados
-- **9 archivos nuevos** creados
-- **Todos los namespaces** actualizados correctamente
-- **Todos los imports** corregidos
+#### Codificación Corregida
+- **VirtualDisplayManager.cs**: Corregidos 20+ caracteres mojibake → UTF-8 correcto
+  - Mensajes de error con acentos españoles restaurados
+  - Ejemplo: "Ã³" → "ó", "Ãá" → "á"
+
+### ✅ Fase 2: Reorganización de Program.cs
+
+#### Métodos Extraídos a RuntimeAccessHelper (6 métodos estáticos)
+- `NormalizeBrowserImageFit(string?)`: Normaliza valores "fill"/"cover"/"contain"
+- `SecurityCookieName(ScreenRuntimeContext)`: Genera nombre de cookie por runtime
+- `ResolveRuntime(HttpContext, IReadOnlyList<ScreenRuntimeContext>)`: Encuentra runtime por puerto local
+- `IsAuthorized(HttpContext, ScreenRuntimeContext)`: Verifica autorizaci\u00f3n del cliente
+- `ResolveViewerKey(HttpContext, ScreenRuntimeContext)`: Obtiene clave viewer (cookie/IP)
+- `UnauthorizedResult(ScreenRuntimeContext)`: Retorna respuesta 401/403
+
+#### Helpers de Cleanup Extraídos a RuntimeCleanupHelper
+- `DisposeRuntimesAsync(IEnumerable<ScreenRuntimeContext>)`: Disposal ordenado en reverso
+- `WaitForVirtualDisplaysRemovalAsync(IReadOnlyCollection<string>, TimeSpan)`: Polling hasta remoci\u00f3n
+
+#### Templates HTML Extraídos
+- **SecurityPageTemplate.cs** (UI/HtmlTemplates/): P\u00e1gina de login con formulario de c\u00f3digo (170 líneas)
+  - Genera HTML de login responsivo con validaci\u00f3n de 6 d\u00edgitos
+  - Estilos dark modernos con gradientes y tarjetas semitransparentes
+  - Script JS para POST /auth/login
+  
+- **ViewerLimitPageTemplate.cs** (UI/HtmlTemplates/): P\u00e1gina de l\u00edmite alcanzado (51 líneas)
+  - Muestra mensaje cuando todos los cupos de viewers est\u00e1n ocupados
+
+#### Models Organizados
+- **SecurityLoginRequest.cs** (Controllers/): Record para modelo POST /auth/login
+  - `public sealed record SecurityLoginRequest(string? Code);`
+
+### ✅ Resultado Program.cs
+
+**Antes (685 líneas)**:
+```csharp
+// ~6 métodos estáticos locales inline
+// ~2 bloques HTML ~100 líneas c/u
+// Logic mezclada con templates
+```
+
+**Después (418 líneas)**:
+```csharp
+// Líneas 40-41: Instanciación de 4 templates
+var webImageTemplate = new WebImagePageTemplate();
+var rtcTemplate = new RtcPageTemplate();
+var securityPageTemplate = new SecurityPageTemplate();
+var viewerLimitPageTemplate = new ViewerLimitPageTemplate();
+
+// Endpoints ahora delegan a helpers
+app.MapPost("/auth/login", (HttpContext ctx, SecurityLoginRequest request) =>
+{
+    var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+    var isAuthorized = RuntimeAccessHelper.IsAuthorized(ctx, runtime);
+    // ...
+    return Results.Content(securityPageTemplate.Generate(runtime, ctx), "text/html");
+});
+
+// Cleanup al final usa helpers
+await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
+await RuntimeCleanupHelper.WaitForVirtualDisplaysRemovalAsync(...);
+```
 
 ---
 
