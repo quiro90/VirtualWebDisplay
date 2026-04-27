@@ -7,6 +7,27 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 
 ---
 
+## [1.2.0] - 2026-04-27
+
+### 🔧 Limpieza y reorganización estructural
+
+### ✨ Added
+
+- **`Infrastructure/RuntimeStartupHelper.cs`**: Extrae la lógica de inicialización de runtimes (creación de displays virtuales, asignación de monitor index, arranque de servicios). Devuelve `false` si algún runtime falla, mostrando el diálogo correspondiente.
+- **`Controllers/WebApiEndpoints.cs`**: Todos los endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/cert`, `/config`, `/auth/login`) movidos aquí desde `Program.cs`. Namespace `VirtualWebDisplay.Controllers`, junto a `SecurityLoginRequest`.
+
+### 🔄 Changed
+
+- **`Program.cs`**: Reducido de ~418 a ~120 líneas. Solo orquesta el ciclo de vida (init, loop stop/start, cleanup). Delega arranque a `RuntimeStartupHelper` y endpoints a `WebApiEndpoints`.
+- **`LocalCertificateProvider.cs`**: Reemplazados los constructores obsoletos `new X509Certificate2(...)` por `X509CertificateLoader.LoadPkcs12FromFile()` y `X509CertificateLoader.LoadPkcs12()`.
+- Eliminados 17 `Console.WriteLine` de `Program.cs` (app de escritorio, no necesita salida en consola).
+
+### ✅ Build
+
+- 0 errores, 0 warnings (SYSLIB0057 resueltos)
+
+---
+
 ## [1.1.0] - 2026-04-26
 
 ### 🔧 Mantenimiento - Fase 1-2 Higiene y Reorganización
@@ -69,7 +90,7 @@ Refactorización incremental enfocada en higiene estructural y optimización de 
 
 ### 📊 Verificación
 
-- ✅ Compilación exitosa: 0 errores, 2 pre-existing SYSLIB0057 warnings (no nuevos)
+- ✅ Compilación exitosa: 0 errores, 2 warnings SYSLIB0057 (resueltos en v1.2.0)
 - ✅ DLL generado: 0.21 MB
 - ✅ Smoke test: Arranque validado sin regresos
 - ✅ Integración: Todos los helpers llamados correctamente en 8 endpoints

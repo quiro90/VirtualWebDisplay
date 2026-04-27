@@ -114,7 +114,8 @@ graph TB
 #### 2. **Web Layer & Controllers** (Entry Point)
 - **Propósito**: Servidor HTTP/HTTPS que expone la aplicación vía web, con helpers de acceso y autorización
 - **Componentes**:
-  - `Program.cs`: Punto de entrada, configuración de Kestrel, mapeo de endpoints (418 líneas)
+  - `Program.cs`: Punto de entrada, configuración de Kestrel, orquestación del ciclo de vida (~120 líneas)
+  - `Controllers/WebApiEndpoints.cs`: Registro de todos los endpoints HTTP (`Map()` recibe el `WebApplication`)
   - `Controllers/SecurityLoginRequest.cs`: Modelo para deserialización POST /auth/login
   - `UI/HtmlTemplates/SecurityPageTemplate.cs`: Genera página HTML de login
   - `UI/HtmlTemplates/ViewerLimitPageTemplate.cs`: Genera página HTML cuando límite de viewers alcanzado
@@ -169,6 +170,7 @@ graph TB
   - `NetworkAddressHelper`: Obtiene dirección IP local
   - `LocalCertificateProvider`: Genera/obtiene certificado SSL autofirmado
   - `SingleInstanceManager`: Previene múltiples instancias de la aplicación (mutex)
+  - `RuntimeStartupHelper`: Inicializa runtimes (crea displays virtuales, asigna monitor index, arranca servicios)
   - `RuntimeAccessHelper`: Helpers estáticos para resolución runtime, autorización, cookies, normalización de config
   - `RuntimeCleanupHelper`: Helpers estáticos para disposal ordenado y waits de remoción de displays
 - **Métodos Principales** (RuntimeAccessHelper):
