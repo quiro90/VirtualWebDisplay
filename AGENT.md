@@ -164,16 +164,17 @@ Browser POST /webrtc/offer con SDP
 - Verificar Parsec VDD si es necesario
 - Crear runtimes por pantalla (`ScreenRuntimeContext`)
 - Configurar Kestrel (HTTP + HTTPS con cert autofirmado)
-- Mapear endpoints: `/`, `/cap`, `/webrtc/offer`, `/mjpeg`, `/cert`, `/config`
+- Mapear endpoints: `/`, `/auth/login`, `/cap`, `/webrtc/offer`, `/mjpeg`, `/cert`, `/config`
 - Cleanup al cerrar
 
 **Endpoints HTTP**:
-- `GET /` → Template HTML (WebImage o RTC según config)
-- `GET /cap` → JPEG frame actual
-- `POST /webrtc/offer` → Negociación WebRTC
-- `GET /mjpeg` → MJPEG stream (legacy)
+- `GET /` → Template HTML (WebImage o RTC según config); si seguridad activa y no autenticado, devuelve login por clave
+- `POST /auth/login` → Login por clave de pantalla (cookie HTTP-only)
+- `GET /cap` → JPEG frame actual (requiere auth si seguridad activa)
+- `POST /webrtc/offer` → Negociación WebRTC (requiere auth si seguridad activa)
+- `GET /mjpeg` → MJPEG stream (legacy, requiere auth si seguridad activa)
 - `GET /cert` → Descargar certificado SSL (.crt)
-- `GET /config` → JSON con configuración actual
+- `GET /config` → JSON con configuración actual (requiere auth si seguridad activa)
 
 ### VirtualDisplayTrayController
 **Responsabilidades**:
@@ -379,6 +380,7 @@ public sealed class CaptureService : BackgroundService
 | `StreamRotationDegrees` | int | Rotación (0, 90, 180, 270) |
 | `VirtualDisplayPlacement` | string | "right", "left", "top", "bottom", "duplicate" |
 | `BrowserImageFit` | string | "contain", "cover", "fill" |
+| `ScreenSecurityEnabled` | bool | Activa clave de acceso por pantalla |
 | `MonitorIndex` | int | Índice en Screen.AllScreens (-1 = auto) |
 
 ---

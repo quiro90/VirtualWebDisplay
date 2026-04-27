@@ -584,32 +584,22 @@ if (!createdNew)
 
 ---
 
-### 3. Validación de Configuración
+### 3. Seguridad por pantalla (clave dinámica)
 
-**Antes de Guardar**:
-```csharp
-public void EnsureValid()
-{
-    // Normalizar resolución
-    if (Width < 640) Width = 640;
-    if (Height < 480) Height = 480;
+**Comportamiento actual**:
+- Cada pantalla (`Screen1`/`Screen2`) tiene check `ScreenSecurityEnabled`.
+- Si está activo, al iniciar runtime se genera una clave alfanumérica aleatoria de 6 caracteres.
+- El host muestra login en `/` hasta que el cliente se autentica.
+- Endpoints protegidos por auth cuando seguridad está activa: `/cap`, `/mjpeg`, `/webrtc/offer`, `/config`.
 
-    // Normalizar calidad JPEG
-    if (JpegQuality < 1) JpegQuality = 1;
-    if (JpegQuality > 100) JpegQuality = 100;
-
-    // Detectar conflicto de puertos
-    if (Screen1.HttpPort == Screen2.HttpPort && Screen2.Enabled)
-    {
-        Screen2.HttpPort = Screen1.HttpPort + 10;
-    }
-}
-```
+**Límite de intentos**:
+- 5 intentos por cliente/IP en ventana de 45 segundos.
+- Al superar el límite, responde `429` con tiempo de espera.
 
 **Beneficio**:
-- ✅ Previene configuración inválida
-- ✅ Detecta y resuelve conflictos automáticamente
-- ✅ Garantiza valores dentro de rangos seguros
+- ✅ Evita acceso casual desde otros dispositivos de la red local
+- ✅ Seguridad independiente por pantalla
+- ✅ No expone contenido sin clave válida
 
 ---
 
@@ -623,7 +613,7 @@ public void EnsureValid()
 - [ ] **3+ Pantallas**: Soporte para más de 2 pantallas simultáneas
 - [ ] **Modo Espejo**: Duplicar monitor real (no solo virtuales)
 - [ ] **Grabación de Sesión**: Guardar stream a archivo MP4
-- [ ] **Autenticación**: Password-protect para acceso remoto
+- [x] **Autenticación por clave local**: Protección por pantalla con clave dinámica y rate limiting
 
 ---
 

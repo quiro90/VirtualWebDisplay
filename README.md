@@ -24,7 +24,8 @@
 - 🌐 **Acceso Remoto**: Accede desde cualquier dispositivo en tu red local
 - 🔒 **HTTPS Automático**: Certificado SSL autofirmado generado automáticamente
 - 🎯 **Sin Configuración de Red**: Detección automática de IP local
-- 💾 **Persistencia de Configuración**: Settings guardados en `~/.virtualwebdisplay/`
+- 💾 **Persistencia de Configuración**: Settings guardados en `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`
+- 🔐 **Seguridad por Pantalla**: Clave alfanumérica dinámica de 6 caracteres (opcional por Screen1/Screen2), con límite de intentos
 
 ---
 
@@ -149,6 +150,7 @@ Click derecho en el icono → **Configuration**
 | **JPEG Quality** | Calidad de compresión | 1-100 (default: 75, mayor = mejor calidad) |
 | **Position** | Posición relativa al monitor primario | Right, Left, Above, Below |
 | **Rotation** | Rotación de imagen | 0°, 90°, 180°, 270° |
+| **Screen Security** | Requiere clave de acceso al abrir el host | Activado/Desactivado por pantalla |
 
 Click **Apply** para crear/actualizar la pantalla virtual.
 
@@ -163,7 +165,9 @@ https://localhost:5001
 ```
 https://192.168.1.XXX:5001
 ```
-*(La IP se muestra en la página web)*
+*(La IP se muestra en la app y en systray)*
+
+Si la seguridad de pantalla está activada para esa pantalla, primero aparecerá un formulario de acceso y solo mostrará contenido al ingresar la clave válida.
 
 ### 4. Instalar Certificado SSL (Primera Vez)
 
@@ -231,7 +235,7 @@ Configuración Recomendada:
 
 ### Archivo de Configuración
 
-Ubicación: `C:\Users\<Usuario>\.virtualwebdisplay\settings.json`
+Ubicación: `C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json`
 
 **Ejemplo**:
 
@@ -239,29 +243,25 @@ Ubicación: `C:\Users\<Usuario>\.virtualwebdisplay\settings.json`
 {
   "Screen1": {
     "Enabled": true,
-    "Width": 1920,
-    "Height": 1080,
-    "HttpPort": 5000,
-    "TransmissionMode": "RTC",
-    "CaptureIntervalMs": 50,
-    "JpegQuality": 75,
-    "Placement": "Right",
-    "OffsetX": 0,
-    "OffsetY": 0,
-    "Rotation": 0
+    "Port": 8000,
+    "Width": 1080,
+    "Height": 1920,
+    "TransmissionMethod": "Rtc",
+    "CaptureIntervalSeconds": 0.25,
+    "JpegQuality": 40,
+    "ScreenSecurityEnabled": true,
+    "StreamRotationDegrees": 0,
+    "VirtualDisplayPlacement": "right",
+    "BrowserImageFit": "contain"
   },
   "Screen2": {
     "Enabled": false,
-    "Width": 1280,
-    "Height": 720,
-    "HttpPort": 6000,
-    "TransmissionMode": "WebImage",
-    "CaptureIntervalMs": 100,
-    "JpegQuality": 70,
-    "Placement": "Above",
-    "OffsetX": 0,
-    "OffsetY": 0,
-    "Rotation": 0
+    "Port": 8002,
+    "TransmissionMethod": "WebImage",
+    "CaptureIntervalSeconds": 0.2,
+    "JpegQuality": 45,
+    "ScreenSecurityEnabled": false,
+    "VirtualDisplayPlacement": "left"
   }
 }
 ```
@@ -269,7 +269,7 @@ Ubicación: `C:\Users\<Usuario>\.virtualwebdisplay\settings.json`
 **Edición Manual**:
 
 1. Cerrar la aplicación
-2. Editar `settings.json`
+2. Editar `virtualscreen.user.json`
 3. Reiniciar la aplicación (validará y aplicará configuración)
 
 Ver **docs/CONFIGURATION.md** para detalles de cada campo.
@@ -284,8 +284,9 @@ Ver **docs/CONFIGURATION.md** para detalles de cada campo.
 | `/cap` | GET | Imagen JPEG actual (para modo Web Image) |
 | `/mjpeg` | GET | Stream MJPEG continuo (solo modo Web Image) |
 | `/webrtc/offer` | POST | Negociación WebRTC (SDP offer → answer) |
+| `/auth/login` | POST | Login por clave cuando la seguridad de pantalla está activa |
 | `/cert` | GET | Descargar certificado SSL autofirmado |
-| `/config` | GET | Descargar configuración JSON actual |
+| `/config` | GET | Descargar configuración JSON actual (requiere auth si seguridad activa) |
 
 ### Ejemplo: Obtener Frame Actual
 

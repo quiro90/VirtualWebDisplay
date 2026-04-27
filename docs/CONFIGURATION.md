@@ -1,19 +1,69 @@
 # ⚙️ Configuración - VirtualWebDisplay
 
+> Estado actual (2026-04): este proyecto usa `virtualscreen.user.json` y los campos `Port`, `TransmissionMethod`, `CaptureIntervalSeconds`, `StreamRotationDegrees`, `VirtualDisplayPlacement`, `BrowserImageFit` y `ScreenSecurityEnabled`.
+>
+> Este documento conserva secciones históricas para referencia. Para cambios nuevos, tomar como fuente de verdad:
+> - `docs/ai-map/04-configuracion-y-api.md`
+> - `AGENT.md`
+
 ## Tabla de Contenidos
 
-1. [Ubicación del Archivo](#ubicación-del-archivo)
-2. [Estructura JSON](#estructura-json)
-3. [Referencia de Campos](#referencia-de-campos)
-4. [Ejemplos de Configuración](#ejemplos-de-configuración)
-5. [Validación y Valores por Defecto](#validación-y-valores-por-defecto)
-6. [Edición Manual](#edición-manual)
+1. [Esquema Vigente (importante)](#esquema-vigente-importante)
+2. [Ubicación del Archivo](#ubicación-del-archivo)
+3. [Estructura JSON](#estructura-json)
+4. [Referencia de Campos](#referencia-de-campos)
+5. [Ejemplos de Configuración](#ejemplos-de-configuración)
+6. [Validación y Valores por Defecto](#validación-y-valores-por-defecto)
+7. [Edición Manual](#edición-manual)
+
+---
+
+## Esquema Vigente (importante)
+
+Ruta real de persistencia:
+- `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`
+
+Ejemplo actualizado:
+
+```json
+{
+  "UiLanguage": "es",
+  "Screen1": {
+    "Enabled": true,
+    "Port": 8000,
+    "Width": 1080,
+    "Height": 1920,
+    "TransmissionMethod": "Rtc",
+    "CaptureIntervalSeconds": 0.25,
+    "JpegQuality": 40,
+    "ScreenSecurityEnabled": true,
+    "StreamRotationDegrees": 0,
+    "VirtualDisplayPlacement": "right",
+    "BrowserImageFit": "contain"
+  },
+  "Screen2": {
+    "Enabled": false,
+    "Port": 8002,
+    "TransmissionMethod": "WebImage",
+    "CaptureIntervalSeconds": 0.2,
+    "JpegQuality": 45,
+    "ScreenSecurityEnabled": false,
+    "VirtualDisplayPlacement": "left"
+  }
+}
+```
+
+Notas:
+- `ScreenSecurityEnabled=true` activa login por clave al abrir el host de esa pantalla.
+- La clave es alfanumérica de 6 caracteres y se genera al iniciar los runtimes.
+- Límite anti-force brute: 5 intentos por cliente/IP, ventana de 45 segundos.
+- Si ves referencias a `HttpPort`, `TransmissionMode`, `CaptureIntervalMs`, `Rotation`, son nombres históricos.
 
 ---
 
 ## Ubicación del Archivo
 
-**Ruta**: `C:\Users\<Usuario>\.virtualwebdisplay\settings.json`
+**Ruta**: `C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json`
 
 **Ejemplos**:
 ```

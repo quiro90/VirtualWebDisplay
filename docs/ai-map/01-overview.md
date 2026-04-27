@@ -26,8 +26,8 @@
 
 ### Red y servidor
 - `ASP.NET Core Minimal API`
-  - sirve `/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/config`
-- binding multipuerto con `UseUrls(...)`
+  - sirve `/`, `/auth/login`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/config`
+- binding multipuerto con `ConfigureKestrel(... ListenAnyIP ...)` (HTTP en `Port`, HTTPS en `Port+1`)
 
 ### Streaming
 - `SIPSorcery.Net`
@@ -59,6 +59,7 @@ Runtime por pantalla
 
 Acceso desde navegador/dispositivo
     -> HTTP local por puerto dedicado por pantalla
+    -> si `ScreenSecurityEnabled=true`, primero login por clave (cookie HTTP-only)
     -> página HTML según modo (WebImage o Rtc)
     -> consumo de frames JPEG
 ```

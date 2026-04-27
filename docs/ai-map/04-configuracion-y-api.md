@@ -38,6 +38,7 @@ Screen2: VirtualScreenConfig
 | `MonitorIndex` | -1 | -1=auto (VDD creado), 0=primario, 1+=otros |
 | `VirtualDisplayPlacement` | "right" | right/left/top/bottom |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |
+| `ScreenSecurityEnabled` | false | Activa protección por clave de 6 caracteres para esa pantalla |
 
 ### `BrowserImageFit` — valores y efecto visual
 - `fill`: estira la imagen para llenar toda la pantalla del cliente (sin barras, puede deformar si hay diferencia de proporción)
@@ -46,7 +47,7 @@ Screen2: VirtualScreenConfig
 
 ### Defaults por pantalla
 - **Screen1**: `Enabled=true`, `Port=8000`, `VirtualDisplayPlacement="right"`
-- **Screen2**: `Enabled=false`, `Port=8001`, `VirtualDisplayPlacement="left"`, `TransmissionMethod=Rtc`
+- **Screen2**: `Enabled=false`, `Port=8002`, `VirtualDisplayPlacement="left"`, `TransmissionMethod=Rtc`
 
 ## Perfiles conocidos
 Definidos en `VirtualDisplayProfiles.All`. Todos en portrait; se rotan si `Landscape=true`.
@@ -89,18 +90,25 @@ Ambos modos usan los mismos parámetros de captura (`CaptureIntervalSeconds`, `J
 
 ### `GET /`
 Devuelve la página HTML cliente para la pantalla correspondiente al puerto local donde entró la solicitud.
-- Si el runtime usa `WebImage`: responde con `BuildWebImagePage(...)`
-- Si el runtime usa `Rtc`: responde con `BuildRtcPage(...)`
-- Ambas páginas aplican `BrowserImageFit` vía CSS `object-fit`
+- Si `ScreenSecurityEnabled=true` y el cliente no está autenticado: responde una página de login por clave.
+- Si el runtime usa `WebImage`: responde con `WebImagePageTemplate`.
+- Si el runtime usa `Rtc`: responde con `RtcPageTemplate`.
+- Ambas páginas aplican `BrowserImageFit` vía CSS `object-fit`.
 
 ### `GET /cap`
 Devuelve el último frame JPEG capturado. `Cache-Control: no-store, no-cache`.
 
+Requiere autenticación previa cuando `ScreenSecurityEnabled=true`.
+
 ### `GET /mjpeg`
 Stream multipart MJPEG continuo. Comparte el frame de `CaptureService`.
 
+Requiere autenticación previa cuando `ScreenSecurityEnabled=true`.
+
 ### `POST /webrtc/offer`
 Recibe una oferta SDP y devuelve la respuesta SDP.
+
+Requiere autenticación previa cuando `ScreenSecurityEnabled=true`.
 
 #### Request esperado
 ```json
@@ -114,8 +122,17 @@ Recibe una oferta SDP y devuelve la respuesta SDP.
 
 Solo disponible si `TransmissionMethod = Rtc`. Devuelve 400 si se invoca en modo WebImage.
 
+### `POST /auth/login`
+Valida la clave de acceso para la pantalla (si seguridad activa) y crea cookie de sesión HTTP-only.
+
+Reglas:
+- clave correcta: autoriza y devuelve `200`.
+- clave incorrecta: `401`.
+- límite: 5 intentos por cliente/IP, ventana de 45 segundos.
+- al superar límite: `429` con tiempo de espera.
+
 ### `GET /config`
-Devuelve metadata de runtime:
+Devuelve metadata de runtime (requiere auth si seguridad activa):
 ```json
 {
   "displayName": "Pantalla 1",
