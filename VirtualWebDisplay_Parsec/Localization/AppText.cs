@@ -7,13 +7,13 @@ public sealed record LanguageOption(string Code, string DisplayName);
 
 public static class AppText
 {
-    private const string DefaultLanguage = "es";
+    private const string DefaultLanguage = "en";
     private static readonly ResourceManager ResourceManager = new("VirtualWebDisplay.Localization.AppText", typeof(AppText).Assembly);
 
     private static readonly IReadOnlyList<LanguageOption> SupportedLanguagesInternal =
     [
-        new("es", "Espanol"),
         new("en", "English"),
+        new("es", "Español"),
     ];
 
     public static IReadOnlyList<LanguageOption> SupportedLanguages => SupportedLanguagesInternal;

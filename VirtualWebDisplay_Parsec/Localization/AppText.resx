@@ -15,131 +15,130 @@
 
   <data name="Common_AppName" xml:space="preserve"><value>VirtualWebDisplay</value></data>
   <data name="Common_AppDisplayName" xml:space="preserve"><value>Virtual Web Display</value></data>
-  <data name="Language_Label" xml:space="preserve"><value>Idioma:</value></data>
-  <data name="Language_Spanish" xml:space="preserve"><value>Español</value></data>
-  <data name="Language_English" xml:space="preserve"><value>Inglés</value></data>
-  <data name="Form_Config_EnableScreen2" xml:space="preserve"><value>Activar una segunda pantalla (experimental)</value></data>
-  <data name="Form_Config_Menu_Configuration" xml:space="preserve"><value>Configuración</value></data>
-  <data name="Form_Config_Menu_Language" xml:space="preserve"><value>Idioma</value></data>
-  <data name="Form_Config_Menu_WindowStyle" xml:space="preserve"><value>Estilo de ventana</value></data>
-  <data name="Form_Config_Menu_About" xml:space="preserve"><value>Acerca de...</value></data>
-  <data name="Form_Config_WindowStyle_System" xml:space="preserve"><value>Sistema</value></data>
-  <data name="Form_Config_WindowStyle_Light" xml:space="preserve"><value>Claro</value></data>
-  <data name="Form_Config_WindowStyle_Dark" xml:space="preserve"><value>Oscuro</value></data>
+  <data name="Language_Label" xml:space="preserve"><value>Language:</value></data>
+  <data name="Language_Spanish" xml:space="preserve"><value>Spanish</value></data>
+  <data name="Language_English" xml:space="preserve"><value>English</value></data>
+  <data name="Form_Config_EnableScreen2" xml:space="preserve"><value>Enable a second screen (experimental)</value></data>
+  <data name="Form_Config_Menu_Configuration" xml:space="preserve"><value>Configuration</value></data>
+  <data name="Form_Config_Menu_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Form_Config_Menu_WindowStyle" xml:space="preserve"><value>Window style</value></data>
+  <data name="Form_Config_Menu_About" xml:space="preserve"><value>About...</value></data>
+  <data name="Form_Config_WindowStyle_System" xml:space="preserve"><value>System</value></data>
+  <data name="Form_Config_WindowStyle_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Form_Config_WindowStyle_Dark" xml:space="preserve"><value>Dark</value></data>
 
-  <data name="Form_Config_TitleStartup" xml:space="preserve"><value>VirtualWebDisplay - Configuración de pantallas</value></data>
-  <data name="Form_Config_Title" xml:space="preserve"><value>VirtualWebDisplay - Configuración</value></data>
-  <data name="Form_Config_Header" xml:space="preserve"><value>Configurar las pantallas</value></data>
-  <data name="Form_Config_DescriptionStartup" xml:space="preserve"><value>Configurá tus pantallas antes de iniciar.</value></data>
-  <data name="Form_Config_Description" xml:space="preserve"><value>Ajustá la configuración de cada pantalla. Los cambios se guardan para el próximo inicio de la aplicación.</value></data>
-  <data name="Form_Config_Accept_Restart" xml:space="preserve"><value>Reiniciar</value></data>
-  <data name="Form_Config_Accept_Start" xml:space="preserve"><value>Iniciar</value></data>
-  <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Guardar</value></data>
-  <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Salir</value></data>
-  <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Cerrar</value></data>
-  <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Pantalla 1</value></data>
-  <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Pantalla 2</value></data>
+  <data name="Form_Config_TitleStartup" xml:space="preserve"><value>VirtualWebDisplay - Screen setup</value></data>
+  <data name="Form_Config_Title" xml:space="preserve"><value>VirtualWebDisplay - Configuration</value></data>
+  <data name="Form_Config_Header" xml:space="preserve"><value>Configure screens</value></data>
+  <data name="Form_Config_DescriptionStartup" xml:space="preserve"><value>Configure your screens before starting.</value></data>
+  <data name="Form_Config_Description" xml:space="preserve"><value>Adjust each screen. Changes are saved for the next app launch.</value></data>
+  <data name="Form_Config_Accept_Restart" xml:space="preserve"><value>Restart</value></data>
+  <data name="Form_Config_Accept_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Screen 1</value></data>
+  <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Screen 2</value></data>
 
-  <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>La pantalla 2 debe usar un puerto distinto al de la pantalla 1.</value></data>
-  <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Puerto duplicado</value></data>
+  <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>Screen 2 must use a different port than Screen 1.</value></data>
+  <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Duplicate port</value></data>
 
-  <data name="Tab_EnableExperimental" xml:space="preserve"><value>Habilitar (experimental)</value></data>
-  <data name="Tab_Label_Port" xml:space="preserve"><value>Puerto:</value></data>
-  <data name="Tab_Help_Port" xml:space="preserve"><value>Definí el puerto local que vas a usar para conectarte por web a tu monitor remoto.</value></data>
-  <data name="Tab_Label_Transmission" xml:space="preserve"><value>Transmisión:</value></data>
-  <data name="Tab_Label_Placement" xml:space="preserve"><value>Posición:</value></data>
-  <data name="Tab_Help_Placement" xml:space="preserve"><value>Esta posición se aplica al iniciar los monitores. Después podés reorganizarlos desde la configuración de Windows.</value></data>
-  <data name="Tab_Placement_Right" xml:space="preserve"><value>Derecha</value></data>
-  <data name="Tab_Placement_Left" xml:space="preserve"><value>Izquierda</value></data>
-  <data name="Tab_Placement_Top" xml:space="preserve"><value>Arriba</value></data>
-  <data name="Tab_Placement_Bottom" xml:space="preserve"><value>Abajo</value></data>
-  <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Duplicar</value></data>
-  <data name="Tab_Label_StreamRotation" xml:space="preserve"><value>Rotación de la transmisión:</value></data>
-  <data name="Tab_Rotation_0" xml:space="preserve"><value>Sin rotación (0°)</value></data>
-  <data name="Tab_Rotation_90" xml:space="preserve"><value>Rotar 90°</value></data>
-  <data name="Tab_Rotation_180" xml:space="preserve"><value>Rotar 180°</value></data>
-  <data name="Tab_Rotation_270" xml:space="preserve"><value>Rotar 270°</value></data>
-  <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Actualizar cada (ms):</value></data>
-  <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Tiempo entre actualizaciones de la imagen. Para un movimiento fluido usá menos de 10 ms; para pantallas e-ink recomendamos más de 100 ms.</value></data>
-  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
-  <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
-  <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Número máximo de espectadores:</value></data>
-  <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>Es la cantidad máxima de dispositivos que pueden ver la transmisión de tu pantalla. Si es 0, no hay límite.</value></data>
-  <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Acceso en:</value></data>
-  <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>Esta es tu dirección local de red. Desde un dispositivo conectado a la misma red Wi-Fi deberías poder ver tu escritorio virtual.</value></data>
+  <data name="Tab_EnableExperimental" xml:space="preserve"><value>Enable (experimental)</value></data>
+  <data name="Tab_Label_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="Tab_Help_Port" xml:space="preserve"><value>Set the local port you will use to open your remote monitor from a web browser.</value></data>
+  <data name="Tab_Label_Transmission" xml:space="preserve"><value>Transmission:</value></data>
+  <data name="Tab_Label_Placement" xml:space="preserve"><value>Placement:</value></data>
+  <data name="Tab_Help_Placement" xml:space="preserve"><value>This placement is applied when the monitors start. You can rearrange them later in Windows display settings.</value></data>
+  <data name="Tab_Placement_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Tab_Placement_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Tab_Placement_Top" xml:space="preserve"><value>Top</value></data>
+  <data name="Tab_Placement_Bottom" xml:space="preserve"><value>Bottom</value></data>
+  <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Tab_Label_StreamRotation" xml:space="preserve"><value>Stream rotation:</value></data>
+  <data name="Tab_Rotation_0" xml:space="preserve"><value>No rotation (0°)</value></data>
+  <data name="Tab_Rotation_90" xml:space="preserve"><value>Rotate 90°</value></data>
+  <data name="Tab_Rotation_180" xml:space="preserve"><value>Rotate 180°</value></data>
+  <data name="Tab_Rotation_270" xml:space="preserve"><value>Rotate 270°</value></data>
+  <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
+  <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Time between image updates. For smoother motion use less than 10 ms; for e-ink displays we recommend more than 100 ms.</value></data>
+  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>
+  <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Fit:</value></data>
+  <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Screen security (require access code)</value></data>
+  <data name="Tab_Help_ScreenSecurity" xml:space="preserve"><value>This option requires entering the generated access code before the screen can be viewed.</value></data>
+  <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Show</value></data>
+  <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="Tab_SecurityCode_Pending" xml:space="preserve"><value>Code is generated after startup</value></data>
+  <data name="Tab_SecurityCode_Disabled" xml:space="preserve"><value>Security disabled</value></data>
+  <data name="Tab_BrowserFit_Fill" xml:space="preserve"><value>Stretch (fill)</value></data>
+  <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Crop</value></data>
+  <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
+  <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configure displays (Windows) ↗</value></data>
+  <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Maximum viewers (0 = unlimited):</value></data>
+  <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>This is the maximum number of devices allowed to watch your screen stream. If it is 0, the limit is disabled.</value></data>
+  <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Access at:</value></data>
+  <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>This is your local network address. From a device connected to the same Wi-Fi network, you should be able to view your virtual desktop.</value></data>
 
-  <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Seguridad de pantalla (pedir clave)</value></data>
-  <data name="Tab_Help_ScreenSecurity" xml:space="preserve"><value>Esta opción hace que, para ver tu pantalla, primero haya que ingresar el código de acceso generado.</value></data>
-  <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Mostrar</value></data>
-  <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Ocultar</value></data>
-  <data name="Tab_SecurityCode_Pending" xml:space="preserve"><value>La clave se genera al iniciar</value></data>
-  <data name="Tab_SecurityCode_Disabled" xml:space="preserve"><value>Seguridad desactivada</value></data>
-  <data name="Tab_BrowserFit_Fill" xml:space="preserve"><value>Estirar (llenar)</value></data>
-  <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Recortar</value></data>
-  <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contener (barras)</value></data>
-  <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configurar pantallas (Windows) ↗</value></data>
+  <data name="About_Title" xml:space="preserve"><value>About Virtual Web Display</value></data>
+  <data name="About_Subtitle" xml:space="preserve"><value>Your virtual desktop, available on any device connected to the same local network.</value></data>
+  <data name="About_AuthorPrefix" xml:space="preserve"><value>Created by Juan Quiroga</value></data>
+  <data name="About_LinkedinHandle" xml:space="preserve"><value>@juanquiroga90</value></data>
+  <data name="About_Message" xml:space="preserve"><value>Virtual Web Display was created to stream a virtual desktop to any other device connected to the same local network in a simple, direct way.</value></data>
+  <data name="About_Footer" xml:space="preserve"><value>Thank you for choosing Virtual Web Display.</value></data>
 
-  <data name="Tray_Menu_Configuration" xml:space="preserve"><value>Configuración...</value></data>
-  <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Abrir {0}</value></data>
-  <data name="Tray_Menu_Restart" xml:space="preserve"><value>Reiniciar</value></data>
-  <data name="Tray_Menu_Exit" xml:space="preserve"><value>Salir</value></data>
+  <data name="Tray_Menu_Configuration" xml:space="preserve"><value>Configuration...</value></data>
+  <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>
+  <data name="Tray_Menu_Restart" xml:space="preserve"><value>Restart</value></data>
+  <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
   <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
-  <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Clave</value></data>
-  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuración guardada. Usá 'Reiniciar' desde el ícono de bandeja para aplicar los nuevos cambios.</value></data>
+  <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Code</value></data>
+  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply the new changes.</value></data>
 
-  <data name="About_Title" xml:space="preserve"><value>Acerca de Virtual Web Display</value></data>
-  <data name="About_Subtitle" xml:space="preserve"><value>Tu escritorio virtual, disponible en cualquier dispositivo de la misma red local.</value></data>
-  <data name="About_AuthorPrefix" xml:space="preserve"><value>Creado por Juan Quiroga</value></data>
-  <data name="About_LinkedinHandle" xml:space="preserve"><value>@juanquiroga90</value></data>
-  <data name="About_Message" xml:space="preserve"><value>Virtual Web Display fue creado para retransmitir un escritorio virtual a cualquier otro dispositivo conectado a la misma red local, de una forma simple y directa.</value></data>
-  <data name="About_Footer" xml:space="preserve"><value>Gracias por elegir Virtual Web Display.</value></data>
+  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Official installer:</value></data>
+  <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Open download page</value></data>
+  <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copy URL</value></data>
+  <data name="InstallDialog_Copied" xml:space="preserve"><value>Copied</value></data>
+  <data name="InstallDialog_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="InstallDialog_FallbackMessageWithUrl" xml:space="preserve"><value>{0}\n\nOfficial installer: {1}</value></data>
 
-  <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Instalador oficial:</value></data>
-  <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Abrir página de descarga</value></data>
-  <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copiar URL</value></data>
-  <data name="InstallDialog_Copied" xml:space="preserve"><value>Copiada</value></data>
-  <data name="InstallDialog_Close" xml:space="preserve"><value>Cerrar</value></data>
-  <data name="InstallDialog_FallbackMessageWithUrl" xml:space="preserve"><value>{0}\n\nInstalador oficial: {1}</value></data>
+  <data name="Program_SingleInstanceCloseFailed_Message" xml:space="preserve"><value>The previous VirtualWebDisplay instance could not be closed for relaunch.</value></data>
+  <data name="Program_SingleInstanceCloseFailed_Title" xml:space="preserve"><value>VirtualWebDisplay - Relaunch failed</value></data>
+  <data name="Program_DriverMissing_Title" xml:space="preserve"><value>VirtualWebDisplay - Missing Parsec VDD</value></data>
+  <data name="Program_DriverMissing_MessageSuffix" xml:space="preserve"><value>This version requires Parsec VDD to create and capture the virtual monitor. Install the Parsec desktop app that includes the Virtual Display Driver (VDD). You can open or copy the official URL below.</value></data>
+  <data name="Parsec_Driver_NotFound" xml:space="preserve"><value>No installed or accessible Parsec Virtual Display adapter was found.</value></data>
+  <data name="Parsec_Driver_Detected" xml:space="preserve"><value>Parsec VDD detected successfully.</value></data>
+  <data name="Parsec_Driver_CreateDisplayFailed" xml:space="preserve"><value>Parsec VDD is installed, but the virtual monitor could not be created automatically.</value></data>
+  <data name="Program_DisplayError_Title" xml:space="preserve"><value>VirtualWebDisplay - Error on {0}</value></data>
+  <data name="Program_MonitorNotDetected_Message" xml:space="preserve"><value>Windows virtual monitor could not be identified for {0}.</value></data>
+  <data name="Program_MonitorNotDetected_Title" xml:space="preserve"><value>VirtualWebDisplay - Virtual monitor not detected</value></data>
+  <data name="Program_WebRtcDisabled_Error" xml:space="preserve"><value>WebRTC is not enabled for the current transmission method.</value></data>
+  <data name="Program_WebRtcInvalidOffer_Error" xml:space="preserve"><value>Invalid WebRTC offer.</value></data>
+  <data name="Program_Security_InvalidCode_Error" xml:space="preserve"><value>Invalid access code.</value></data>
+  <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Too many attempts. Try again in {0} seconds.</value></data>
+  <data name="Program_Security_MissingCode_Error" xml:space="preserve"><value>You must enter the access code to continue.</value></data>
 
-  <data name="Program_SingleInstanceCloseFailed_Message" xml:space="preserve"><value>No se pudo cerrar la instancia anterior de VirtualWebDisplay para relanzarla.</value></data>
-  <data name="Program_SingleInstanceCloseFailed_Title" xml:space="preserve"><value>VirtualWebDisplay - Relanzamiento fallido</value></data>
-  <data name="Program_DriverMissing_Title" xml:space="preserve"><value>VirtualWebDisplay - Falta Parsec VDD</value></data>
-  <data name="Program_DriverMissing_MessageSuffix" xml:space="preserve"><value>Esta versión requiere Parsec VDD para crear y capturar el monitor virtual. Instalá la versión de escritorio de Parsec que incluye Virtual Display Driver (VDD). Podés abrir o copiar la URL oficial desde abajo.</value></data>
-  <data name="Parsec_Driver_NotFound" xml:space="preserve"><value>No se encontró un adaptador de Parsec Virtual Display instalado o accesible.</value></data>
-  <data name="Parsec_Driver_Detected" xml:space="preserve"><value>Parsec VDD detectado correctamente.</value></data>
-  <data name="Parsec_Driver_CreateDisplayFailed" xml:space="preserve"><value>Parsec VDD está instalado, pero no se pudo crear el monitor virtual automáticamente.</value></data>
-  <data name="Program_DisplayError_Title" xml:space="preserve"><value>VirtualWebDisplay - Error en {0}</value></data>
-  <data name="Program_MonitorNotDetected_Message" xml:space="preserve"><value>No se pudo identificar el monitor virtual de Windows para {0}.</value></data>
-  <data name="Program_MonitorNotDetected_Title" xml:space="preserve"><value>VirtualWebDisplay - Monitor virtual no detectado</value></data>
-  <data name="Program_WebRtcDisabled_Error" xml:space="preserve"><value>WebRTC no está habilitado para el método de transmisión actual.</value></data>
-  <data name="Program_WebRtcInvalidOffer_Error" xml:space="preserve"><value>La oferta WebRTC es inválida.</value></data>
-  <data name="Program_Security_InvalidCode_Error" xml:space="preserve"><value>Clave inválida.</value></data>
-  <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Demasiados intentos. Intentá de nuevo en {0} segundos.</value></data>
-  <data name="Program_Security_MissingCode_Error" xml:space="preserve"><value>Debés ingresar la clave para continuar.</value></data>
+  <data name="Program_ViewerLimit_Full_Message" xml:space="preserve"><value>The allowed viewer limit has been reached.</value></data>
+  <data name="Program_ViewerLimit_Full_Error" xml:space="preserve"><value>The allowed viewer limit has been reached.</value></data>
 
-  <data name="Program_ViewerLimit_Full_Message" xml:space="preserve"><value>Se alcanzó el límite de espectadores permitido.</value></data>
-  <data name="Program_ViewerLimit_Full_Error" xml:space="preserve"><value>Se alcanzó el límite de espectadores permitido.</value></data>
+  <data name="Security_Page_Title" xml:space="preserve"><value>Protected access - {0}</value></data>
+  <data name="Security_Page_Heading" xml:space="preserve"><value>Protected screen</value></data>
+  <data name="Security_Page_Description" xml:space="preserve"><value>Enter the 6-character access code to view this screen.</value></data>
+  <data name="Security_Page_Input_Placeholder" xml:space="preserve"><value>Access code</value></data>
+  <data name="Security_Page_Submit" xml:space="preserve"><value>Unlock</value></data>
+  <data name="Security_Page_Attempts" xml:space="preserve"><value>Attempts left: {0}</value></data>
+  <data name="Security_Page_Wait" xml:space="preserve"><value>Temporarily blocked. Retry in {0}s.</value></data>
 
-  <data name="Security_Page_Title" xml:space="preserve"><value>Acceso protegido - {0}</value></data>
-  <data name="Security_Page_Heading" xml:space="preserve"><value>Pantalla protegida</value></data>
-  <data name="Security_Page_Description" xml:space="preserve"><value>Ingresá la clave de 6 caracteres para ver esta pantalla.</value></data>
-  <data name="Security_Page_Input_Placeholder" xml:space="preserve"><value>Clave</value></data>
-  <data name="Security_Page_Submit" xml:space="preserve"><value>Acceder</value></data>
-  <data name="Security_Page_Attempts" xml:space="preserve"><value>Intentos restantes: {0}</value></data>
-  <data name="Security_Page_Wait" xml:space="preserve"><value>Bloqueado temporalmente. Reintenta en {0}s.</value></data>
-
-  <data name="Transmission_WebImage" xml:space="preserve"><value>Imagen por web</value></data>
+  <data name="Transmission_WebImage" xml:space="preserve"><value>Image over web</value></data>
   <data name="Transmission_WebRtc" xml:space="preserve"><value>WebRTC</value></data>
 
-  <data name="Runtime_Screen1" xml:space="preserve"><value>Pantalla 1</value></data>
-  <data name="Runtime_Screen2" xml:space="preserve"><value>Pantalla 2</value></data>
+  <data name="Runtime_Screen1" xml:space="preserve"><value>Screen 1</value></data>
+  <data name="Runtime_Screen2" xml:space="preserve"><value>Screen 2</value></data>
 
-  <data name="WebRtc_Status_Connecting" xml:space="preserve"><value>Conectando...</value></data>
-  <data name="WebRtc_Status_Negotiating" xml:space="preserve"><value>Negociando WebRTC...</value></data>
-  <data name="WebRtc_Status_Connected" xml:space="preserve"><value>WebRTC conectado</value></data>
-  <data name="WebRtc_Status_DisconnectedRetrying" xml:space="preserve"><value>WebRTC desconectado. Reintentando...</value></data>
-  <data name="WebRtc_Status_ErrorRetrying" xml:space="preserve"><value>Error WebRTC. Reintentando...</value></data>
-  <data name="WebRtc_Status_NegotiationFailed" xml:space="preserve"><value>No se pudo negociar la sesión WebRTC.</value></data>
-  <data name="WebRtc_Status_StartFailed" xml:space="preserve"><value>No se pudo iniciar WebRTC. Reintentando...</value></data>
+  <data name="WebRtc_Status_Connecting" xml:space="preserve"><value>Connecting...</value></data>
+  <data name="WebRtc_Status_Negotiating" xml:space="preserve"><value>Negotiating WebRTC...</value></data>
+  <data name="WebRtc_Status_Connected" xml:space="preserve"><value>WebRTC connected</value></data>
+  <data name="WebRtc_Status_DisconnectedRetrying" xml:space="preserve"><value>WebRTC disconnected. Retrying...</value></data>
+  <data name="WebRtc_Status_ErrorRetrying" xml:space="preserve"><value>WebRTC error. Retrying...</value></data>
+  <data name="WebRtc_Status_NegotiationFailed" xml:space="preserve"><value>WebRTC session negotiation failed.</value></data>
+  <data name="WebRtc_Status_StartFailed" xml:space="preserve"><value>WebRTC startup failed. Retrying...</value></data>
 </root>
