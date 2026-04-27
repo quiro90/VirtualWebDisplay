@@ -52,6 +52,7 @@ internal static class IndexHandler
                 ["title"]           = runtime.DisplayName,
                 ["browserImageFit"] = browserImageFit,
                 ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
+                ["touchInputEnabled"] = runtime.Config.TouchInputEnabled,
             };
             html = webImageTemplate.Generate(parameters);
         }
@@ -61,6 +62,7 @@ internal static class IndexHandler
             {
                 ["title"]           = runtime.DisplayName,
                 ["browserImageFit"] = browserImageFit,
+                ["touchInputEnabled"] = runtime.Config.TouchInputEnabled,
             };
             html = rtcTemplate.Generate(parameters);
         }

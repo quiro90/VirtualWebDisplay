@@ -116,6 +116,8 @@ internal sealed class ConfigurationFormPresenter
         form.ConfigurationSaved += ApplySelection;
         form.StopRequested      += () => StopRequested?.Invoke();
         form.StartupConfirmed   += () => StartupConfirmed?.Invoke();
+        form.Screen1TouchInputChanged += enabled => ApplyTouchInputChange("screen1", enabled);
+        form.Screen2TouchInputChanged += enabled => ApplyTouchInputChange("screen2", enabled);
         return form;
     }
 
@@ -135,6 +137,18 @@ internal sealed class ConfigurationFormPresenter
         _settings.UiLanguage  = selection.UiLanguage;
         _settings.WindowTheme = selection.WindowTheme;
         _settings.EnsureValid();
+        _settingsStore.Save(_settings);
+    }
+
+    private void ApplyTouchInputChange(string screenId, bool enabled)
+    {
+        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen1.TouchInputEnabled = enabled;
+        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen2.TouchInputEnabled = enabled;
+        else
+            return;
+
         _settingsStore.Save(_settings);
     }
 }

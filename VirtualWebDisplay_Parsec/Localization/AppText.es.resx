@@ -57,16 +57,14 @@
   <data name="Tab_Placement_Top" xml:space="preserve"><value>Arriba</value></data>
   <data name="Tab_Placement_Bottom" xml:space="preserve"><value>Abajo</value></data>
   <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Duplicar</value></data>
-  <data name="Tab_Label_StreamRotation" xml:space="preserve"><value>Rotación de la transmisión:</value></data>
-  <data name="Tab_Rotation_0" xml:space="preserve"><value>Sin rotación (0°)</value></data>
-  <data name="Tab_Rotation_90" xml:space="preserve"><value>Rotar 90°</value></data>
-  <data name="Tab_Rotation_180" xml:space="preserve"><value>Rotar 180°</value></data>
-  <data name="Tab_Rotation_270" xml:space="preserve"><value>Rotar 270°</value></data>
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Actualizar cada (ms):</value></data>
   <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Tiempo entre actualizaciones de la imagen. Para un movimiento fluido usá menos de 10 ms; para pantallas e-ink recomendamos más de 100 ms.</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Número máximo de espectadores:</value></data>
+  <data name="Tab_Label_TouchInput" xml:space="preserve"><value>Táctil:</value></data>
+  <data name="Tab_Touch_Yes" xml:space="preserve"><value>Sí</value></data>
+  <data name="Tab_Touch_No" xml:space="preserve"><value>No</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>Es la cantidad máxima de dispositivos que pueden ver la transmisión de tu pantalla. Si es 0, no hay límite.</value></data>
   <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Acceso en:</value></data>
   <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>Esta es tu dirección local de red. Desde un dispositivo conectado a la misma red Wi-Fi deberías poder ver tu escritorio virtual.</value></data>

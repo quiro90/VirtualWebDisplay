@@ -11,6 +11,8 @@ public sealed class RtcPageTemplate : IHtmlTemplate
     {
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
         var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
+        var touchInputEnabledObj = parameters.GetValueOrDefault("touchInputEnabled", false);
+        var touchInputEnabled = touchInputEnabledObj is bool boolVal && boolVal;
         var htmlLang = AppText.HtmlLang;
         var statusConnecting = AppText.Get("WebRtc_Status_Connecting");
         var statusNegotiating = AppText.Get("WebRtc_Status_Negotiating");
@@ -263,6 +265,8 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                     }
 
                     startKeepAliveSignal();
+
+                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", 50, touchInputEnabled)}}
 
                     connect().catch(function () {
                         setStatus('{{statusStartFailed}}');

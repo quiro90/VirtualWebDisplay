@@ -48,6 +48,8 @@ public sealed class ResolutionConfigurationForm : Form
     public event Action<VirtualWebDisplaySettings>? ConfigurationSaved;
     public event Action? StartupConfirmed;
     public event Action? StopRequested;
+    public event Action<bool>? Screen1TouchInputChanged;
+    public event Action<bool>? Screen2TouchInputChanged;
 
     private string AcceptButtonText => _wasStarted
         ? (_serviceActionPending ? AppText.Get("Form_Config_Accept_Stopping") : AppText.Get("Form_Config_Accept_Stop"))
@@ -216,6 +218,8 @@ public sealed class ResolutionConfigurationForm : Form
         _enableScreen2Check.Checked = workingCopy.Screen2.Enabled;
         _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
         _enableScreen2Check.CheckedChanged += (_, _) => _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
+        _screen1Controls.TouchInputChanged += enabled => Screen1TouchInputChanged?.Invoke(enabled);
+        _screen2Controls.TouchInputChanged += enabled => Screen2TouchInputChanged?.Invoke(enabled);
 
         ApplyLocalization();
         ApplyTheme();

@@ -27,12 +27,12 @@ public sealed class ScreenTabControls
     private readonly Label _qualityLabel;
     private readonly ThemedTrackBar _jpegQualitySlider;
     private readonly Label _jpegQualityValueLabel;
-    private readonly Label _rotationLabel;
-    private readonly ThemedComboBox _streamRotationCombo;
     private readonly Label _fitLabel;
     private readonly ThemedComboBox _browserImageFitCombo;
     private readonly Label _maxViewersLabel;
     private readonly ThemedNumericUpDown _maxViewersInput;
+    private readonly Label _touchInputLabel;
+    private readonly CheckBox _touchInputCheckBox;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
@@ -45,6 +45,8 @@ public sealed class ScreenTabControls
     private string _runtimeSecurityCode = string.Empty;
     private bool _showSecurityCode;
     private bool _serviceRunning;
+
+    public event Action<bool>? TouchInputChanged;
 
     public ScreenTabControls(
         string title,
@@ -123,25 +125,7 @@ public sealed class ScreenTabControls
 
         currentTop += 54;
 
-        // Fila 2: Rotación stream
-        _rotationLabel = CreateLabel(AppText.Get("Tab_Label_StreamRotation"), 14, currentTop);
-        _streamRotationCombo = new ThemedComboBox
-        {
-            Left = 14,
-            Top = currentTop + 18,
-            Width = 230,
-        };
-        _streamRotationCombo.Items.AddRange(
-        [
-            new StreamRotationItem(0,   AppText.Get("Tab_Rotation_0")),
-            new StreamRotationItem(90,  AppText.Get("Tab_Rotation_90")),
-            new StreamRotationItem(180, AppText.Get("Tab_Rotation_180")),
-            new StreamRotationItem(270, AppText.Get("Tab_Rotation_270")),
-        ]);
-
-        currentTop += 54;
-
-        // Fila 3: Actualizar cada (ms) | Calidad JPEG
+        // Fila 2: Actualizar cada (ms) | Calidad JPEG
         _captureIntervalLabel = CreateLabel(AppText.Get("Tab_Label_CaptureIntervalMs"), 14, currentTop);
         _captureIntervalInput = new ThemedNumericUpDown
         {
@@ -218,6 +202,15 @@ public sealed class ScreenTabControls
             Maximum = 99,
         };
 
+        _touchInputLabel = CreateLabel(AppText.Get("Tab_Label_TouchInput"), 404, currentTop + 3);
+        _touchInputCheckBox = new CheckBox
+        {
+            Left = 448,
+            Top = currentTop + 1,
+            Width = 56,
+            Text = AppText.Get("Tab_Touch_No"),
+        };
+
         currentTop += 28;
 
         _screenSecurityCheckBox = new CheckBox
@@ -279,12 +272,12 @@ public sealed class ScreenTabControls
             _qualityLabel,
             _jpegQualitySlider,
             _jpegQualityValueLabel,
-            _rotationLabel,
-            _streamRotationCombo,
             _fitLabel,
             _browserImageFitCombo,
             _maxViewersLabel,
             _maxViewersInput,
+            _touchInputLabel,
+            _touchInputCheckBox,
             _screenSecurityCheckBox,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton,
@@ -307,9 +300,13 @@ public sealed class ScreenTabControls
         _transmissionMethodCombo.SelectedIndexChanged += (_, _) => UpdateState();
         _captureIntervalInput.ValueChanged += (_, _) => UpdateState();
         _jpegQualitySlider.ValueChanged += (_, _) => UpdateState();
-        _streamRotationCombo.SelectedIndexChanged += (_, _) => UpdateState();
         _browserImageFitCombo.SelectedIndexChanged += (_, _) => UpdateState();
         _maxViewersInput.ValueChanged += (_, _) => UpdateState();
+        _touchInputCheckBox.CheckedChanged += (_, _) =>
+        {
+            UpdateState();
+            TouchInputChanged?.Invoke(_touchInputCheckBox.Checked);
+        };
         _screenSecurityCheckBox.CheckedChanged += (_, _) => UpdateState();
     }
 
@@ -324,19 +321,19 @@ public sealed class ScreenTabControls
         _portLabel.Text = AppText.Get("Tab_Label_Port");
         _methodLabel.Text = AppText.Get("Tab_Label_Transmission");
         _placementLabel.Text = AppText.Get("Tab_Label_Placement");
-        _rotationLabel.Text = AppText.Get("Tab_Label_StreamRotation");
         _captureIntervalLabel.Text = AppText.Get("Tab_Label_CaptureIntervalMs");
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
+        _touchInputLabel.Text = AppText.Get("Tab_Label_TouchInput");
         _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
         _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
+        UpdateTouchInputToggleText();
 
         RefreshTransmissionOptions();
         RefreshPlacementOptions();
-        RefreshRotationOptions();
         RefreshBrowserFitOptions();
         ApplyHelpTooltips();
         UpdateState();
@@ -358,8 +355,8 @@ public sealed class ScreenTabControls
         config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
         config.JpegQuality = _jpegQualitySlider.Value;
         config.MaxViewers = (int)_maxViewersInput.Value;
+        config.TouchInputEnabled = _touchInputCheckBox.Checked;
         config.ScreenSecurityEnabled = _screenSecurityCheckBox.Checked;
-        config.StreamRotationDegrees = ((StreamRotationItem)_streamRotationCombo.SelectedItem!).Degrees;
         config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
         config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
 
@@ -378,12 +375,8 @@ public sealed class ScreenTabControls
         _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
         _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
         _maxViewersInput.Value = Math.Clamp(config.MaxViewers, 0, 99);
+        _touchInputCheckBox.Checked = config.TouchInputEnabled;
         _screenSecurityCheckBox.Checked = config.ScreenSecurityEnabled;
-
-        var validDegrees = new[] { 0, 90, 180, 270 };
-        var degrees = validDegrees.Contains(config.StreamRotationDegrees) ? config.StreamRotationDegrees : 0;
-        _streamRotationCombo.SelectedItem = _streamRotationCombo.Items.Cast<StreamRotationItem>()
-            .First(item => item.Degrees == degrees);
 
         var normalizedPlacement = VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement);
         _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
@@ -410,6 +403,7 @@ public sealed class ScreenTabControls
             {
                 // Mientras el servicio corre, bloquea configuración pero permite ver/copiar el código activo.
                 control.Enabled = control == _windowsDisplayButton
+                    || control == _touchInputCheckBox
                     || control == _screenSecurityCodeTextBox
                     || control == _screenSecurityCodeToggleButton;
             }
@@ -420,6 +414,7 @@ public sealed class ScreenTabControls
         }
 
         _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
+        UpdateTouchInputToggleText();
 
         var port = (int)_portInput.Value;
         _httpUrlLink.Text = $"http://{_localIp}:{port}";
@@ -505,6 +500,13 @@ public sealed class ScreenTabControls
         SetHelpToolTip(AppText.Get("Tab_Help_AccessUrl"), _accessUrlPrefixLabel, _httpUrlLink);
     }
 
+    private void UpdateTouchInputToggleText()
+    {
+        _touchInputCheckBox.Text = _touchInputCheckBox.Checked
+            ? AppText.Get("Tab_Touch_Yes")
+            : AppText.Get("Tab_Touch_No");
+    }
+
     private void SetHelpToolTip(string text, params Control[] controls)
     {
         foreach (var control in controls)
@@ -556,24 +558,6 @@ public sealed class ScreenTabControls
             ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
     }
 
-    private void RefreshRotationOptions()
-    {
-        var selectedDegrees = (_streamRotationCombo.SelectedItem as StreamRotationItem)?.Degrees ?? 0;
-
-        _streamRotationCombo.Items.Clear();
-        _streamRotationCombo.Items.AddRange(
-        [
-            new StreamRotationItem(0, AppText.Get("Tab_Rotation_0")),
-            new StreamRotationItem(90, AppText.Get("Tab_Rotation_90")),
-            new StreamRotationItem(180, AppText.Get("Tab_Rotation_180")),
-            new StreamRotationItem(270, AppText.Get("Tab_Rotation_270")),
-        ]);
-
-        _streamRotationCombo.SelectedItem = _streamRotationCombo.Items.Cast<StreamRotationItem>()
-            .FirstOrDefault(item => item.Degrees == selectedDegrees)
-            ?? _streamRotationCombo.Items.Cast<StreamRotationItem>().First(item => item.Degrees == 0);
-    }
-
     private void RefreshBrowserFitOptions()
     {
         var selectedFit = (_browserImageFitCombo.SelectedItem as ImageFitItem)?.Fit ?? "fill";
@@ -592,11 +576,6 @@ public sealed class ScreenTabControls
     }
 
     private sealed record TransmissionMethodItem(string Method, string DisplayName)
-    {
-        public override string ToString() => DisplayName;
-    }
-
-    private sealed record StreamRotationItem(int Degrees, string DisplayName)
     {
         public override string ToString() => DisplayName;
     }

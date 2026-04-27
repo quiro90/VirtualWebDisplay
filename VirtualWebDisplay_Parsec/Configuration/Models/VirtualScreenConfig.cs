@@ -55,13 +55,12 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public int MaxViewers { get; set; } = 1;
 
+    /// <summary>
+    /// Whether touch input should start enabled on the web page for this screen.
+    /// </summary>
+    public bool TouchInputEnabled { get; set; }
+
     public int Port { get; set; } = 8000;
-
-    /// <summary>Legacy: migrado a StreamRotationDegrees. Se mantiene para leer configs guardadas antiguas.</summary>
-    public bool RotateForPortrait { get; set; }
-
-    /// <summary>Degrees to rotate the captured frame before encoding: 0, 90, 180 or 270.</summary>
-    public int StreamRotationDegrees { get; set; }
 
     /// <summary>
     /// Index of the monitor to capture from Screen.AllScreens.
@@ -102,9 +101,8 @@ public sealed class VirtualScreenConfig
         JpegQuality = JpegQuality,
         ScreenSecurityEnabled = ScreenSecurityEnabled,
         MaxViewers = MaxViewers,
+        TouchInputEnabled = TouchInputEnabled,
         Port = Port,
-        RotateForPortrait = RotateForPortrait,
-        StreamRotationDegrees = StreamRotationDegrees,
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
         BrowserImageFit = BrowserImageFit,
@@ -124,9 +122,8 @@ public sealed class VirtualScreenConfig
         target.JpegQuality = JpegQuality;
         target.ScreenSecurityEnabled = ScreenSecurityEnabled;
         target.MaxViewers = MaxViewers;
+        target.TouchInputEnabled = TouchInputEnabled;
         target.Port = Port;
-        target.RotateForPortrait = RotateForPortrait;
-        target.StreamRotationDegrees = StreamRotationDegrees;
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;
         target.BrowserImageFit = BrowserImageFit;

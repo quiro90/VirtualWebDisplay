@@ -11,7 +11,10 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
     {
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
         var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
-        var intervalMs = parameters.GetValueOrDefault("intervalMs", 250);
+        var intervalMsObj = parameters.GetValueOrDefault("intervalMs", 250);
+        var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
+        var touchInputEnabledObj = parameters.GetValueOrDefault("touchInputEnabled", false);
+        var touchInputEnabled = touchInputEnabledObj is bool boolVal && boolVal;
         var htmlLang = AppText.HtmlLang;
 
         return $$"""
@@ -99,12 +102,13 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                                 credentials: 'same-origin'
                             }).catch(function () {});
                         }
-
                         ping();
                         setInterval(ping, 10000);
                     }
 
                     startKeepAliveSignal();
+
+                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)), touchInputEnabled)}}
                 })();
                 </script>
             </body>

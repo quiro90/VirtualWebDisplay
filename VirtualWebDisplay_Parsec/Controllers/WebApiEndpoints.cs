@@ -45,6 +45,12 @@ internal static class WebApiEndpoints
         app.MapPost("/webrtc/offer", (HttpContext ctx, WebRtcSessionOffer offer, CancellationToken ct) =>
             WebRtcHandler.HandleOffer(ctx, offer, runtimes, ct));
 
+        app.MapPost("/input/touch", (HttpContext ctx, TouchInputRequest request) =>
+            InputHandler.HandleTouchInput(ctx, request, runtimes));
+
+        app.MapGet("/input/stats", (HttpContext ctx) =>
+            InputHandler.HandleTouchStats(ctx, runtimes));
+
         app.MapGet("/cert", () =>
             Results.Bytes(tlsCertDerBytes, "application/x-x509-ca-cert", LocalCertificateProvider.CrtDownloadFileName));
 

@@ -19,9 +19,6 @@ public sealed class VirtualWebDisplaySettings
 
         Screen1.Enabled = true;
 
-        MigrateRotation(Screen1);
-        MigrateRotation(Screen2);
-
         TransmissionModeOptions.EnsureValidSelection(Screen1);
         TransmissionModeOptions.EnsureValidSelection(Screen2);
 
@@ -55,10 +52,4 @@ public sealed class VirtualWebDisplaySettings
         TransmissionMethod = TransmissionModeOptions.Rtc,
     };
 
-    private static void MigrateRotation(VirtualScreenConfig config)
-    {
-        if (config.StreamRotationDegrees == 0 && config.RotateForPortrait)
-            config.StreamRotationDegrees = 90;
-        config.RotateForPortrait = false;
-    }
 }

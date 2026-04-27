@@ -57,11 +57,6 @@
   <data name="Tab_Placement_Top" xml:space="preserve"><value>Top</value></data>
   <data name="Tab_Placement_Bottom" xml:space="preserve"><value>Bottom</value></data>
   <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
-  <data name="Tab_Label_StreamRotation" xml:space="preserve"><value>Stream rotation:</value></data>
-  <data name="Tab_Rotation_0" xml:space="preserve"><value>No rotation (0°)</value></data>
-  <data name="Tab_Rotation_90" xml:space="preserve"><value>Rotate 90°</value></data>
-  <data name="Tab_Rotation_180" xml:space="preserve"><value>Rotate 180°</value></data>
-  <data name="Tab_Rotation_270" xml:space="preserve"><value>Rotate 270°</value></data>
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
   <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Time between image updates. For smoother motion use less than 10 ms; for e-ink displays we recommend more than 100 ms.</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>
@@ -77,6 +72,9 @@
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
   <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configure displays (Windows) ↗</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Maximum viewers (0 = unlimited):</value></data>
+  <data name="Tab_Label_TouchInput" xml:space="preserve"><value>Touch:</value></data>
+  <data name="Tab_Touch_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Tab_Touch_No" xml:space="preserve"><value>No</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>This is the maximum number of devices allowed to watch your screen stream. If it is 0, the limit is disabled.</value></data>
   <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Access at:</value></data>
   <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>This is your local network address. From a device connected to the same Wi-Fi network, you should be able to view your virtual desktop.</value></data>
