@@ -5,19 +5,20 @@
 2. Si ya existe otra instancia, intenta cerrarla y espera hasta 10 segundos.
 3. Carga settings con `VirtualScreenSettingsStore.Load()`.
 4. Crea `VirtualDisplayTrayController` (inicia hilo STA en background).
-5. Verifica `Parsec VDD` con `VirtualDisplayManager.VerifyDriverAvailability()`.
+5. `RuntimeFactory.GetEnabledPorts(settings)` verifica el driver Parsec VDD y devuelve los puertos activos.
 6. Muestra formulario inicial (`tray.ShowStartupConfiguration()`).
-7. Construye uno o dos `ScreenRuntimeContext` según `Screen2.Enabled`.
-8. Configura el host web para escuchar en todos los puertos activos (`UseUrls`).
-9. Para cada runtime:
+7. `WebApplication.CreateBuilder` + `Build()` — el DI container queda disponible (`ILoggerFactory`).
+8. `RuntimeFactory.TryCreate(settings, hostName, localIp, loggerFactory)` construye uno o dos `ScreenRuntimeContext` con loggers reales.
+9. `KestrelConfigurator.Configure(builder, ports, tlsCert)` asigna los puertos HTTP/HTTPS a Kestrel.
+10. Para cada runtime:
    - crea monitor virtual (`DisplayManager.TryCreate`),
    - detecta el índice de monitor Windows (`WindowsMonitorIndex`),
    - arranca `CaptureService`,
    - arranca `WebRtcStreamService`.
-10. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/config`).
-11. Actualiza tray con las URLs disponibles + balloon tip.
-12. Ejecuta el servidor hasta salida (`app.Run()`).
-13. En `finally`: `DisposeRuntimesAsync(runtimes)` en orden inverso.
+11. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/auth/login`).
+12. Actualiza tray con las URLs disponibles + balloon tip.
+13. Ejecuta el servidor hasta salida (`app.RunAsync()`).
+14. En `finally`: `DisposeRuntimesAsync(runtimes)` en orden inverso.
 
 ## 2. Creación de una pantalla virtual
 1. `ScreenRuntimeContext` ya contiene un `VirtualScreenConfig`.

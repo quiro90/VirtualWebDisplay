@@ -49,10 +49,12 @@ Arranque (Program.cs — composition root ~50 líneas)
     -> muestra UI inicial (VirtualDisplayTrayController)
     -> obtiene TLS cert (LocalCertificateProvider)
     -> ApplicationLifecycleManager.RunAsync(...)
-        -> RuntimeFactory.TryCreate(...)     — verifica driver Parsec VDD, construye runtimes
-        -> KestrelConfigurator.Configure(...)  — asigna puertos HTTP/HTTPS a Kestrel
+        -> RuntimeFactory.GetEnabledPorts(...)  — verifica driver Parsec VDD, devuelve lista de puertos
+        -> WebApplication.CreateBuilder + Build  — DI container listo (ILoggerFactory disponible)
+        -> RuntimeFactory.TryCreate(...)         — construye runtimes con loggers reales
+        -> KestrelConfigurator.Configure(ports)  — asigna puertos HTTP/HTTPS a Kestrel (overload de puertos)
         -> RuntimeStartupHelper.StartRuntimesAsync(...)
-        -> WebApiEndpoints.Map(app, runtimes) — registra endpoints HTTP
+        -> WebApiEndpoints.Map(app, runtimes)    — registra endpoints HTTP
         -> await app.RunAsync()
         -> RuntimeCleanupHelper (al salir)
         -> bucle stop/restart coordinado con tray

@@ -40,9 +40,8 @@
 **Rol:** construir la lista de `ScreenRuntimeContext` activos y verificar el driver.
 
 ### Responsabilidades
-- construir `ScreenRuntimeContext` para Screen1 y (si está habilitada) Screen2,
-- verificar que el driver Parsec VDD está instalado cuando se requieren pantallas no duplicadas,
-- mostrar `InstallDialog` y retornar `null` si el driver falta.
+- `GetEnabledPorts(settings)` — verifica disponibilidad del driver Parsec VDD y devuelve los puertos habilitados; retorna `null` y muestra `InstallDialog` si el driver falta. Llamado **antes** de construir el DI container para que Kestrel se pueda configurar con puertos sin instanciar servicios.
+- `TryCreate(settings, hostName, localIp, loggerFactory?)` — construye `ScreenRuntimeContext` para Screen1 y (si habilitada) Screen2, propagando `ILoggerFactory` a cada runtime.
 
 ---
 
@@ -50,7 +49,8 @@
 **Rol:** configurar puertos HTTP y HTTPS en Kestrel por runtime.
 
 ### API pública
-- `Configure(WebApplicationBuilder builder, IReadOnlyList<ScreenRuntimeContext> runtimes, X509Certificate2 tlsCert)` — registra `ListenAnyIP(port)` y `ListenAnyIP(port+1, UseHttps)` por cada runtime.
+- `Configure(builder, IReadOnlyList<ScreenRuntimeContext>, cert)` — overload de compatibilidad; extrae puertos del config de cada runtime.
+- `Configure(builder, IReadOnlyList<int> ports, cert)` — overload primario; registra `ListenAnyIP(port)` y `ListenAnyIP(port+1, UseHttps)` por cada puerto. Usado desde `ApplicationLifecycleManager` antes de crear los runtimes completos.
 
 ---
 
@@ -98,6 +98,10 @@
 - `CaptureService` (captura JPEG)
 - `WebRtcStreamService` (emisión WebRTC)
 - `ViewerLimiter` (control de receptores simultáneos por pantalla)
+- URLs de acceso (`HostUrl`, `IpUrl`)
+
+### Constructor
+Acepta `ILoggerFactory?` opcional. Si se provee, crea loggers tipados para `CaptureService` y `WebRtcStreamService`; si no, usa `NullLoggerFactory` (útil en tests).
 - URLs de acceso (`HostUrl`, `IpUrl`)
 
 ### Métodos clave
@@ -162,6 +166,8 @@ Es la unidad operativa principal por pantalla. Si en el futuro se agrega una ter
 
 ### Notas
 - hereda de `BackgroundService`,
+- recibe `ILogger<CaptureService>` en el constructor (propagado desde `ILoggerFactory` vía `ScreenRuntimeContext`),
+- errores de captura se registran con `LogWarning` incluyendo el `MonitorIndex` afectado; el loop continúa (errores transitorios esperados: pantalla bloqueada, monitor desconectado),
 - todo el P/Invoke de cursor está delegado a `Infrastructure/Interop/CursorNativeMethods.cs`,
 - comparte el último frame por referencia para que `/cap`, `/mjpeg` y `WebRtcStreamService` reutilicen la misma captura sin duplicar memoria,
 - tanto `WebImage` como `Rtc` usan los mismos parámetros `CaptureIntervalSeconds` y `JpegQuality`.

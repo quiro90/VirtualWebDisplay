@@ -15,7 +15,6 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 - `02-componentes.md`: mapeo por archivo, clase y responsabilidad.
 - `03-flujos.md`: recorridos de ejecución importantes.
 - `04-configuracion-y-api.md`: configuración persistida, endpoints y modos de transmisión.
-- `05-deuda-tecnica-y-residuos.md`: residuos eliminados, deuda técnica vigente y prioridades de limpieza.
 
 ## Idea mental rápida
 - La app es una mezcla de `ASP.NET Core Minimal API` + `Windows Forms` + interop Win32.
