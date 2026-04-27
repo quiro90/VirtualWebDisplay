@@ -513,8 +513,8 @@ dotnet run
 - **Repositorio**: https://github.com/quiro90/VirtualWebDisplay
 - **Documentación**:
   - `README.md` - Overview del proyecto
-  - `ARCHITECTURE.md` - Diseño detallado
-  - `DEVELOPMENT.md` - Guía de desarrollo
+  - `docs/ARCHITECTURE.md` - Diseño detallado
+  - `docs/DEVELOPMENT.md` - Guía de desarrollo
   - `docs/FEATURES.md` - Funcionalidades
   - `docs/CONFIGURATION.md` - Configuración avanzada
 

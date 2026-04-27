@@ -1,12 +1,11 @@
-using System.Globalization;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using Microsoft.Win32;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Theme;
 
 namespace VirtualWebDisplay.UI.Forms;
 
@@ -263,30 +262,13 @@ public sealed class ResolutionConfigurationForm : Form
         return true;
     }
 
-    private bool ValidateAndBuildSelection(out VirtualWebDisplaySettings selection)
-    {
-        selection = new VirtualWebDisplaySettings
-        {
-            UiLanguage = _selectedLanguageCode,
-            WindowTheme = _selectedWindowTheme,
-            Screen1 = _screen1Controls.BuildConfig(alwaysEnabled: true),
-            Screen2 = _screen2Controls.BuildConfig(alwaysEnabled: false),
-        };
-
-        selection.EnsureValid();
-
-        if (selection.Screen2.Enabled && selection.Screen1.Port == selection.Screen2.Port)
-        {
-            MessageBox.Show(
-                AppText.Get("Validation_DuplicatePort_Message"),
-                AppText.Get("Validation_DuplicatePort_Title"),
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Warning);
-            return false;
-        }
-
-        return true;
-    }
+    private bool ValidateAndBuildSelection(out VirtualWebDisplaySettings selection) =>
+        SettingsFormValidator.TryBuild(
+            _selectedLanguageCode,
+            _selectedWindowTheme,
+            _screen1Controls.BuildConfig(alwaysEnabled: true),
+            _screen2Controls.BuildConfig(alwaysEnabled: false),
+            out selection);
 
     private void CloseDialog()
     {
@@ -428,161 +410,35 @@ public sealed class ResolutionConfigurationForm : Form
 
     private void ApplyTheme()
     {
-        var dark = ResolveDarkMode();
+        var dark    = FormThemeApplicator.ResolveDarkMode(_selectedWindowTheme);
         var palette = dark ? ThemePalette.Dark() : ThemePalette.Light();
 
         BackColor = palette.Background;
         ForeColor = palette.Foreground;
 
         _titleBarPanel.BackColor = palette.TitleBackground;
-        _titleLabel.ForeColor = palette.TitleForeground;
+        _titleLabel.ForeColor    = palette.TitleForeground;
 
-        ApplyThemeRecursive(this, palette);
-        StyleTitleButton(_configurationButton, palette);
-        StyleTitleButton(_closeButton, palette);
+        FormThemeApplicator.ApplyThemeRecursive(this, palette);
+        FormThemeApplicator.StyleTitleButton(_configurationButton, palette);
+        FormThemeApplicator.StyleTitleButton(_closeButton, palette);
         _tabs.ApplyPalette(
-            tabBackground: palette.Button,
+            tabBackground:         palette.Button,
             tabSelectedBackground: palette.TitleButton,
-            tabForeground: palette.Foreground,
+            tabForeground:         palette.Foreground,
             tabSelectedForeground: palette.TitleForeground,
-            tabBorder: palette.Border,
-            pageBackground: palette.Panel);
+            tabBorder:             palette.Border,
+            pageBackground:        palette.Panel);
 
-        _configurationMenu.BackColor = palette.Panel;
-        _configurationMenu.ForeColor = palette.Foreground;
-        _configurationMenu.Renderer = new ThemedMenuRenderer(palette.Panel, palette.Border, palette.Button, palette.Foreground);
-        foreach (ToolStripItem rootItem in _configurationMenu.Items)
-        {
-            rootItem.BackColor = palette.Panel;
-            rootItem.ForeColor = palette.Foreground;
-
-            if (rootItem is not ToolStripMenuItem root)
-                continue;
-
-            root.DropDown.BackColor = palette.Panel;
-            root.DropDown.ForeColor = palette.Foreground;
-            root.DropDown.Renderer = new ThemedMenuRenderer(palette.Panel, palette.Border, palette.Button, palette.Foreground);
-            foreach (ToolStripItem child in root.DropDownItems)
-            {
-                child.BackColor = palette.Panel;
-                child.ForeColor = palette.Foreground;
-            }
-        }
-
+        FormThemeApplicator.ApplyThemeToMenu(_configurationMenu, palette);
         Invalidate();
-    }
-
-    private bool ResolveDarkMode()
-    {
-        if (_selectedWindowTheme == WindowThemeOptions.Dark)
-            return true;
-
-        if (_selectedWindowTheme == WindowThemeOptions.Light)
-            return false;
-
-        try
-        {
-            using var personalize = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            var value = personalize?.GetValue("AppsUseLightTheme");
-            if (value is int intValue)
-                return intValue == 0;
-        }
-        catch
-        {
-        }
-
-        return false;
     }
 
     private void ShowAboutDialog()
     {
-        var dark = ResolveDarkMode();
+        var dark    = FormThemeApplicator.ResolveDarkMode(_selectedWindowTheme);
         var palette = dark ? ThemePalette.Dark() : ThemePalette.Light();
         AboutDialog.Show(this, palette.Background, palette.Foreground, palette.Panel, palette.Border);
-    }
-
-    private static void ApplyThemeRecursive(Control root, ThemePalette palette)
-    {
-        foreach (Control control in root.Controls)
-        {
-            switch (control)
-            {
-                case ThemedComboBox themedComboBox:
-                    themedComboBox.ApplyPalette(
-                        backgroundColor: palette.Input,
-                        foregroundColor: palette.Foreground,
-                        borderColor: palette.Border,
-                        selectionBackgroundColor: palette.TitleButton,
-                        selectionForegroundColor: palette.TitleForeground,
-                        buttonColor: palette.Button,
-                        arrowColor: palette.ButtonText);
-                    break;
-                case ThemedNumericUpDown themedNumericUpDown:
-                    themedNumericUpDown.ApplyPalette(
-                        backgroundColor: palette.Input,
-                        foregroundColor: palette.Foreground,
-                        borderColor: palette.Border,
-                        buttonColor: palette.Button,
-                        buttonForegroundColor: palette.ButtonText);
-                    themedNumericUpDown.BackColor = palette.Panel;
-                    break;
-                case ThemedTrackBar themedTrackBar:
-                    themedTrackBar.BackColor = palette.Panel;
-                    themedTrackBar.ApplyPalette(
-                        trackColor: palette.Border,
-                        activeTrackColor: palette.Link,
-                        thumbColor: palette.TitleButton,
-                        tickColor: palette.Foreground);
-                    break;
-                case TabControl tabControl:
-                    tabControl.BackColor = palette.Panel;
-                    tabControl.ForeColor = palette.Foreground;
-                    break;
-                case TabPage tabPage:
-                    tabPage.BackColor = palette.Panel;
-                    tabPage.ForeColor = palette.Foreground;
-                    break;
-                case Button button:
-                    button.BackColor = palette.Button;
-                    button.ForeColor = palette.ButtonText;
-                    button.FlatStyle = FlatStyle.Flat;
-                    button.FlatAppearance.BorderColor = palette.Border;
-                    break;
-                case CheckBox checkBox:
-                    checkBox.BackColor = Color.Transparent;
-                    checkBox.ForeColor = palette.Foreground;
-                    break;
-                case LinkLabel link:
-                    link.LinkColor = palette.Link;
-                    link.ActiveLinkColor = palette.LinkActive;
-                    link.VisitedLinkColor = palette.Link;
-                    link.ForeColor = palette.Link;
-                    break;
-                case Label label:
-                    label.BackColor = Color.Transparent;
-                    label.ForeColor = palette.Foreground;
-                    break;
-                case TextBox textBox:
-                    textBox.BackColor = palette.Input;
-                    textBox.ForeColor = palette.Foreground;
-                    break;
-                default:
-                    control.BackColor = palette.Panel;
-                    control.ForeColor = palette.Foreground;
-                    break;
-            }
-
-            if (control.HasChildren)
-                ApplyThemeRecursive(control, palette);
-        }
-    }
-
-    private static void StyleTitleButton(Button button, ThemePalette palette)
-    {
-        button.BackColor = palette.TitleButton;
-        button.ForeColor = palette.TitleForeground;
-        button.FlatStyle = FlatStyle.Flat;
-        button.FlatAppearance.BorderColor = palette.Border;
     }
 
     private static Font? TryCreateUiFont()
@@ -612,79 +468,5 @@ public sealed class ResolutionConfigurationForm : Form
     [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
 
-    private sealed record ThemePalette(
-        Color Background,
-        Color Panel,
-        Color Foreground,
-        Color Border,
-        Color Button,
-        Color ButtonText,
-        Color Input,
-        Color Link,
-        Color LinkActive,
-        Color TitleBackground,
-        Color TitleForeground,
-        Color TitleButton)
-    {
-        public static ThemePalette Light() => new(
-            Background: Color.FromArgb(244, 246, 250),
-            Panel: Color.White,
-            Foreground: Color.FromArgb(38, 44, 53),
-            Border: Color.FromArgb(206, 213, 224),
-            Button: Color.FromArgb(236, 240, 247),
-            ButtonText: Color.FromArgb(30, 36, 46),
-            Input: Color.White,
-            Link: Color.FromArgb(17, 92, 203),
-            LinkActive: Color.FromArgb(8, 69, 156),
-            TitleBackground: Color.FromArgb(246, 249, 254),
-            TitleForeground: Color.FromArgb(28, 36, 48),
-            TitleButton: Color.FromArgb(228, 236, 247));
 
-        public static ThemePalette Dark() => new(
-            Background: Color.FromArgb(20, 24, 31),
-            Panel: Color.FromArgb(30, 35, 44),
-            Foreground: Color.FromArgb(227, 233, 243),
-            Border: Color.FromArgb(64, 73, 90),
-            Button: Color.FromArgb(50, 60, 75),
-            ButtonText: Color.FromArgb(235, 241, 250),
-            Input: Color.FromArgb(40, 48, 60),
-            Link: Color.FromArgb(129, 182, 255),
-            LinkActive: Color.FromArgb(172, 208, 255),
-            TitleBackground: Color.FromArgb(15, 19, 24),
-            TitleForeground: Color.FromArgb(242, 245, 250),
-            TitleButton: Color.FromArgb(34, 44, 56));
-    }
-
-    private sealed class ThemedMenuRenderer(Color background, Color border, Color selectedBackground, Color foreground) : ToolStripProfessionalRenderer
-    {
-        protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
-        {
-            using var brush = new SolidBrush(background);
-            e.Graphics.FillRectangle(brush, e.AffectedBounds);
-        }
-
-        protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
-        {
-            using var brush = new SolidBrush(background);
-            e.Graphics.FillRectangle(brush, e.AffectedBounds);
-        }
-
-        protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
-        {
-            var bounds = new Rectangle(Point.Empty, e.Item.Size);
-            var itemBackColor = e.Item.Selected ? selectedBackground : background;
-            using var brush = new SolidBrush(itemBackColor);
-            using var borderPen = new Pen(border);
-            e.Graphics.FillRectangle(brush, bounds);
-            e.Graphics.DrawRectangle(borderPen, 0, 0, bounds.Width - 1, bounds.Height - 1);
-            e.Item.ForeColor = foreground;
-        }
-
-        protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
-        {
-            using var pen = new Pen(border);
-            var bounds = new Rectangle(0, 0, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
-            e.Graphics.DrawRectangle(pen, bounds);
-        }
-    }
 }

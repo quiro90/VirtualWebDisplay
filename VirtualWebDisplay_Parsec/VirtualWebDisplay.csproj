@@ -20,8 +20,4 @@
     <PackageReference Include="SIPSorcery" Version="10.0.5" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>

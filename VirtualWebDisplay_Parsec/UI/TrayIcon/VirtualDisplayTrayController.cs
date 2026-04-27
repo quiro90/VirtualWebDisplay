@@ -1,7 +1,5 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
-using VirtualWebDisplay.UI.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure;
@@ -11,13 +9,13 @@ namespace VirtualWebDisplay.UI.TrayIcon;
 
 /// <summary>
 /// Controlador del ícono de bandeja (system tray) para VirtualWebDisplay.
+/// Responsabilidad: threading del tray, ciclo de vida del servicio y coordinación de UI.
+/// La construcción del menú delega en <see cref="TrayMenuBuilder"/>.
+/// La gestión del formulario delega en <see cref="ConfigurationFormPresenter"/>.
 /// </summary>
 public sealed class VirtualDisplayTrayController : IDisposable
 {
-    private readonly VirtualWebDisplaySettings _settings;
-    private readonly VirtualScreenSettingsStore _settingsStore;
-    private readonly AppearanceSettingsStore _appearanceStore;
-    private readonly string _localIp;
+    private readonly ConfigurationFormPresenter _formPresenter;
     private readonly Thread _uiThread;
     private readonly ManualResetEventSlim _ready = new(false);
 
@@ -32,8 +30,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private bool _serviceActionPending;
     private bool _disposed;
     private Icon? _appIcon;
-    private ResolutionConfigurationForm? _startupForm;
-    private ResolutionConfigurationForm? _configForm;
 
     private static Icon LoadAppIcon()
     {
@@ -44,10 +40,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore, AppearanceSettingsStore appearanceStore, string localIp)
     {
-        _settings = settings;
-        _settingsStore = settingsStore;
-        _appearanceStore = appearanceStore;
-        _localIp = localIp;
+        _formPresenter = new ConfigurationFormPresenter(settings, settingsStore, appearanceStore, localIp);
         _uiThread = new Thread(RunUiThread)
         {
             IsBackground = true,
@@ -64,24 +57,13 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         PostToUi(() =>
         {
-            _startupForm = CreateConfigurationForm(isInitialStartup: true, hasStarted: false);
-
-            _startupForm.FormClosed += (_, _) =>
-            {
-                if (_startupForm.WasStarted)
-                {
-                    _startupForm = null;
-                }
-                else
+            _formPresenter.OpenStartupForm(
+                onConfirmed: () => completion.TrySetResult(true),
+                onCancelled: () =>
                 {
                     completion.TrySetResult(false);
                     _context?.ExitThread();
-                }
-            };
-
-            _startupForm.StartupConfirmed += () => completion.TrySetResult(true);
-
-            _startupForm.Show();
+                });
         });
 
         return completion.Task.GetAwaiter().GetResult();
@@ -89,11 +71,16 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     public void ConfigureRuntimeActions(Action exitRequested, Action stopRequested, IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
-        _exitRequested = exitRequested;
-        _stopRequested = stopRequested;
-        _serviceStartSignal = null; // service is now running
+        _exitRequested        = exitRequested;
+        _stopRequested        = stopRequested;
+        _serviceStartSignal   = null;
         _serviceActionPending = false;
-        _screenRuntimes = screenRuntimes;
+        _screenRuntimes       = screenRuntimes;
+
+        _formPresenter.StopRequested    -= StopService;
+        _formPresenter.StartupConfirmed -= OnFormStartupConfirmed;
+        _formPresenter.StopRequested    += StopService;
+        _formPresenter.StartupConfirmed += OnFormStartupConfirmed;
 
         PostToUi(() =>
         {
@@ -104,11 +91,10 @@ public sealed class VirtualDisplayTrayController : IDisposable
             _contextMenu = BuildContextMenu();
             _notifyIcon.ContextMenuStrip = _contextMenu;
 
-            _startupForm?.NotifyServiceStarted(_screenRuntimes);
-            _configForm?.NotifyServiceStarted(_screenRuntimes);
+            _formPresenter.NotifyServiceStarted(_screenRuntimes);
         });
 
-        var summary = string.Join(" | ", _screenRuntimes.Select(runtime => $"{runtime.DisplayName}: {runtime.HostUrl}"));
+        var summary = string.Join(" | ", _screenRuntimes.Select(r => $"{r.DisplayName}: {r.HostUrl}"));
         UpdateStatus(summary);
 
         PostToUi(() =>
@@ -117,16 +103,15 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 return;
 
             _notifyIcon.BalloonTipTitle = AppText.Get("Tray_BalloonTitle");
-            _notifyIcon.BalloonTipText = string.Join("\n", _screenRuntimes.Select(runtime =>
+            _notifyIcon.BalloonTipText  = string.Join("\n", _screenRuntimes.Select(r =>
             {
-                var locationText = string.Equals(runtime.HostUrl, runtime.IpUrl, StringComparison.OrdinalIgnoreCase)
-                    ? $"{runtime.DisplayName}: {runtime.HostUrl}"
-                    : $"{runtime.DisplayName}: {runtime.HostUrl} | {runtime.IpUrl}";
+                var locationText = string.Equals(r.HostUrl, r.IpUrl, StringComparison.OrdinalIgnoreCase)
+                    ? $"{r.DisplayName}: {r.HostUrl}"
+                    : $"{r.DisplayName}: {r.HostUrl} | {r.IpUrl}";
 
-                if (!runtime.SecurityGate.Enabled)
-                    return locationText;
-
-                return $"{locationText} | {AppText.Get("Tray_SecurityCode_Label")}: {runtime.SecurityGate.AccessCode}";
+                return !r.SecurityGate.Enabled
+                    ? locationText
+                    : $"{locationText} | {AppText.Get("Tray_SecurityCode_Label")}: {r.SecurityGate.AccessCode}";
             }));
             _notifyIcon.ShowBalloonTip(5000);
         });
@@ -152,13 +137,13 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _invoker = new Control();
         _invoker.CreateControl();
 
-        _appIcon = LoadAppIcon();
-        _contextMenu = BuildContextMenu();
-        _notifyIcon = new NotifyIcon
+        _appIcon      = LoadAppIcon();
+        _contextMenu  = BuildContextMenu();
+        _notifyIcon   = new NotifyIcon
         {
-            Icon = _appIcon,
-            Text = TrimTrayText(AppText.Get("Common_AppName")),
-            Visible = true,
+            Icon             = _appIcon,
+            Text             = TrimTrayText(AppText.Get("Common_AppName")),
+            Visible          = true,
             ContextMenuStrip = _contextMenu,
         };
 
@@ -174,82 +159,18 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _invoker.Dispose();
     }
 
-    private ContextMenuStrip BuildContextMenu()
-    {
-        var menu = new ContextMenuStrip();
-        menu.Items.Add(AppText.Get("Tray_Menu_Configuration"), null, (_, _) => ShowConfigurationDialog());
+    private ContextMenuStrip BuildContextMenu() =>
+        TrayMenuBuilder.Build(
+            _screenRuntimes,
+            _serviceActionPending,
+            _serviceStartSignal,
+            onShowConfiguration: ShowConfigurationDialog,
+            onStopService:       StopService,
+            onStartService:      StartService,
+            onExit:              ExitApplication);
 
-        if (_screenRuntimes.Count > 0)
-        {
-            foreach (var runtime in _screenRuntimes)
-                menu.Items.Add(AppText.Format("Tray_Menu_OpenDisplay", runtime.DisplayName), null, (_, _) => OpenStreamUrl(runtime.HostUrl));
-
-            menu.Items.Add(new ToolStripSeparator());
-        }
-
-        menu.Items.Add(new ToolStripSeparator());
-        if (_screenRuntimes.Count > 0 && !_serviceActionPending)
-            menu.Items.Add(AppText.Get("Tray_Menu_Stop"), null, (_, _) => StopService());
-        else if (_screenRuntimes.Count == 0 && _serviceStartSignal is not null && !_serviceActionPending)
-            menu.Items.Add(AppText.Get("Tray_Menu_Start"), null, (_, _) => StartService());
-
-        menu.Items.Add(AppText.Get("Tray_Menu_Exit"), null, (_, _) => ExitApplication());
-        return menu;
-    }
-
-    private void ShowConfigurationDialog()
-    {
-        if (_startupForm is not null && !_startupForm.IsDisposed)
-        {
-            _startupForm.BringToFront();
-            _startupForm.Activate();
-            return;
-        }
-
-        var hasStarted = _screenRuntimes.Count > 0;
-        _configForm = CreateConfigurationForm(isInitialStartup: false, hasStarted);
-        try
-        {
-            _configForm.ShowDialog();
-        }
-        finally
-        {
-            _configForm.Dispose();
-            _configForm = null;
-        }
-    }
-
-    private ResolutionConfigurationForm CreateConfigurationForm(bool isInitialStartup, bool hasStarted)
-    {
-        var screenRuntimes = hasStarted ? _screenRuntimes : null;
-        var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted, screenRuntimes, _appearanceStore);
-
-        form.ConfigurationSaved += ApplySelection;
-        form.StopRequested += StopService;
-        form.StartupConfirmed += OnFormStartupConfirmed;
-
-        return form;
-    }
-
-    private void ApplySelection(VirtualWebDisplaySettings selection)
-    {
-        selection.EnsureValid();
-
-        selection.Screen1.CopyTo(_settings.Screen1);
-        selection.Screen2.CopyTo(_settings.Screen2);
-        _settings.UiLanguage = selection.UiLanguage;
-        _settings.WindowTheme = selection.WindowTheme;
-        _settings.EnsureValid();
-        _settingsStore.Save(_settings);
-    }
-
-    private static void OpenStreamUrl(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return;
-
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-    }
+    private void ShowConfigurationDialog() =>
+        _formPresenter.ShowConfigurationDialog(_screenRuntimes);
 
     private void ExitApplication()
     {
@@ -293,8 +214,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
     public void NotifyServiceStopped()
     {
         _serviceActionPending = false;
-        _serviceStartSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _screenRuntimes = [];
+        _serviceStartSignal   = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _screenRuntimes       = [];
 
         PostToUi(() =>
         {
@@ -303,8 +224,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             if (_notifyIcon is not null)
                 _notifyIcon.ContextMenuStrip = _contextMenu;
 
-            _startupForm?.NotifyServiceStopped();
-            _configForm?.NotifyServiceStopped();
+            _formPresenter.NotifyServiceStopped();
         });
     }
 

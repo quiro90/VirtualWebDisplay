@@ -5,54 +5,12 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Infrastructure.Interop;
 
 namespace VirtualWebDisplay.Streaming;
 
 public sealed class CaptureService : BackgroundService
 {
-    [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
-    {
-        public int X;
-        public int Y;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct CURSORINFO
-    {
-        public int cbSize;
-        public int flags;
-        public IntPtr hCursor;
-        public POINT ptScreenPos;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ICONINFO
-    {
-        [MarshalAs(UnmanagedType.Bool)]
-        public bool fIcon;
-        public int xHotspot;
-        public int yHotspot;
-        public IntPtr hbmMask;
-        public IntPtr hbmColor;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool GetCursorInfo(out CURSORINFO pci);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr CopyIcon(IntPtr hIcon);
-
-    [DllImport("user32.dll")]
-    private static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
-
-    [DllImport("user32.dll")]
-    private static extern bool DestroyIcon(IntPtr hIcon);
-
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr hObject);
-
-    private const int CursorShowing = 0x00000001;
 
     private readonly VirtualScreenConfig _config;
     private byte[] _currentFrame = [];
@@ -143,22 +101,24 @@ public sealed class CaptureService : BackgroundService
 
     private static void DrawCursorIfVisible(Graphics g, Rectangle region)
     {
-        var cursorInfo = new CURSORINFO { cbSize = Marshal.SizeOf<CURSORINFO>() };
-        if (!GetCursorInfo(out cursorInfo) || (cursorInfo.flags & CursorShowing) == 0 || cursorInfo.hCursor == IntPtr.Zero)
+        var cursorInfo = new CursorNativeMethods.CURSORINFO { cbSize = Marshal.SizeOf<CursorNativeMethods.CURSORINFO>() };
+        if (!CursorNativeMethods.GetCursorInfo(out cursorInfo)
+            || (cursorInfo.flags & CursorNativeMethods.CursorShowing) == 0
+            || cursorInfo.hCursor == IntPtr.Zero)
             return;
 
         if (!region.Contains(cursorInfo.ptScreenPos.X, cursorInfo.ptScreenPos.Y))
             return;
 
-        var iconHandle = CopyIcon(cursorInfo.hCursor);
+        var iconHandle = CursorNativeMethods.CopyIcon(cursorInfo.hCursor);
         if (iconHandle == IntPtr.Zero)
             return;
 
-        ICONINFO iconInfo = default;
+        CursorNativeMethods.ICONINFO iconInfo = default;
 
         try
         {
-            if (!GetIconInfo(iconHandle, out iconInfo))
+            if (!CursorNativeMethods.GetIconInfo(iconHandle, out iconInfo))
                 return;
 
             using var icon = Icon.FromHandle(iconHandle);
@@ -169,12 +129,12 @@ public sealed class CaptureService : BackgroundService
         finally
         {
             if (iconInfo.hbmMask != IntPtr.Zero)
-                DeleteObject(iconInfo.hbmMask);
+                CursorNativeMethods.DeleteObject(iconInfo.hbmMask);
 
             if (iconInfo.hbmColor != IntPtr.Zero)
-                DeleteObject(iconInfo.hbmColor);
+                CursorNativeMethods.DeleteObject(iconInfo.hbmColor);
 
-            DestroyIcon(iconHandle);
+            CursorNativeMethods.DestroyIcon(iconHandle);
         }
     }
 
