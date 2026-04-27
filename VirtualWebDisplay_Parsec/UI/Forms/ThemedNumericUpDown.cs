@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace VirtualWebDisplay.UI.Forms;
@@ -16,6 +17,7 @@ internal sealed class ThemedNumericUpDown : UserControl
     private decimal _increment = 1;
     private decimal _value;
     private int _decimalPlaces;
+    private IReadOnlyList<decimal>? _allowedValues;
     private Color _backgroundColor = SystemColors.Window;
     private Color _foregroundColor = SystemColors.WindowText;
     private Color _borderColor = SystemColors.ActiveBorder;
@@ -78,6 +80,23 @@ internal sealed class ThemedNumericUpDown : UserControl
             if (_minimum > _maximum)
                 _minimum = _maximum;
             Value = Clamp(_value);
+        }
+    }
+
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IReadOnlyList<decimal>? AllowedValues
+    {
+        get => _allowedValues;
+        set
+        {
+            _allowedValues = value is { Count: > 0 } ? value : null;
+            if (_allowedValues is not null)
+            {
+                _minimum = _allowedValues[0];
+                _maximum = _allowedValues[^1];
+                Value = SnapToAllowed(_value);
+            }
         }
     }
 
@@ -243,14 +262,32 @@ internal sealed class ThemedNumericUpDown : UserControl
         if (decimal.TryParse(_textBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsed)
             || decimal.TryParse(_textBox.Text, NumberStyles.Number, CultureInfo.InvariantCulture, out parsed))
         {
-            Value = parsed;
+            Value = _allowedValues is not null ? SnapToAllowed(parsed) : parsed;
             return;
         }
 
         UpdateText();
     }
 
-    private void StepValue(decimal delta) => Value += delta;
+    private void StepValue(decimal delta)
+    {
+        if (_allowedValues is not null)
+        {
+            if (delta > 0)
+            {
+                var next = _allowedValues.FirstOrDefault(v => v > _value);
+                Value = next == default && !_allowedValues.Contains(_value) ? _allowedValues[^1] : (next == default ? _value : next);
+            }
+            else
+            {
+                var prev = _allowedValues.LastOrDefault(v => v < _value);
+                Value = prev == default && !_allowedValues.Contains(_value) ? _allowedValues[0] : (prev == default ? _value : prev);
+            }
+            return;
+        }
+
+        Value += delta;
+    }
 
     private void UpdateText()
     {
@@ -258,4 +295,12 @@ internal sealed class ThemedNumericUpDown : UserControl
     }
 
     private decimal Clamp(decimal value) => Math.Min(_maximum, Math.Max(_minimum, value));
+
+    private decimal SnapToAllowed(decimal value)
+    {
+        if (_allowedValues is null || _allowedValues.Count == 0)
+            return Clamp(value);
+
+        return _allowedValues.MinBy(v => Math.Abs(v - value));
+    }
 }

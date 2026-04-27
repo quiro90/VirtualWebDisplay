@@ -9,7 +9,7 @@ public static class TransmissionModeOptions
     public const string Rtc = "Rtc";
 
     private const double MinCaptureIntervalSeconds = 0.001;
-    private const double MaxCaptureIntervalSeconds = 60;
+    private const double MaxCaptureIntervalSeconds = 0.3;
     private const int MinJpegQuality = 10;
     private const int MaxJpegQuality = 100;
 

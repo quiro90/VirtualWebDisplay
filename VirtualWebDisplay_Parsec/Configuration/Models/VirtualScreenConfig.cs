@@ -20,7 +20,7 @@ public sealed class VirtualScreenConfig
     public string TransmissionMethod { get; set; } = TransmissionModeOptions.Rtc;
 
     /// <summary>Capture interval in seconds. E.g. 0.008 = 8ms (~125 FPS)</summary>
-    public double CaptureIntervalSeconds { get; set; } = 0.008;
+    public double CaptureIntervalSeconds { get; set; } = 0.004;
 
     /// <summary>JPEG quality 1-100. Lower = faster transfer (better for e-ink).</summary>
     public int JpegQuality { get; set; } = 40;
@@ -35,7 +35,7 @@ public sealed class VirtualScreenConfig
     /// Maximum simultaneous viewers allowed for this screen.
     /// 0 = unlimited.
     /// </summary>
-    public int MaxViewers { get; set; }
+    public int MaxViewers { get; set; } = 1;
 
     public int Port { get; set; } = 8000;
 
