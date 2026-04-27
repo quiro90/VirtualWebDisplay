@@ -14,7 +14,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         Config = config;
         DisplayManager = new VirtualDisplayManager();
         CaptureService = new CaptureService(config);
-        WebRtcStreamService = new WebRtcStreamService(CaptureService, config, NullLogger<WebRtcStreamService>.Instance);
+        WebRtcStreamService = new WebRtcStreamService(CaptureService, NullLogger<WebRtcStreamService>.Instance);
         SecurityGate = new ScreenSecurityGate(config.ScreenSecurityEnabled);
         ViewerLimiter = new ViewerLimiter(config.MaxViewers);
         ViewerLimiter.GetWebRtcCount = () => WebRtcStreamService.ActivePeerCount;

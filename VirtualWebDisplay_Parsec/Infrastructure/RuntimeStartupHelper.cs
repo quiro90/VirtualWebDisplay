@@ -20,6 +20,7 @@ internal static class RuntimeStartupHelper
             if (VirtualDisplayPlacementOptions.IsDuplicate(runtime.Config.VirtualDisplayPlacement))
             {
                 var primaryIndex = Array.FindIndex(Screen.AllScreens, s => s.Primary);
+                // MonitorIndex is resolved at startup time; config.MonitorIndex=-1 means "auto" until this point.
                 runtime.Config.MonitorIndex = primaryIndex >= 0 ? primaryIndex : 0;
                 await runtime.StartAsync(CancellationToken.None);
                 continue;
@@ -38,6 +39,7 @@ internal static class RuntimeStartupHelper
 
             if (runtime.DisplayManager.WindowsMonitorIndex is int virtualMonitorIndex)
             {
+                // MonitorIndex is resolved here once the virtual display is registered by Windows.
                 runtime.Config.MonitorIndex = virtualMonitorIndex;
             }
             else if (runtime.Config.MonitorIndex < 0)

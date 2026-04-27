@@ -48,6 +48,31 @@ Se extrajeron 16 clases con responsabilidad única:
 
 ## Deuda técnica vigente, ordenada por prioridad
 
+## Prioridad alta
+
+### E. `_authorizedSessions` sin expiración — leak en uso prolongado
+`ScreenSecurityGate` almacena sesiones autorizadas en un `ConcurrentDictionary<string, DateTimeOffset>` (valor = timestamp de creación) pero **nunca purga entradas antiguas**. En uso prolongado el diccionario crece indefinidamente. Además una sesión autorizada dura para siempre hasta que el proceso se reinicia, lo que es un riesgo de seguridad si el acceso físico al dispositivo cambia.
+
+#### Riesgo
+- Leak de memoria en aplicaciones que corren días/semanas sin reinicio.
+- Una sesión comprometida nunca expira.
+
+#### Limpieza sugerida
+Agregar TTL de sesión configurable (ej. 8–24 hs). En `IsAuthorized`, verificar `DateTimeOffset` almacenado y remover si expiró. Opcionalmente ejecutar purga periódica en background.
+
+---
+
+### F. `LogDebug` en el loop principal de WebRTC — errores invisibles en producción
+En `WebRtcStreamService.ExecuteAsync`, el catch genérico (línea 124) usa `_logger.LogDebug`. Con nivel de log por defecto (`Information` o `Warning`), cualquier excepción en el dispatch de frames WebRTC desaparece silenciosamente.
+
+#### Riesgo
+- Problemas de transmisión difíciles de diagnosticar en producción.
+
+#### Limpieza sugerida
+Cambiar a `LogWarning` para que sea visible con configuración estándar de logging.
+
+---
+
 ## Prioridad media
 
 ### A. `VirtualScreenConfig.Clone()` y `CopyTo()` manuales campo a campo
@@ -58,23 +83,34 @@ Reemplazar con un mecanismo de copia automática (record, AutoMapper, reflexión
 
 ---
 
-### B. Servicios acoplados al modelo mutable
-`CaptureService` y `WebRtcStreamService` leen directamente `VirtualScreenConfig` mutable.
+### B. ~~Servicios acoplados al modelo mutable~~ — Analizado y parcialmente resuelto ✅
 
-#### Riesgo
-- efectos laterales si el objeto cambia en runtime,
-- menos claridad entre configuración persistida y configuración aplicada.
+#### Resultado del análisis
+- `WebRtcStreamService` recibía `VirtualScreenConfig` en el constructor pero **nunca lo leía**. Eliminado — constructor simplificado.
+- `CaptureService` lee `CaptureIntervalSeconds`, `JpegQuality`, `StreamRotationDegrees`, `MonitorIndex`, `Width`/`Height` en cada iteración, pero el config es **efectivamente inmutable durante la ejecución** porque cualquier cambio de usuario dispara un restart completo.
+- Las mutaciones de `MonitorIndex` en `RuntimeStartupHelper` ocurren **antes** de `StartAsync`, no durante la ejecución. Documentadas con comentarios.
 
-#### Limpieza futura sugerida
-Separar configuración editable de snapshot de runtime aplicado.
+#### Deuda residual (baja prioridad)
+Si se quiere eliminar la mutación de `MonitorIndex` sobre el objeto persistido: separar en un `RuntimeScreenState` que contenga valores resueltos en startup (índice de monitor asignado por Windows) sin mezclarlos con el config guardado en disco.
 
 ---
 
 ### C. Mezcla de idioma técnico y de negocio
-El código combina nombres y mensajes en inglés y español.
+El código combina nombres y mensajes en inglés y español sin una convención clara. Ejemplos: comentarios XML en español en clases con nombres en inglés, strings hardcodeadas en español dentro de archivos con identifiers en inglés, docstrings bilingues en `VirtualScreenConfig`.
+
+#### Convención recomendada
+- **Código fuente** (identifiers, nombres de clases/métodos/variables): inglés.
+- **Comentarios de implementación** (por qué, no qué): español (preferencia del equipo).
+- **Comentarios de API pública / XML doc**: inglés.
+- **Mensajes al usuario** (`AppText.resx`): siempre vía recursos, nunca hardcodeados.
 
 #### Impacto
 No rompe funcionalidad, pero aumenta fricción documental y consistencia interna.
+
+---
+
+### G. ~~Allocations por frame en `WebRtcStreamService.TrySendFrame`~~ ✅ Implementado
+`ArrayPool<byte>.Shared` aplicado. En el caso de uso real (Kindle, calidad 40, resolución ~800×1280) los frames son ≤64KB = 1 chunk → 0 allocations por frame. `send(byte[])` serializa inmediatamente, es seguro devolver el buffer al pool tras la llamada.
 
 ---
 
@@ -85,6 +121,15 @@ Hay varios `Thread.Sleep` y polling ligero para detectar el monitor virtual o es
 
 #### Nota
 No necesariamente está mal para este tipo de integración con Windows/driver, pero es una zona sensible si aparecen problemas de timing.
+
+---
+
+### H. Revisión de UI y catches silenciosos menores
+La UI con modo oscuro/claro funciona correctamente. Áreas de evaluación opcional:
+- `ResolutionConfigurationForm`: construcción de controles con coordenadas absolutas (`Left`, `Top`) — funciona bien pero es frágil ante cambios de tamaño. Evaluar `TableLayoutPanel` o `FlowLayoutPanel` para filas de controles.
+- `ScreenTabControls`: el patrón `currentTop += N` funciona pero requiere ajuste manual si se insertan filas.
+- `FormThemeApplicator.ResolveDarkMode`: el `catch { }` en lectura de registry es aceptable (falla no crítica) — agregar comentario explicando por qué se silencia.
+- `CaptureService.ExecuteAsync`: el `catch { }` en el loop de captura es completamente silencioso. Errores transitorios (pantalla bloqueada, monitor desconectado) son esperados, pero errores persistentes no dejan diagnóstico. Cambiar a `catch (Exception ex) { _logger.LogDebug(ex, "Transient capture error."); }`.
 
 ---
 
@@ -101,6 +146,8 @@ Conviene evitar refactors grandes que puedan afectar:
 - compatibilidad con perfiles tipo Kindle/iPad.
 
 ## Próximas limpiezas de mejor relación beneficio/riesgo
-1. separar HTML cliente fuera de `Program.cs`,
-2. centralizar copia/clonado de `VirtualScreenConfig`,
-3. evaluar separación entre settings editables y snapshot de runtime.
+1. expiración de sesiones en `ScreenSecurityGate` (ítem E) — alta prioridad, bajo riesgo,
+2. `LogWarning` en WebRTC dispatch (ítem F) — una línea, impacto inmediato en diagnóstico,
+3. `ArrayPool` en `TrySendFrame` (ítem G) — mejora de rendimiento sin cambio de comportamiento,
+4. centralizar copia/clonado de `VirtualScreenConfig` (ítem A),
+5. evaluar separación entre settings editables y snapshot de runtime (ítem B).

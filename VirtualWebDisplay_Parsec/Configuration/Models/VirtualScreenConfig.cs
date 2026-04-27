@@ -114,3 +114,5 @@ public sealed class VirtualScreenConfig
         target.BrowserImageFit = BrowserImageFit;
     }
 }
+
+

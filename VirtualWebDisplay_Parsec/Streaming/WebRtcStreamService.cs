@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
+using System.Buffers;
 using System.Collections.Concurrent;
-using VirtualWebDisplay.Configuration;
-using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Streaming.Models;
 
 namespace VirtualWebDisplay.Streaming;
@@ -15,15 +14,13 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     private static readonly RTCConfiguration PeerConfiguration = new();
 
     private readonly CaptureService _captureService;
-    private readonly VirtualScreenConfig _config;
     private readonly ILogger<WebRtcStreamService> _logger;
     private readonly ConcurrentDictionary<Guid, PeerState> _peers = new();
     private uint _frameId;
 
-    public WebRtcStreamService(CaptureService captureService, VirtualScreenConfig config, ILogger<WebRtcStreamService> logger)
+    public WebRtcStreamService(CaptureService captureService, ILogger<WebRtcStreamService> logger)
     {
         _captureService = captureService;
-        _config = config;
         _logger = logger;
     }
 
@@ -123,7 +120,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "No se pudo enviar un frame WebRTC.");
+                _logger.LogWarning(ex, "Error dispatching WebRTC frame.");
                 await Task.Delay(100, stoppingToken);
             }
         }
@@ -159,7 +156,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "No se pudo cerrar el peer WebRTC {PeerId}.", peerId);
+            _logger.LogWarning(ex, "Error closing WebRTC peer {PeerId}.", peerId);
         }
     }
 
@@ -188,14 +185,25 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 
             // Prepend 4-byte little-endian frameId to each binary chunk so the
             // client can discard chunks that belong to a superseded frame.
+            // Rent buffers from ArrayPool to avoid per-chunk heap allocations at ~30fps.
             var idBytes = BitConverter.GetBytes(frameId);
             for (var offset = 0; offset < frame.Length; offset += MaxChunkSize)
             {
                 var chunkLength = Math.Min(MaxChunkSize, frame.Length - offset);
-                var chunk = new byte[4 + chunkLength];
-                Buffer.BlockCopy(idBytes, 0, chunk, 0, 4);
-                Buffer.BlockCopy(frame, offset, chunk, 4, chunkLength);
-                channel.send(chunk);
+                var chunkSize   = 4 + chunkLength;
+                var chunk       = ArrayPool<byte>.Shared.Rent(chunkSize);
+                try
+                {
+                    Buffer.BlockCopy(idBytes, 0, chunk, 0, 4);
+                    Buffer.BlockCopy(frame, offset, chunk, 4, chunkLength);
+                    // send(byte[]) serializes the payload immediately — safe to return the buffer after the call.
+                    // Slice only when the rented buffer is larger than needed (e.g. last partial chunk).
+                    channel.send(chunkSize == chunk.Length ? chunk : chunk[..chunkSize]);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(chunk);
+                }
             }
 
             return true;

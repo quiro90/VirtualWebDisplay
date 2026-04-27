@@ -9,6 +9,7 @@ public sealed class ScreenSecurityGate
 {
     private const int MaxAttempts = 5;
     private static readonly TimeSpan AttemptWindow = TimeSpan.FromSeconds(45);
+    private static readonly TimeSpan SessionTtl = TimeSpan.FromHours(8);
     private const int AccessCodeLength = 6;
 
     private readonly ConcurrentDictionary<string, DateTimeOffset> _authorizedSessions = new(StringComparer.Ordinal);
@@ -54,7 +55,19 @@ public sealed class ScreenSecurityGate
         if (!context.Request.Cookies.TryGetValue(cookieName, out var sessionId) || string.IsNullOrWhiteSpace(sessionId))
             return false;
 
-        return _authorizedSessions.ContainsKey(sessionId);
+        var now = DateTimeOffset.UtcNow;
+        PurgeExpiredSessions(now);
+
+        if (!_authorizedSessions.TryGetValue(sessionId, out var createdAt))
+            return false;
+
+        if (now - createdAt > SessionTtl)
+        {
+            _authorizedSessions.TryRemove(sessionId, out _);
+            return false;
+        }
+
+        return true;
     }
 
     public SecurityAuthorizeResult TryAuthorize(HttpContext context, string cookieName, string? submittedCode)
@@ -85,6 +98,7 @@ public sealed class ScreenSecurityGate
             IsEssential = true,
             SameSite = SameSiteMode.Lax,
             Secure = context.Request.IsHttps,
+            Expires = DateTimeOffset.UtcNow.Add(SessionTtl),
         };
 
         context.Response.Cookies.Append(cookieName, sessionId, cookieOptions);
@@ -112,6 +126,15 @@ public sealed class ScreenSecurityGate
             var oldest = attempts[0];
             var retryAfter = (int)Math.Ceiling((oldest + AttemptWindow - now).TotalSeconds);
             return new SecurityClientWindowState(0, Math.Max(1, retryAfter));
+        }
+    }
+
+    private void PurgeExpiredSessions(DateTimeOffset now)
+    {
+        foreach (var entry in _authorizedSessions)
+        {
+            if (now - entry.Value > SessionTtl)
+                _authorizedSessions.TryRemove(entry.Key, out _);
         }
     }
 
