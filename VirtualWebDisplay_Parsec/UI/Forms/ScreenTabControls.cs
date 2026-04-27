@@ -36,6 +36,7 @@ public sealed class ScreenTabControls
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
+    private readonly ToolTip _helpToolTip;
     private readonly Control[] _managedControls;
     private readonly string _localIp;
     private readonly LinkLabel _httpUrlLink;
@@ -57,6 +58,13 @@ public sealed class ScreenTabControls
         _portEditable = isInitialStartup;
         _localIp = localIp;
         TabPage = new TabPage(title);
+        _helpToolTip = new ToolTip
+        {
+            AutoPopDelay = 12000,
+            InitialDelay = 300,
+            ReshowDelay = 150,
+            ShowAlways = true,
+        };
 
         var currentTop = 14;
         if (allowDisable && showEnableToggle)
@@ -65,7 +73,7 @@ public sealed class ScreenTabControls
             {
                 Left = 14,
                 Top = currentTop,
-                Width = 180,
+                Width = 270,
                 Text = AppText.Get("Tab_EnableExperimental"),
             };
             TabPage.Controls.Add(_enabledCheckBox);
@@ -145,12 +153,12 @@ public sealed class ScreenTabControls
             Increment = 1M,
         };
 
-        _qualityLabel = CreateLabel(AppText.Get("Tab_Label_JpegQuality"), 100, currentTop);
+        _qualityLabel = CreateLabel(AppText.Get("Tab_Label_JpegQuality"), 140, currentTop);
         _jpegQualitySlider = new ThemedTrackBar
         {
-            Left = 100,
+            Left = 140,
             Top = currentTop + 12,
-            Width = 280,
+            Width = 236,
             Minimum = 10,
             Maximum = 100,
             TickFrequency = 10,
@@ -159,7 +167,7 @@ public sealed class ScreenTabControls
         };
         _jpegQualityValueLabel = new Label
         {
-            Left = 388,
+            Left = 384,
             Top = currentTop + 20,
             Width = 50,
         };
@@ -172,7 +180,7 @@ public sealed class ScreenTabControls
         {
             Left = 14,
             Top = currentTop + 18,
-            Width = 180,
+            Width = 192,
         };
         _browserImageFitCombo.Items.AddRange(
         [
@@ -183,9 +191,9 @@ public sealed class ScreenTabControls
 
         _windowsDisplayButton = new Button
         {
-            Left = 206,
+            Left = 216,
             Top = currentTop + 14,
-            Width = 254,
+            Width = 244,
             Height = 28,
             Text = AppText.Get("Tab_Button_OpenWindowsDisplay"),
         };
@@ -201,9 +209,9 @@ public sealed class ScreenTabControls
         _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
         _maxViewersInput = new ThemedNumericUpDown
         {
-            Left = 300,
+            Left = 334,
             Top = currentTop,
-            Width = 60,
+            Width = 62,
             Minimum = 0,
             Maximum = 99,
         };
@@ -214,7 +222,7 @@ public sealed class ScreenTabControls
         {
             Left = 14,
             Top = currentTop,
-            Width = 320,
+            Width = 380,
             Text = AppText.Get("Tab_Label_ScreenSecurity"),
         };
 
@@ -288,6 +296,7 @@ public sealed class ScreenTabControls
         _httpUrlLink.LinkClicked += (_, _) => OpenUrl(_httpUrlLink.Text);
 
         Initialize(config);
+        ApplyHelpTooltips();
 
         if (_enabledCheckBox is not null)
             _enabledCheckBox.CheckedChanged += (_, _) => UpdateState();
@@ -327,6 +336,7 @@ public sealed class ScreenTabControls
         RefreshPlacementOptions();
         RefreshRotationOptions();
         RefreshBrowserFitOptions();
+        ApplyHelpTooltips();
         UpdateState();
     }
 
@@ -468,6 +478,22 @@ public sealed class ScreenTabControls
     {
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
         catch { }
+    }
+
+    private void ApplyHelpTooltips()
+    {
+        SetHelpToolTip(AppText.Get("Tab_Help_Port"), _portLabel, _portInput);
+        SetHelpToolTip(AppText.Get("Tab_Help_Placement"), _placementLabel, _placementCombo);
+        SetHelpToolTip(AppText.Get("Tab_Help_CaptureInterval"), _captureIntervalLabel, _captureIntervalInput);
+        SetHelpToolTip(AppText.Get("Tab_Help_MaxViewers"), _maxViewersLabel, _maxViewersInput);
+        SetHelpToolTip(AppText.Get("Tab_Help_ScreenSecurity"), _screenSecurityCheckBox, _screenSecurityCodeTextBox, _screenSecurityCodeToggleButton);
+        SetHelpToolTip(AppText.Get("Tab_Help_AccessUrl"), _accessUrlPrefixLabel, _httpUrlLink);
+    }
+
+    private void SetHelpToolTip(string text, params Control[] controls)
+    {
+        foreach (var control in controls)
+            _helpToolTip.SetToolTip(control, text);
     }
 
     private static Label CreateLabel(string text, int left, int top) => new()

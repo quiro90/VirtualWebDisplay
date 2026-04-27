@@ -18,10 +18,11 @@
   <data name="Language_Label" xml:space="preserve"><value>Language:</value></data>
   <data name="Language_Spanish" xml:space="preserve"><value>Spanish</value></data>
   <data name="Language_English" xml:space="preserve"><value>English</value></data>
-  <data name="Form_Config_EnableScreen2" xml:space="preserve"><value>Enable second screen (experimental)</value></data>
+  <data name="Form_Config_EnableScreen2" xml:space="preserve"><value>Enable a second screen (experimental)</value></data>
   <data name="Form_Config_Menu_Configuration" xml:space="preserve"><value>Configuration</value></data>
   <data name="Form_Config_Menu_Language" xml:space="preserve"><value>Language</value></data>
   <data name="Form_Config_Menu_WindowStyle" xml:space="preserve"><value>Window style</value></data>
+  <data name="Form_Config_Menu_About" xml:space="preserve"><value>About...</value></data>
   <data name="Form_Config_WindowStyle_System" xml:space="preserve"><value>System</value></data>
   <data name="Form_Config_WindowStyle_Light" xml:space="preserve"><value>Light</value></data>
   <data name="Form_Config_WindowStyle_Dark" xml:space="preserve"><value>Dark</value></data>
@@ -29,8 +30,8 @@
   <data name="Form_Config_TitleStartup" xml:space="preserve"><value>VirtualWebDisplay - Screen setup</value></data>
   <data name="Form_Config_Title" xml:space="preserve"><value>VirtualWebDisplay - Configuration</value></data>
   <data name="Form_Config_Header" xml:space="preserve"><value>Configure screens</value></data>
-  <data name="Form_Config_DescriptionStartup" xml:space="preserve"><value>Configure your screens.</value></data>
-  <data name="Form_Config_Description" xml:space="preserve"><value>Adjust each screen configuration. Changes are saved for the next app startup.</value></data>
+  <data name="Form_Config_DescriptionStartup" xml:space="preserve"><value>Configure your screens before starting.</value></data>
+  <data name="Form_Config_Description" xml:space="preserve"><value>Adjust each screen. Changes are saved for the next app launch.</value></data>
   <data name="Form_Config_Accept_Restart" xml:space="preserve"><value>Restart</value></data>
   <data name="Form_Config_Accept_Start" xml:space="preserve"><value>Start</value></data>
   <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Save</value></data>
@@ -44,8 +45,10 @@
 
   <data name="Tab_EnableExperimental" xml:space="preserve"><value>Enable (experimental)</value></data>
   <data name="Tab_Label_Port" xml:space="preserve"><value>Port:</value></data>
+  <data name="Tab_Help_Port" xml:space="preserve"><value>Set the local port you will use to open your remote monitor from a web browser.</value></data>
   <data name="Tab_Label_Transmission" xml:space="preserve"><value>Transmission:</value></data>
   <data name="Tab_Label_Placement" xml:space="preserve"><value>Placement:</value></data>
+  <data name="Tab_Help_Placement" xml:space="preserve"><value>This placement is applied when the monitors start. You can rearrange them later in Windows display settings.</value></data>
   <data name="Tab_Placement_Right" xml:space="preserve"><value>Right</value></data>
   <data name="Tab_Placement_Left" xml:space="preserve"><value>Left</value></data>
   <data name="Tab_Placement_Top" xml:space="preserve"><value>Top</value></data>
@@ -57,19 +60,30 @@
   <data name="Tab_Rotation_180" xml:space="preserve"><value>Rotate 180°</value></data>
   <data name="Tab_Rotation_270" xml:space="preserve"><value>Rotate 270°</value></data>
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
+  <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Time between image updates. For smoother motion use less than 10 ms; for e-ink displays we recommend more than 100 ms.</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Fit:</value></data>
   <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Screen security (require access code)</value></data>
+  <data name="Tab_Help_ScreenSecurity" xml:space="preserve"><value>This option requires entering the generated access code before the screen can be viewed.</value></data>
   <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Show</value></data>
   <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Hide</value></data>
   <data name="Tab_SecurityCode_Pending" xml:space="preserve"><value>Code is generated after startup</value></data>
   <data name="Tab_SecurityCode_Disabled" xml:space="preserve"><value>Security disabled</value></data>
   <data name="Tab_BrowserFit_Fill" xml:space="preserve"><value>Stretch (fill)</value></data>
-  <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Crop (cover)</value></data>
+  <data name="Tab_BrowserFit_Cover" xml:space="preserve"><value>Crop</value></data>
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
-  <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Open Windows display settings ↗</value></data>
-  <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Max allowed viewers (0 = unlimited):</value></data>
+  <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configure displays (Windows) ↗</value></data>
+  <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Maximum viewers (0 = unlimited):</value></data>
+  <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>This is the maximum number of devices allowed to watch your screen stream. If it is 0, the limit is disabled.</value></data>
   <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Access at:</value></data>
+  <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>This is your local network address. From a device connected to the same Wi-Fi network, you should be able to view your virtual desktop.</value></data>
+
+  <data name="About_Title" xml:space="preserve"><value>About Virtual Web Display</value></data>
+  <data name="About_Subtitle" xml:space="preserve"><value>Your virtual desktop, available on any device connected to the same local network.</value></data>
+  <data name="About_AuthorPrefix" xml:space="preserve"><value>Created by Juan Quiroga</value></data>
+  <data name="About_LinkedinHandle" xml:space="preserve"><value>@juanquiroga90</value></data>
+  <data name="About_Message" xml:space="preserve"><value>Virtual Web Display was created to stream a virtual desktop to any other device connected to the same local network in a simple, direct way.</value></data>
+  <data name="About_Footer" xml:space="preserve"><value>Thank you for choosing Virtual Web Display.</value></data>
 
   <data name="Tray_Menu_Configuration" xml:space="preserve"><value>Configuration...</value></data>
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>
@@ -78,10 +92,10 @@
   <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
   <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
   <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Code</value></data>
-  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply new values.</value></data>
+  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuration saved. Use 'Restart' from the tray icon to apply the new changes.</value></data>
 
   <data name="InstallDialog_OfficialInstaller" xml:space="preserve"><value>Official installer:</value></data>
-  <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Open download</value></data>
+  <data name="InstallDialog_OpenDownload" xml:space="preserve"><value>Open download page</value></data>
   <data name="InstallDialog_CopyUrl" xml:space="preserve"><value>Copy URL</value></data>
   <data name="InstallDialog_Copied" xml:space="preserve"><value>Copied</value></data>
   <data name="InstallDialog_Close" xml:space="preserve"><value>Close</value></data>
@@ -97,21 +111,21 @@
   <data name="Program_WebRtcDisabled_Error" xml:space="preserve"><value>WebRTC is not enabled for the current transmission method.</value></data>
   <data name="Program_WebRtcInvalidOffer_Error" xml:space="preserve"><value>Invalid WebRTC offer.</value></data>
   <data name="Program_Security_InvalidCode_Error" xml:space="preserve"><value>Invalid access code.</value></data>
-  <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Too many attempts. Wait {0} seconds.</value></data>
+  <data name="Program_Security_TooManyAttempts_Error" xml:space="preserve"><value>Too many attempts. Try again in {0} seconds.</value></data>
   <data name="Program_Security_MissingCode_Error" xml:space="preserve"><value>You must enter the access code to continue.</value></data>
 
-  <data name="Program_ViewerLimit_Full_Message" xml:space="preserve"><value>Maximum number of viewers reached</value></data>
-  <data name="Program_ViewerLimit_Full_Error" xml:space="preserve"><value>Maximum number of viewers reached</value></data>
+  <data name="Program_ViewerLimit_Full_Message" xml:space="preserve"><value>The allowed viewer limit has been reached.</value></data>
+  <data name="Program_ViewerLimit_Full_Error" xml:space="preserve"><value>The allowed viewer limit has been reached.</value></data>
 
   <data name="Security_Page_Title" xml:space="preserve"><value>Protected access - {0}</value></data>
   <data name="Security_Page_Heading" xml:space="preserve"><value>Protected screen</value></data>
   <data name="Security_Page_Description" xml:space="preserve"><value>Enter the 6-character access code to view this screen.</value></data>
   <data name="Security_Page_Input_Placeholder" xml:space="preserve"><value>Access code</value></data>
-  <data name="Security_Page_Submit" xml:space="preserve"><value>Enter</value></data>
+  <data name="Security_Page_Submit" xml:space="preserve"><value>Unlock</value></data>
   <data name="Security_Page_Attempts" xml:space="preserve"><value>Attempts left: {0}</value></data>
   <data name="Security_Page_Wait" xml:space="preserve"><value>Temporarily blocked. Retry in {0}s.</value></data>
 
-  <data name="Transmission_WebImage" xml:space="preserve"><value>Web image</value></data>
+  <data name="Transmission_WebImage" xml:space="preserve"><value>Image over web</value></data>
   <data name="Transmission_WebRtc" xml:space="preserve"><value>WebRTC</value></data>
 
   <data name="Runtime_Screen1" xml:space="preserve"><value>Screen 1</value></data>
