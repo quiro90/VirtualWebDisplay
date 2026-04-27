@@ -1,20 +1,20 @@
 using System.Net;
 using VirtualWebDisplay.Configuration;
-using VirtualWebDisplay.Controllers;
+using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.Streaming.Models;
 using VirtualWebDisplay.UI.HtmlTemplates;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Controllers;
 
 /// <summary>
 /// Registra todos los endpoints HTTP de la aplicación en el <see cref="WebApplication"/>.
 /// </summary>
 internal static class WebApiEndpoints
 {
-    private static readonly WebImagePageTemplate   _webImageTemplate        = new();
-    private static readonly RtcPageTemplate        _rtcTemplate             = new();
-    private static readonly SecurityPageTemplate   _securityPageTemplate    = new();
+    private static readonly WebImagePageTemplate    _webImageTemplate        = new();
+    private static readonly RtcPageTemplate         _rtcTemplate             = new();
+    private static readonly SecurityPageTemplate    _securityPageTemplate    = new();
     private static readonly ViewerLimitPageTemplate _viewerLimitPageTemplate = new();
 
     public static void Map(
@@ -86,9 +86,9 @@ internal static class WebApiEndpoints
             {
                 var parameters = new Dictionary<string, object>
                 {
-                    ["title"]          = runtime.DisplayName,
+                    ["title"]           = runtime.DisplayName,
                     ["browserImageFit"] = browserImageFit,
-                    ["intervalMs"]     = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000))
+                    ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000))
                 };
                 html = _webImageTemplate.Generate(parameters);
             }
@@ -96,7 +96,7 @@ internal static class WebApiEndpoints
             {
                 var parameters = new Dictionary<string, object>
                 {
-                    ["title"]          = runtime.DisplayName,
+                    ["title"]           = runtime.DisplayName,
                     ["browserImageFit"] = browserImageFit
                 };
                 html = _rtcTemplate.Generate(parameters);

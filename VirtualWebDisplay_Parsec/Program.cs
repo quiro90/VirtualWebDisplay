@@ -1,6 +1,7 @@
 using System.Net;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
+using VirtualWebDisplay.Controllers;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.Parsec;
