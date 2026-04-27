@@ -13,9 +13,8 @@ internal static class TouchInputScriptHelper
     /// Parameters esperados:
     /// - screenElementId: ID del elemento HTML que recibe toques ("screen" para WebImage, "screen" para WebRTC)
     /// - throttleMs: Mínimo de ms entre eventos (default: 50ms)
-    /// - touchInputEnabledDefault: reservado para compatibilidad de firma
     /// </summary>
-    public static string GenerateTouchInputScript(string screenElementId, int throttleMs = 50, bool touchInputEnabledDefault = false)
+    public static string GenerateTouchInputScript(string screenElementId, int throttleMs = 50)
     {
         // Validar parámetros
         if (string.IsNullOrWhiteSpace(screenElementId))

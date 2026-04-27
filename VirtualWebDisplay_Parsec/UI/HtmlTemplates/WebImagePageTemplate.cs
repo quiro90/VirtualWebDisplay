@@ -19,8 +19,6 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
         };
         var intervalMsObj = parameters.GetValueOrDefault("intervalMs", 250);
         var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
-        var touchInputEnabledObj = parameters.GetValueOrDefault("touchInputEnabled", false);
-        var touchInputEnabled = touchInputEnabledObj is bool boolVal && boolVal;
         var htmlLang = AppText.HtmlLang;
 
         return $$"""
@@ -75,7 +73,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                 <script>
                 (function () {
                     var INTERVAL = {{intervalMs}};
-                    var img = document.getElementById('screen');
+                    var screenLayer = document.getElementById('screen');
                     var seq = 0;
                     var viewport = window.visualViewport;
 
@@ -96,7 +94,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                     function next() {
                         var pre = new Image();
                         pre.onload = function () {
-                            img.style.backgroundImage = "url('" + this.src + "')";
+                            screenLayer.style.backgroundImage = "url('" + this.src + "')";
                             setTimeout(next, INTERVAL);
                         };
                         pre.onerror = function () {
@@ -112,12 +110,12 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                         e.preventDefault();
                     }
 
-                    // iOS Safari: evita drag-and-drop/long-press sobre <img>
-                    img.addEventListener('dragstart', preventNative, { passive: false });
-                    img.addEventListener('contextmenu', preventNative, { passive: false });
-                    img.addEventListener('touchstart', preventNative, { passive: false });
-                    img.addEventListener('touchmove', preventNative, { passive: false });
-                    img.addEventListener('touchend', preventNative, { passive: false });
+                    // iOS Safari: evita drag-and-drop/long-press sobre la capa de stream.
+                    screenLayer.addEventListener('dragstart', preventNative, { passive: false });
+                    screenLayer.addEventListener('contextmenu', preventNative, { passive: false });
+                    screenLayer.addEventListener('touchstart', preventNative, { passive: false });
+                    screenLayer.addEventListener('touchmove', preventNative, { passive: false });
+                    screenLayer.addEventListener('touchend', preventNative, { passive: false });
                     document.addEventListener('gesturestart', preventNative, { passive: false });
                     document.addEventListener('gesturechange', preventNative, { passive: false });
 
@@ -136,7 +134,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
 
                     startKeepAliveSignal();
 
-                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)), touchInputEnabled)}}
+                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)))}}
                 })();
                 </script>
             </body>
