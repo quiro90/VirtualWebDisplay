@@ -40,7 +40,8 @@ public sealed class ResolutionConfigurationForm : Form
     public VirtualWebDisplaySettings Selection { get; private set; } = new();
     public bool WasStarted => _wasStarted;
 
-    public event Action<VirtualWebDisplaySettings>? ConfigurationApplied;
+    public event Action<VirtualWebDisplaySettings>? ConfigurationSaved;
+    public event Action? StartupConfirmed;
     public event Action? RestartRequested;
 
     private string AcceptButtonText => _wasStarted
@@ -222,11 +223,10 @@ public sealed class ResolutionConfigurationForm : Form
 
     private void AcceptButton_Click(object? sender, EventArgs e)
     {
-        if (!ValidateAndBuildSelection(out var selection))
+        if (!TrySaveSelection())
             return;
 
-        Selection = selection;
-        ConfigurationApplied?.Invoke(selection);
+        StartupConfirmed?.Invoke();
 
         if (_wasStarted)
         {
@@ -238,6 +238,16 @@ public sealed class ResolutionConfigurationForm : Form
         {
             CloseDialog();
         }
+    }
+
+    private bool TrySaveSelection()
+    {
+        if (!ValidateAndBuildSelection(out var selection))
+            return false;
+
+        Selection = selection;
+        ConfigurationSaved?.Invoke(selection);
+        return true;
     }
 
     private bool ValidateAndBuildSelection(out VirtualWebDisplaySettings selection)
@@ -269,6 +279,16 @@ public sealed class ResolutionConfigurationForm : Form
     {
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (_isInitialStartup && !_wasStarted && DialogResult != DialogResult.OK)
+        {
+            TrySaveSelection();
+        }
+
+        base.OnFormClosing(e);
     }
 
     private void ApplyRuntimeSecurityCodes(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes)

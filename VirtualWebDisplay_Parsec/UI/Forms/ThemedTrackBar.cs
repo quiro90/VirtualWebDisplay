@@ -113,6 +113,12 @@ internal sealed class ThemedTrackBar : Control
         Invalidate();
     }
 
+    protected override void OnEnabledChanged(EventArgs e)
+    {
+        base.OnEnabledChanged(e);
+        Invalidate();
+    }
+
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
@@ -121,10 +127,14 @@ internal sealed class ThemedTrackBar : Control
         e.Graphics.Clear(BackColor);
 
         var trackRectangle = GetTrackRectangle();
-        using var trackPen = new Pen(_trackColor, 4);
-        using var activePen = new Pen(_activeTrackColor, 4);
-        using var tickPen = new Pen(_tickColor, 1);
-        using var thumbBrush = new SolidBrush(_thumbColor);
+        var trackC = Enabled ? _trackColor : DimColor(_trackColor);
+        var activeC = Enabled ? _activeTrackColor : DimColor(_activeTrackColor);
+        var tickC = Enabled ? _tickColor : DimColor(_tickColor);
+        var thumbC = Enabled ? _thumbColor : DimColor(_thumbColor);
+        using var trackPen = new Pen(trackC, 4);
+        using var activePen = new Pen(activeC, 4);
+        using var tickPen = new Pen(tickC, 1);
+        using var thumbBrush = new SolidBrush(thumbC);
 
         e.Graphics.DrawLine(trackPen, trackRectangle.Left, trackRectangle.Top, trackRectangle.Right, trackRectangle.Top);
 
@@ -208,4 +218,7 @@ internal sealed class ThemedTrackBar : Control
         var ratio = trackRectangle.Width == 0 ? 0 : (double)(clampedX - trackRectangle.Left) / trackRectangle.Width;
         Value = _minimum + (int)Math.Round((_maximum - _minimum) * ratio);
     }
+
+    private static Color DimColor(Color color) =>
+        Color.FromArgb(color.R / 2, color.G / 2, color.B / 2);
 }

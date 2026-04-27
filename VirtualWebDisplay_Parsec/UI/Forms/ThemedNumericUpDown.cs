@@ -39,10 +39,10 @@ internal sealed class ThemedNumericUpDown : UserControl
         _textBox.Leave += (_, _) => CommitText();
         _textBox.KeyDown += TextBox_KeyDown;
 
-        _incrementButton = CreateSpinButton("▲");
+        _incrementButton = CreateSpinButton();
         _incrementButton.Click += (_, _) => StepValue(_increment);
 
-        _decrementButton = CreateSpinButton("▼");
+        _decrementButton = CreateSpinButton();
         _decrementButton.Click += (_, _) => StepValue(-_increment);
 
         Controls.AddRange([_textBox, _incrementButton, _decrementButton]);
@@ -145,6 +145,7 @@ internal sealed class ThemedNumericUpDown : UserControl
         _incrementButton.ForeColor = buttonForegroundColor;
         _decrementButton.BackColor = buttonColor;
         _decrementButton.ForeColor = buttonForegroundColor;
+        UpdateLayout();
         Invalidate();
     }
 
@@ -172,19 +173,36 @@ internal sealed class ThemedNumericUpDown : UserControl
         borderBounds.Width -= 1;
         borderBounds.Height -= 1;
         e.Graphics.DrawRectangle(borderPen, borderBounds);
+
+        // Vertical separator between text area and spin buttons
+        var buttonLeft = Math.Max(Width - 17, 0);
+        e.Graphics.DrawLine(borderPen, buttonLeft, 0, buttonLeft, Height - 1);
+
+        // Draw spin button labels directly (WinForms flat buttons inside AllPaintingInWmPaint
+        // UserControls do not reliably render their own text)
+        var symbolColor = Enabled ? _buttonForegroundColor : SystemColors.GrayText;
+        using var symbolFont = new Font("Segoe UI", 7.5F, FontStyle.Bold);
+        var halfH = Math.Max(Height / 2, 10);
+        var incBounds = new Rectangle(buttonLeft, 0, 17, halfH);
+        var decBounds = new Rectangle(buttonLeft, halfH - 1, 17, Height - halfH + 1);
+        TextRenderer.DrawText(e.Graphics, "▲", symbolFont, incBounds, symbolColor,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
+        TextRenderer.DrawText(e.Graphics, "▼", symbolFont, decBounds, symbolColor,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine);
     }
 
-    private Button CreateSpinButton(string text)
+    private Button CreateSpinButton()
     {
-        return new Button
+        var btn = new Button
         {
             Width = 16,
             Height = 11,
             FlatStyle = FlatStyle.Flat,
             TabStop = false,
-            Text = text,
-            Font = new Font(Font.FontFamily, 5.5F, FontStyle.Bold),
+            Text = string.Empty,
         };
+        btn.FlatAppearance.BorderSize = 0;
+        return btn;
     }
 
     private void UpdateLayout()
@@ -196,10 +214,6 @@ internal sealed class ThemedNumericUpDown : UserControl
         _textBox.SetBounds(6, 5, Math.Max(buttonLeft - 8, 20), Math.Max(Height - 10, 12));
         _incrementButton.SetBounds(buttonLeft, 0, 17, Math.Max(Height / 2, 10));
         _decrementButton.SetBounds(buttonLeft, Math.Max(Height / 2 - 1, 0), 17, Math.Max(Height - (Height / 2) + 1, 10));
-        _incrementButton.FlatAppearance.BorderColor = _borderColor;
-        _decrementButton.FlatAppearance.BorderColor = _borderColor;
-        _incrementButton.FlatAppearance.BorderSize = 1;
-        _decrementButton.FlatAppearance.BorderSize = 1;
     }
 
     private void TextBox_KeyDown(object? sender, KeyEventArgs e)

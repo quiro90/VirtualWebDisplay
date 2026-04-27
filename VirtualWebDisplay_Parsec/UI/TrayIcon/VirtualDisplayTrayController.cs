@@ -74,11 +74,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 }
             };
 
-            _startupForm.ConfigurationApplied += _ =>
-            {
-                if (!_startupForm.WasStarted)
-                    completion.TrySetResult(true);
-            };
+            _startupForm.StartupConfirmed += () => completion.TrySetResult(true);
 
             _startupForm.Show();
         });
@@ -214,7 +210,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
         var screenRuntimes = hasStarted ? _screenRuntimes : null;
         var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted, screenRuntimes);
 
-        form.ConfigurationApplied += ApplySelection;
+        form.ConfigurationSaved += ApplySelection;
         form.RestartRequested += RestartApplication;
 
         return form;

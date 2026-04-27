@@ -69,17 +69,16 @@ public sealed class VirtualScreenSettingsStore
             WriteIndented = true,
         });
 
-        var tempFilePath = Path.Combine(directory ?? Path.GetTempPath(), $"{Path.GetFileName(_filePath)}.tmp");
+        var tempFilePath = Path.Combine(
+            directory ?? Path.GetTempPath(),
+            $"{Path.GetFileName(_filePath)}.{Guid.NewGuid():N}.tmp");
 
         try
         {
             PrepareWritableFile(_filePath);
             File.WriteAllText(tempFilePath, json);
 
-            if (File.Exists(_filePath))
-                File.Replace(tempFilePath, _filePath, destinationBackupFileName: null, ignoreMetadataErrors: true);
-            else
-                File.Move(tempFilePath, _filePath);
+            ReplaceFile(tempFilePath, _filePath);
         }
         finally
         {
@@ -99,6 +98,24 @@ public sealed class VirtualScreenSettingsStore
         var normalizedAttributes = attributes & ~FileAttributes.ReadOnly & ~FileAttributes.Hidden & ~FileAttributes.System;
         if (normalizedAttributes != attributes)
             File.SetAttributes(filePath, normalizedAttributes);
+    }
+
+    private static void ReplaceFile(string tempFilePath, string destinationFilePath)
+    {
+        if (!File.Exists(destinationFilePath))
+        {
+            File.Move(tempFilePath, destinationFilePath);
+            return;
+        }
+
+        try
+        {
+            File.Replace(tempFilePath, destinationFilePath, destinationBackupFileName: null, ignoreMetadataErrors: true);
+        }
+        catch (IOException)
+        {
+            File.Copy(tempFilePath, destinationFilePath, overwrite: true);
+        }
     }
 
     private static VirtualWebDisplaySettings CreateDefaults()

@@ -64,12 +64,10 @@ internal sealed class ThemedComboBox : ComboBox
             return;
 
         var isSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
-        var backgroundColor = Enabled
-            ? (isSelected ? _selectionBackgroundColor : _backgroundColor)
-            : SystemColors.Control;
+        var backgroundColor = Enabled && isSelected ? _selectionBackgroundColor : _backgroundColor;
         var foregroundColor = Enabled
             ? (isSelected ? _selectionForegroundColor : _foregroundColor)
-            : SystemColors.GrayText;
+            : DimColor(_foregroundColor);
 
         using var backgroundBrush = new SolidBrush(backgroundColor);
         using var foregroundBrush = new SolidBrush(foregroundColor);
@@ -110,7 +108,7 @@ internal sealed class ThemedComboBox : ComboBox
             Math.Max(buttonWidth, 16),
             Math.Max(ClientRectangle.Height - 2, 1));
 
-        using var buttonBrush = new SolidBrush(Enabled ? _buttonColor : SystemColors.Control);
+        using var buttonBrush = new SolidBrush(_buttonColor);
         using var borderPen = new Pen(_borderColor);
         graphics.FillRectangle(buttonBrush, buttonRectangle);
         graphics.DrawLine(borderPen, buttonRectangle.Left, buttonRectangle.Top, buttonRectangle.Left, buttonRectangle.Bottom);
@@ -123,7 +121,7 @@ internal sealed class ThemedComboBox : ComboBox
             new Point(centerX + 4, centerY - 2),
             new Point(centerX, centerY + 2),
         };
-        using var arrowBrush = new SolidBrush(Enabled ? _arrowColor : SystemColors.GrayText);
+        using var arrowBrush = new SolidBrush(Enabled ? _arrowColor : DimColor(_arrowColor));
         graphics.FillPolygon(arrowBrush, arrowPoints);
 
         var borderBounds = ClientRectangle;
@@ -131,4 +129,7 @@ internal sealed class ThemedComboBox : ComboBox
         borderBounds.Height -= 1;
         graphics.DrawRectangle(borderPen, borderBounds);
     }
+
+    private static Color DimColor(Color color) =>
+        Color.FromArgb(color.R / 2, color.G / 2, color.B / 2);
 }
