@@ -363,6 +363,20 @@ public sealed class VirtualDisplayManager : IDisposable
     private static string NormalizePlacementLabel(string? placement) =>
         VirtualDisplayPlacementOptions.GetDisplayLabel(placement);
 
+    /// <summary>
+    /// Devuelve la resolución actual del monitor con el nombre de dispositivo dado,
+    /// o null si no puede obtenerse.
+    /// </summary>
+    public static (int width, int height)? TryGetCurrentResolution(string deviceName)
+    {
+        var mode = CreateDevMode();
+        if (!EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref mode))
+            return null;
+        if (mode.dmPelsWidth <= 0 || mode.dmPelsHeight <= 0)
+            return null;
+        return (mode.dmPelsWidth, mode.dmPelsHeight);
+    }
+
     private static DEVMODE CreateDevMode() => new()
     {
         dmDeviceName = new string('\0', 32),

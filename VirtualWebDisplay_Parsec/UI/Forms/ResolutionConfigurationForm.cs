@@ -126,7 +126,7 @@ public sealed class ResolutionConfigurationForm : Form
             Top = 8,
             Anchor = AnchorStyles.Top | AnchorStyles.Right,
             FlatStyle = FlatStyle.Flat,
-            Text = "⚙",
+            Text = "🔧",
             Font = new Font(Font.FontFamily, 12, FontStyle.Regular),
             TabStop = false,
         };

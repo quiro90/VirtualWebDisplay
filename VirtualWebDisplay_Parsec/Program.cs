@@ -10,6 +10,7 @@ var appearance = appearanceStore.Load();
 AppText.ApplyCulture(appearance.UiLanguage);
 
 var settingsStore = new VirtualScreenSettingsStore();
+var resolutionStore = new VirtualDisplayResolutionStore();
 var settings = settingsStore.Load();
 settings.EnsureValid();
 settings.UiLanguage = appearance.UiLanguage;
@@ -48,7 +49,7 @@ var certStoreDir = Path.Combine(
 var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
 
 await ApplicationLifecycleManager.RunAsync(
-    tray, settings, appearanceStore, singleInstance,
+    tray, settings, appearanceStore, resolutionStore, singleInstance,
     args, tlsCert, tlsCertDerBytes, hostName, localIp);
 
 singleInstance.Dispose();

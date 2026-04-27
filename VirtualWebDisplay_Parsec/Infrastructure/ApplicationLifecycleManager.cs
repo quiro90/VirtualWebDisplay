@@ -19,6 +19,7 @@ internal static class ApplicationLifecycleManager
         VirtualDisplayTrayController tray,
         VirtualWebDisplaySettings settings,
         AppearanceSettingsStore appearanceStore,
+        VirtualDisplayResolutionStore resolutionStore,
         SingleInstanceManager singleInstance,
         string[] args,
         X509Certificate2 tlsCert,
@@ -61,6 +62,8 @@ internal static class ApplicationLifecycleManager
 
                 WebApiEndpoints.Map(app, runtimes, tlsCertDerBytes);
 
+                using var resolutionWatcher = new VirtualResolutionWatcher(runtimes, resolutionStore);
+                resolutionWatcher.RestoreOrSeedResolutions();
                 await app.RunAsync();
             }
             finally
