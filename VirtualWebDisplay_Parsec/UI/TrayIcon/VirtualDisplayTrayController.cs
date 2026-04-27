@@ -26,11 +26,14 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private NotifyIcon? _notifyIcon;
     private ContextMenuStrip? _contextMenu;
     private Action? _exitRequested;
-    private Action? _restartRequested;
+    private Action? _stopRequested;
+    private TaskCompletionSource<bool>? _serviceStartSignal;
     private IReadOnlyList<ScreenRuntimeContext> _screenRuntimes = [];
+    private bool _serviceActionPending;
     private bool _disposed;
     private Icon? _appIcon;
     private ResolutionConfigurationForm? _startupForm;
+    private ResolutionConfigurationForm? _configForm;
 
     private static Icon LoadAppIcon()
     {
@@ -84,10 +87,12 @@ public sealed class VirtualDisplayTrayController : IDisposable
         return completion.Task.GetAwaiter().GetResult();
     }
 
-    public void ConfigureRuntimeActions(Action exitRequested, Action restartRequested, IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
+    public void ConfigureRuntimeActions(Action exitRequested, Action stopRequested, IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
         _exitRequested = exitRequested;
-        _restartRequested = restartRequested;
+        _stopRequested = stopRequested;
+        _serviceStartSignal = null; // service is now running
+        _serviceActionPending = false;
         _screenRuntimes = screenRuntimes;
 
         PostToUi(() =>
@@ -99,7 +104,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
             _contextMenu = BuildContextMenu();
             _notifyIcon.ContextMenuStrip = _contextMenu;
 
-            _startupForm?.NotifyStartupCompleted(_screenRuntimes);
+            _startupForm?.NotifyServiceStarted(_screenRuntimes);
+            _configForm?.NotifyServiceStarted(_screenRuntimes);
         });
 
         var summary = string.Join(" | ", _screenRuntimes.Select(runtime => $"{runtime.DisplayName}: {runtime.HostUrl}"));
@@ -182,7 +188,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
         }
 
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(AppText.Get("Tray_Menu_Restart"), null, (_, _) => RestartApplication());
+        if (_screenRuntimes.Count > 0 && !_serviceActionPending)
+            menu.Items.Add(AppText.Get("Tray_Menu_Stop"), null, (_, _) => StopService());
+        else if (_screenRuntimes.Count == 0 && _serviceStartSignal is not null && !_serviceActionPending)
+            menu.Items.Add(AppText.Get("Tray_Menu_Start"), null, (_, _) => StartService());
+
         menu.Items.Add(AppText.Get("Tray_Menu_Exit"), null, (_, _) => ExitApplication());
         return menu;
     }
@@ -197,13 +207,15 @@ public sealed class VirtualDisplayTrayController : IDisposable
         }
 
         var hasStarted = _screenRuntimes.Count > 0;
-        using var form = CreateConfigurationForm(isInitialStartup: false, hasStarted);
-
-        var dialogResult = form.ShowDialog();
-
-        if (dialogResult == DialogResult.OK && !hasStarted)
+        _configForm = CreateConfigurationForm(isInitialStartup: false, hasStarted);
+        try
         {
-            _notifyIcon?.ShowBalloonTip(4000, AppText.Get("Tray_BalloonTitle"), AppText.Get("Tray_Balloon_ConfigSaved_Message"), ToolTipIcon.Info);
+            _configForm.ShowDialog();
+        }
+        finally
+        {
+            _configForm.Dispose();
+            _configForm = null;
         }
     }
 
@@ -213,7 +225,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
         var form = new ResolutionConfigurationForm(_settings, isInitialStartup, _localIp, hasStarted, screenRuntimes, _appearanceStore);
 
         form.ConfigurationSaved += ApplySelection;
-        form.RestartRequested += RestartApplication;
+        form.StopRequested += StopService;
+        form.StartupConfirmed += OnFormStartupConfirmed;
 
         return form;
     }
@@ -240,15 +253,63 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     private void ExitApplication()
     {
-        _exitRequested?.Invoke();
+        if (_serviceStartSignal is not null && !_serviceStartSignal.Task.IsCompleted)
+        {
+            // Service is stopped — signal no restart so the wait loop exits.
+            _serviceStartSignal.TrySetResult(false);
+        }
+        else
+        {
+            _exitRequested?.Invoke();
+        }
         _context?.ExitThread();
     }
 
-    private void RestartApplication()
+    private void StopService()
     {
-        _restartRequested?.Invoke();
-        _context?.ExitThread();
+        if (_serviceActionPending)
+            return;
+
+        _serviceActionPending = true;
+        _stopRequested?.Invoke();
     }
+
+    private void StartService()
+    {
+        if (_serviceActionPending)
+            return;
+
+        _serviceActionPending = true;
+        _serviceStartSignal?.TrySetResult(true);
+    }
+
+    private void OnFormStartupConfirmed()
+    {
+        // Handles both initial startup (no-op when signal is null) and
+        // restart from stopped state (resolves _serviceStartSignal).
+        StartService();
+    }
+
+    public void NotifyServiceStopped()
+    {
+        _serviceActionPending = false;
+        _serviceStartSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _screenRuntimes = [];
+
+        PostToUi(() =>
+        {
+            _contextMenu?.Dispose();
+            _contextMenu = BuildContextMenu();
+            if (_notifyIcon is not null)
+                _notifyIcon.ContextMenuStrip = _contextMenu;
+
+            _startupForm?.NotifyServiceStopped();
+            _configForm?.NotifyServiceStopped();
+        });
+    }
+
+    public Task<bool> WaitForServiceStartAsync()
+        => _serviceStartSignal?.Task ?? Task.FromResult(false);
 
     private void PostToUi(Action action)
     {

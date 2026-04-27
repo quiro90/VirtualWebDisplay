@@ -34,6 +34,9 @@
   <data name="Form_Config_Description" xml:space="preserve"><value>Ajustá la configuración de cada pantalla. Los cambios se guardan para el próximo inicio de la aplicación.</value></data>
   <data name="Form_Config_Accept_Restart" xml:space="preserve"><value>Reiniciar</value></data>
   <data name="Form_Config_Accept_Start" xml:space="preserve"><value>Iniciar</value></data>
+  <data name="Form_Config_Accept_Stop" xml:space="preserve"><value>Detener</value></data>
+  <data name="Form_Config_Accept_Starting" xml:space="preserve"><value>Iniciando...</value></data>
+  <data name="Form_Config_Accept_Stopping" xml:space="preserve"><value>Deteniendo...</value></data>
   <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Guardar</value></data>
   <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Salir</value></data>
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Cerrar</value></data>
@@ -83,10 +86,12 @@
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Abrir {0}</value></data>
   <data name="Tray_Menu_Restart" xml:space="preserve"><value>Reiniciar</value></data>
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Salir</value></data>
+    <data name="Tray_Menu_Stop" xml:space="preserve"><value>Detener</value></data>
+    <data name="Tray_Menu_Start" xml:space="preserve"><value>Iniciar</value></data>
   <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
   <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
   <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Clave</value></data>
-  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuración guardada. Usá 'Reiniciar' desde el ícono de bandeja para aplicar los nuevos cambios.</value></data>
+  <data name="Tray_Balloon_ConfigSaved_Message" xml:space="preserve"><value>Configuración guardada. Detené e iniciá el servicio para aplicar los cambios.</value></data>
 
   <data name="About_Title" xml:space="preserve"><value>Acerca de Virtual Web Display</value></data>
   <data name="About_Subtitle" xml:space="preserve"><value>Tu escritorio virtual, disponible en cualquier dispositivo de la misma red local.</value></data>

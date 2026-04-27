@@ -33,8 +33,6 @@ if (!singleInstance.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
     return;
 }
 
-var builder = WebApplication.CreateBuilder(args);
-
 var localIp = NetworkAddressHelper.DetectLocalIp();
 var hostName = Dns.GetHostName();
 
@@ -57,18 +55,24 @@ AppText.ApplyCulture(appearance.UiLanguage);
 settings.UiLanguage = appearance.UiLanguage;
 settings.WindowTheme = appearance.WindowTheme;
 
-// Crear runtimes solo para las pantallas habilitadas.
-// Cada pantalla usa su puerto configurado individualmente (no se calculan puertos dinámicamente).
+var certStoreDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    VirtualScreenSettingsStore.DirectoryName);
+
+var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
+
+var keepRunning = true;
+while (keepRunning)
+{
+// Crear runtimes para las pantallas habilitadas (configuración actual).
 var runtimes = new List<ScreenRuntimeContext>
 {
     new("screen1", AppText.Get("Runtime_Screen1"), settings.Screen1, hostName, localIp),
 };
-
-// Solo agregar Screen2 si está explícitamente habilitada en la configuración.
 if (settings.Screen2.Enabled)
     runtimes.Add(new ScreenRuntimeContext("screen2", AppText.Get("Runtime_Screen2"), settings.Screen2, hostName, localIp));
 
-// Solo verificar VDD si al menos una pantalla necesita monitor virtual (no está en modo duplicado).
+// Verificar VDD si al menos una pantalla necesita monitor virtual.
 if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.VirtualDisplayPlacement)))
 {
     var (driverReady, driverStatus) = VirtualDisplayManager.VerifyDriverAvailability();
@@ -82,21 +86,12 @@ if (runtimes.Any(r => !VirtualDisplayPlacementOptions.IsDuplicate(r.Config.Virtu
     }
 }
 
-var certStoreDir = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-    VirtualScreenSettingsStore.DirectoryName);
-
-var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
-
-// Configurar Kestrel para escuchar solo en los puertos de las pantallas habilitadas.
-// Cada pantalla usa 2 puertos consecutivos: Port (HTTP) y Port+1 (HTTPS).
+var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(kestrel =>
 {
     foreach (var runtime in runtimes)
     {
-        // HTTP: puerto configurado para esta pantalla.
         kestrel.ListenAnyIP(runtime.Config.Port);
-        // HTTPS: puerto configurado + 1 para esta pantalla.
         kestrel.ListenAnyIP(runtime.Config.Port + 1, listenOptions =>
             listenOptions.UseHttps(tlsCert));
     }
@@ -104,7 +99,8 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 
 var app = builder.Build();
 singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
-var restartRequested = false;
+var stopRequested = false;
+var exitRequested = false;
 
 app.Lifetime.ApplicationStopping.Register(() =>
 {
@@ -152,12 +148,8 @@ try
     }
 
     tray.ConfigureRuntimeActions(
-        () => app.Lifetime.StopApplication(),
-        () =>
-        {
-            restartRequested = true;
-            app.Lifetime.StopApplication();
-        },
+        () => { exitRequested = true; app.Lifetime.StopApplication(); },
+        () => { stopRequested = true; app.Lifetime.StopApplication(); },
         runtimes);
 
 
@@ -402,27 +394,30 @@ finally
 
     await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
 
-    if (restartRequested)
-    {
+    if (stopRequested || exitRequested)
         await RuntimeCleanupHelper.WaitForVirtualDisplaysRemovalAsync(createdVirtualDeviceNames, TimeSpan.FromSeconds(6));
-        await Task.Delay(200);
-    }
 
     Console.WriteLine("Recursos liberados.");
 }
 
-// Liberar el mutex explícitamente antes de Exit para que la nueva instancia
-// (en caso de reinicio) pueda adquirirlo sin AbandonedMutexException.
-singleInstance.Dispose();
-
-if (restartRequested)
+if (stopRequested)
 {
-    var processPath = Environment.ProcessPath
-        ?? Process.GetCurrentProcess().MainModule?.FileName;
-    if (processPath is not null)
-        Process.Start(new ProcessStartInfo(processPath, "--autostart") { UseShellExecute = true });
+    tray.NotifyServiceStopped();
+    var startAgain = await tray.WaitForServiceStartAsync();
+    if (startAgain)
+    {
+        // Reload appearance in case user changed language/theme while service was stopped.
+        appearance = appearanceStore.Load();
+        AppText.ApplyCulture(appearance.UiLanguage);
+        settings.UiLanguage = appearance.UiLanguage;
+        settings.WindowTheme = appearance.WindowTheme;
+        await Task.Delay(500); // allow OS to release port bindings
+        continue;
+    }
 }
 
-// Forzar la terminación del proceso una vez que todo el cleanup completó.
-// SIPSorcery y Kestrel pueden dejar threads internos que impiden la salida natural.
+keepRunning = false;
+} // end while (keepRunning)
+
+singleInstance.Dispose();
 Environment.Exit(0);

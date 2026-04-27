@@ -39,17 +39,19 @@ public sealed class ResolutionConfigurationForm : Form
     private string _selectedLanguageCode;
     private string _selectedWindowTheme;
     private bool _wasStarted;
+    private bool _serviceActionPending;
+    private bool _pendingStartAction;
 
     public VirtualWebDisplaySettings Selection { get; private set; } = new();
     public bool WasStarted => _wasStarted;
 
     public event Action<VirtualWebDisplaySettings>? ConfigurationSaved;
     public event Action? StartupConfirmed;
-    public event Action? RestartRequested;
+    public event Action? StopRequested;
 
     private string AcceptButtonText => _wasStarted
-        ? AppText.Get("Form_Config_Accept_Restart")
-        : (_isInitialStartup ? AppText.Get("Form_Config_Accept_Start") : AppText.Get("Form_Config_Accept_Save"));
+        ? (_serviceActionPending ? AppText.Get("Form_Config_Accept_Stopping") : AppText.Get("Form_Config_Accept_Stop"))
+        : (_serviceActionPending && _pendingStartAction ? AppText.Get("Form_Config_Accept_Starting") : AppText.Get("Form_Config_Accept_Start"));
 
     public ResolutionConfigurationForm(
         VirtualWebDisplaySettings settings,
@@ -216,35 +218,38 @@ public sealed class ResolutionConfigurationForm : Form
         ApplyRuntimeSecurityCodes(screenRuntimes);
     }
 
-    public void NotifyStartupCompleted(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
+    public void NotifyServiceStarted(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
     {
-        if (!_isInitialStartup || _wasStarted)
-        {
-            ApplyRuntimeSecurityCodes(screenRuntimes);
-            return;
-        }
-
         _wasStarted = true;
-        _acceptButton.Text = AcceptButtonText;
+        _serviceActionPending = false;
+        _pendingStartAction = false;
+        UpdateAcceptButtonState();
         ApplyRuntimeSecurityCodes(screenRuntimes);
     }
 
     private void AcceptButton_Click(object? sender, EventArgs e)
     {
+        if (_serviceActionPending)
+            return;
+
         if (!TrySaveSelection())
             return;
 
-        StartupConfirmed?.Invoke();
-
         if (_wasStarted)
         {
-            RestartRequested?.Invoke();
-            if (!_isInitialStartup)
-                CloseDialog();
+            // Service is running → stop it; form stays open and NotifyServiceStopped() will flip the button.
+            _serviceActionPending = true;
+            _pendingStartAction = false;
+            UpdateAcceptButtonState();
+            StopRequested?.Invoke();
         }
-        else if (!_isInitialStartup)
+        else
         {
-            CloseDialog();
+            // Service is stopped → start it; form stays open and NotifyServiceStarted() will flip the button.
+            _serviceActionPending = true;
+            _pendingStartAction = true;
+            UpdateAcceptButtonState();
+            StartupConfirmed?.Invoke();
         }
     }
 
@@ -324,7 +329,7 @@ public sealed class ResolutionConfigurationForm : Form
         _screen1Controls.ApplyLocalization();
         _screen2Controls.ApplyLocalization();
 
-        _acceptButton.Text = AcceptButtonText;
+        UpdateAcceptButtonState();
         _cancelButton.Text = _isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close");
 
         BuildConfigurationMenu();
@@ -405,6 +410,20 @@ public sealed class ResolutionConfigurationForm : Form
             UiLanguage = _selectedLanguageCode,
             WindowTheme = _selectedWindowTheme,
         });
+    }
+
+    public void NotifyServiceStopped()
+    {
+        _wasStarted = false;
+        _serviceActionPending = false;
+        _pendingStartAction = false;
+        UpdateAcceptButtonState();
+    }
+
+    private void UpdateAcceptButtonState()
+    {
+        _acceptButton.Text = AcceptButtonText;
+        _acceptButton.Enabled = !_serviceActionPending;
     }
 
     private void ApplyTheme()

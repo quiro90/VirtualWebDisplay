@@ -34,6 +34,9 @@
   <data name="Form_Config_Description" xml:space="preserve"><value>Adjust each screen. Changes are saved for the next app launch.</value></data>
   <data name="Form_Config_Accept_Restart" xml:space="preserve"><value>Restart</value></data>
   <data name="Form_Config_Accept_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Form_Config_Accept_Stop" xml:space="preserve"><value>Stop</value></data>
+  <data name="Form_Config_Accept_Starting" xml:space="preserve"><value>Starting...</value></data>
+  <data name="Form_Config_Accept_Stopping" xml:space="preserve"><value>Stopping...</value></data>
   <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Save</value></data>
   <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Close</value></data>
@@ -89,6 +92,8 @@
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>
   <data name="Tray_Menu_Restart" xml:space="preserve"><value>Restart</value></data>
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>
+    <data name="Tray_Menu_Stop" xml:space="preserve"><value>Stop</value></data>
+    <data name="Tray_Menu_Start" xml:space="preserve"><value>Start</value></data>
   <data name="Tray_Status_Format" xml:space="preserve"><value>VirtualWebDisplay - {0}</value></data>
   <data name="Tray_BalloonTitle" xml:space="preserve"><value>VirtualWebDisplay</value></data>
   <data name="Tray_SecurityCode_Label" xml:space="preserve"><value>Code</value></data>
