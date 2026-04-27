@@ -5,12 +5,14 @@ namespace VirtualWebDisplay.Configuration.Models;
 public sealed class VirtualWebDisplaySettings
 {
     public string UiLanguage { get; set; } = "es";
+    public string WindowTheme { get; set; } = WindowThemeOptions.System;
     public VirtualScreenConfig Screen1 { get; set; } = CreateScreen1Defaults();
     public VirtualScreenConfig Screen2 { get; set; } = CreateScreen2Defaults();
 
     public void EnsureValid()
     {
         UiLanguage = AppText.NormalizeLanguage(UiLanguage);
+        WindowTheme = WindowThemeOptions.Normalize(WindowTheme);
 
         Screen1 ??= CreateScreen1Defaults();
         Screen2 ??= CreateScreen2Defaults();

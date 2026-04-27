@@ -14,9 +14,17 @@
   </resheader>
 
   <data name="Common_AppName" xml:space="preserve"><value>VirtualWebDisplay</value></data>
+  <data name="Common_AppDisplayName" xml:space="preserve"><value>Virtual Web Display</value></data>
   <data name="Language_Label" xml:space="preserve"><value>Language:</value></data>
   <data name="Language_Spanish" xml:space="preserve"><value>Spanish</value></data>
   <data name="Language_English" xml:space="preserve"><value>English</value></data>
+  <data name="Form_Config_EnableScreen2" xml:space="preserve"><value>Enable second screen (experimental)</value></data>
+  <data name="Form_Config_Menu_Configuration" xml:space="preserve"><value>Configuration</value></data>
+  <data name="Form_Config_Menu_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Form_Config_Menu_WindowStyle" xml:space="preserve"><value>Window style</value></data>
+  <data name="Form_Config_WindowStyle_System" xml:space="preserve"><value>System</value></data>
+  <data name="Form_Config_WindowStyle_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Form_Config_WindowStyle_Dark" xml:space="preserve"><value>Dark</value></data>
 
   <data name="Form_Config_TitleStartup" xml:space="preserve"><value>VirtualWebDisplay - Screen setup</value></data>
   <data name="Form_Config_Title" xml:space="preserve"><value>VirtualWebDisplay - Configuration</value></data>
@@ -61,6 +69,7 @@
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
   <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Open Windows display settings ↗</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Max allowed viewers (0 = unlimited):</value></data>
+  <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Access at:</value></data>
 
   <data name="Tray_Menu_Configuration" xml:space="preserve"><value>Configuration...</value></data>
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>

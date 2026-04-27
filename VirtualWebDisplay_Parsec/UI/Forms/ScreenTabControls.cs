@@ -15,34 +15,42 @@ public sealed class ScreenTabControls
     private readonly bool _allowDisable;
     private readonly bool _portEditable;
     private readonly CheckBox? _enabledCheckBox;
+    private bool? _forcedEnabledState;
     private readonly Label _portLabel;
     private readonly Label _methodLabel;
     private readonly Label _placementLabel;
-    private readonly ComboBox _placementCombo;
-    private readonly NumericUpDown _portInput;
-    private readonly ComboBox _transmissionMethodCombo;
+    private readonly ThemedComboBox _placementCombo;
+    private readonly ThemedNumericUpDown _portInput;
+    private readonly ThemedComboBox _transmissionMethodCombo;
     private readonly Label _captureIntervalLabel;
-    private readonly NumericUpDown _captureIntervalInput;
+    private readonly ThemedNumericUpDown _captureIntervalInput;
     private readonly Label _qualityLabel;
-    private readonly TrackBar _jpegQualitySlider;
+    private readonly ThemedTrackBar _jpegQualitySlider;
     private readonly Label _jpegQualityValueLabel;
     private readonly Label _rotationLabel;
-    private readonly ComboBox _streamRotationCombo;
+    private readonly ThemedComboBox _streamRotationCombo;
     private readonly Label _fitLabel;
-    private readonly ComboBox _browserImageFitCombo;
+    private readonly ThemedComboBox _browserImageFitCombo;
     private readonly Label _maxViewersLabel;
-    private readonly NumericUpDown _maxViewersInput;
+    private readonly ThemedNumericUpDown _maxViewersInput;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
     private readonly Control[] _managedControls;
     private readonly string _localIp;
     private readonly LinkLabel _httpUrlLink;
+    private readonly Label _accessUrlPrefixLabel;
     private readonly Button _windowsDisplayButton;
     private string _runtimeSecurityCode = string.Empty;
     private bool _showSecurityCode;
 
-    public ScreenTabControls(string title, bool allowDisable, bool isInitialStartup, VirtualScreenConfig config, string localIp)
+    public ScreenTabControls(
+        string title,
+        bool allowDisable,
+        bool isInitialStartup,
+        VirtualScreenConfig config,
+        string localIp,
+        bool showEnableToggle = true)
     {
         _baseConfig = config.Clone();
         _allowDisable = allowDisable;
@@ -51,7 +59,7 @@ public sealed class ScreenTabControls
         TabPage = new TabPage(title);
 
         var currentTop = 14;
-        if (allowDisable)
+        if (allowDisable && showEnableToggle)
         {
             _enabledCheckBox = new CheckBox
             {
@@ -66,7 +74,7 @@ public sealed class ScreenTabControls
 
         // Fila 1: Puerto | Transmisión | Posición
         _portLabel = CreateLabel(AppText.Get("Tab_Label_Port"), 14, currentTop);
-        _portInput = new NumericUpDown
+        _portInput = new ThemedNumericUpDown
         {
             Left = 14,
             Top = currentTop + 18,
@@ -76,12 +84,11 @@ public sealed class ScreenTabControls
         };
 
         _methodLabel = CreateLabel(AppText.Get("Tab_Label_Transmission"), 98, currentTop);
-        _transmissionMethodCombo = new ComboBox
+        _transmissionMethodCombo = new ThemedComboBox
         {
             Left = 98,
             Top = currentTop + 18,
             Width = 170,
-            DropDownStyle = ComboBoxStyle.DropDownList,
         };
         _transmissionMethodCombo.Items.AddRange(
         [
@@ -90,12 +97,11 @@ public sealed class ScreenTabControls
         ]);
 
         _placementLabel = CreateLabel(AppText.Get("Tab_Label_Placement"), 280, currentTop);
-        _placementCombo = new ComboBox
+        _placementCombo = new ThemedComboBox
         {
             Left = 280,
             Top = currentTop + 18,
             Width = 180,
-            DropDownStyle = ComboBoxStyle.DropDownList,
         };
         _placementCombo.Items.AddRange(
         [
@@ -110,12 +116,11 @@ public sealed class ScreenTabControls
 
         // Fila 2: Rotación stream
         _rotationLabel = CreateLabel(AppText.Get("Tab_Label_StreamRotation"), 14, currentTop);
-        _streamRotationCombo = new ComboBox
+        _streamRotationCombo = new ThemedComboBox
         {
             Left = 14,
             Top = currentTop + 18,
             Width = 230,
-            DropDownStyle = ComboBoxStyle.DropDownList,
         };
         _streamRotationCombo.Items.AddRange(
         [
@@ -129,7 +134,7 @@ public sealed class ScreenTabControls
 
         // Fila 3: Actualizar cada (ms) | Calidad JPEG
         _captureIntervalLabel = CreateLabel(AppText.Get("Tab_Label_CaptureIntervalMs"), 14, currentTop);
-        _captureIntervalInput = new NumericUpDown
+        _captureIntervalInput = new ThemedNumericUpDown
         {
             Left = 14,
             Top = currentTop + 18,
@@ -141,10 +146,10 @@ public sealed class ScreenTabControls
         };
 
         _qualityLabel = CreateLabel(AppText.Get("Tab_Label_JpegQuality"), 100, currentTop);
-        _jpegQualitySlider = new TrackBar
+        _jpegQualitySlider = new ThemedTrackBar
         {
             Left = 100,
-            Top = currentTop + 10,
+            Top = currentTop + 12,
             Width = 280,
             Minimum = 10,
             Maximum = 100,
@@ -163,12 +168,11 @@ public sealed class ScreenTabControls
 
         // Fila 4: Ajuste | Botón configuración Windows
         _fitLabel = CreateLabel(AppText.Get("Tab_Label_BrowserFit"), 14, currentTop);
-        _browserImageFitCombo = new ComboBox
+        _browserImageFitCombo = new ThemedComboBox
         {
             Left = 14,
             Top = currentTop + 18,
             Width = 180,
-            DropDownStyle = ComboBoxStyle.DropDownList,
         };
         _browserImageFitCombo.Items.AddRange(
         [
@@ -195,7 +199,7 @@ public sealed class ScreenTabControls
 
         // Fila 5: Numero de receptores permitidos
         _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
-        _maxViewersInput = new NumericUpDown
+        _maxViewersInput = new ThemedNumericUpDown
         {
             Left = 300,
             Top = currentTop,
@@ -243,12 +247,14 @@ public sealed class ScreenTabControls
 
         _httpUrlLink = new LinkLabel
         {
-            Left = 14,
-            Top = currentTop,
-            Width = 440,
+            Left = 86,
+            Top = currentTop + 1,
+            Width = 366,
             AutoSize = false,
             Text = $"http://{_localIp}:{config.Port}",
         };
+
+        _accessUrlPrefixLabel = CreateLabel(AppText.Get("Tab_AccessUrlPrefix"), 14, currentTop + 3);
 
         _managedControls =
         [
@@ -272,11 +278,12 @@ public sealed class ScreenTabControls
             _screenSecurityCheckBox,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton,
+            _accessUrlPrefixLabel,
+            _windowsDisplayButton,
         ];
 
         TabPage.Controls.AddRange(_managedControls);
         TabPage.Controls.Add(_httpUrlLink);
-        TabPage.Controls.Add(_windowsDisplayButton);
 
         _httpUrlLink.LinkClicked += (_, _) => OpenUrl(_httpUrlLink.Text);
 
@@ -311,6 +318,7 @@ public sealed class ScreenTabControls
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
+        _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
         _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
@@ -332,7 +340,7 @@ public sealed class ScreenTabControls
     public VirtualScreenConfig BuildConfig(bool alwaysEnabled)
     {
         var config = _baseConfig.Clone();
-        config.Enabled = alwaysEnabled || _enabledCheckBox?.Checked == true;
+        config.Enabled = alwaysEnabled || IsTabEnabled();
         config.Port = (int)_portInput.Value;
         config.TransmissionMethod = ((TransmissionMethodItem)_transmissionMethodCombo.SelectedItem!).Method;
         config.CaptureIntervalSeconds = (double)_captureIntervalInput.Value / 1000.0;
@@ -351,6 +359,8 @@ public sealed class ScreenTabControls
     {
         if (_enabledCheckBox is not null)
             _enabledCheckBox.Checked = config.Enabled;
+        else if (_allowDisable)
+            _forcedEnabledState = config.Enabled;
 
         _portInput.Value = Math.Max(_portInput.Minimum, Math.Min(_portInput.Maximum, config.Port));
         _captureIntervalInput.Value = Math.Clamp((decimal)(config.CaptureIntervalSeconds * 1000), _captureIntervalInput.Minimum, _captureIntervalInput.Maximum);
@@ -381,7 +391,7 @@ public sealed class ScreenTabControls
 
     private void UpdateState()
     {
-        var enabled = !_allowDisable || _enabledCheckBox?.Checked == true;
+        var enabled = IsTabEnabled();
         foreach (var control in _managedControls)
             control.Enabled = enabled && (control != _portInput || _portEditable);
 
@@ -391,6 +401,29 @@ public sealed class ScreenTabControls
         _httpUrlLink.Text = $"http://{_localIp}:{port}";
 
         UpdateSecurityCodePreview(enabled);
+    }
+
+    public void SetEnabledState(bool enabled)
+    {
+        if (!_allowDisable)
+            return;
+
+        _forcedEnabledState = enabled;
+        if (_enabledCheckBox is not null && _enabledCheckBox.Checked != enabled)
+            _enabledCheckBox.Checked = enabled;
+        else
+            UpdateState();
+    }
+
+    public bool IsEnabledState() => IsTabEnabled();
+
+    private bool IsTabEnabled()
+    {
+        if (!_allowDisable)
+            return true;
+
+        return _forcedEnabledState
+            ?? (_enabledCheckBox?.Checked == true);
     }
 
     private void UpdateSecurityCodePreview(bool tabEnabled)

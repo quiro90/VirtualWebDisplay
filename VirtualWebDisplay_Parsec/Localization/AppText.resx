@@ -14,9 +14,17 @@
   </resheader>
 
   <data name="Common_AppName" xml:space="preserve"><value>VirtualWebDisplay</value></data>
+  <data name="Common_AppDisplayName" xml:space="preserve"><value>Virtual Web Display</value></data>
   <data name="Language_Label" xml:space="preserve"><value>Idioma:</value></data>
   <data name="Language_Spanish" xml:space="preserve"><value>Espanol</value></data>
   <data name="Language_English" xml:space="preserve"><value>Ingles</value></data>
+  <data name="Form_Config_EnableScreen2" xml:space="preserve"><value>Activar segunda pantalla (experimental)</value></data>
+  <data name="Form_Config_Menu_Configuration" xml:space="preserve"><value>Configuracion</value></data>
+  <data name="Form_Config_Menu_Language" xml:space="preserve"><value>Idioma</value></data>
+  <data name="Form_Config_Menu_WindowStyle" xml:space="preserve"><value>Estilo de ventana</value></data>
+  <data name="Form_Config_WindowStyle_System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="Form_Config_WindowStyle_Light" xml:space="preserve"><value>Claro</value></data>
+  <data name="Form_Config_WindowStyle_Dark" xml:space="preserve"><value>Oscuro</value></data>
 
   <data name="Form_Config_TitleStartup" xml:space="preserve"><value>VirtualWebDisplay - Configuracion de pantallas</value></data>
   <data name="Form_Config_Title" xml:space="preserve"><value>VirtualWebDisplay - Configuracion</value></data>
@@ -52,6 +60,7 @@
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Numero de receptores permitidos:</value></data>
+  <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Acceda a:</value></data>
 
   <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Seguridad de pantalla (pedir clave)</value></data>
   <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Mostrar</value></data>
