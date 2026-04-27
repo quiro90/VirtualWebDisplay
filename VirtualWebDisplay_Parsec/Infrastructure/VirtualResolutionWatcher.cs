@@ -53,14 +53,22 @@ internal sealed class VirtualResolutionWatcher : IDisposable
         var anyRestored = false;
         foreach (var runtime in _runtimes)
         {
+            // Sincronizar siempre el Config con la resolución real de Windows.
+            if (current.TryGetValue(runtime.Id, out var cur))
+            {
+                runtime.Config.Width  = cur.Width;
+                runtime.Config.Height = cur.Height;
+            }
+
             if (!saved.TryGetValue(runtime.Id, out var res))
-                continue;
+                continue; // Sin historial: se usará la que Windows asignó.
 
             var deviceName = runtime.DisplayManager.WindowsDeviceName;
             if (string.IsNullOrWhiteSpace(deviceName))
                 continue;
 
-            if (current.TryGetValue(runtime.Id, out var cur) && cur == res)
+            // Solo aplicar si la resolución guardada difiere de la actual.
+            if (current.TryGetValue(runtime.Id, out cur) && cur == res)
                 continue;
 
             runtime.Config.Width  = res.Width;

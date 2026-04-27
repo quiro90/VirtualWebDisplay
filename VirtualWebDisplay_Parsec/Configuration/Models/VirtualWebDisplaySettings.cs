@@ -22,8 +22,6 @@ public sealed class VirtualWebDisplaySettings
         MigrateRotation(Screen1);
         MigrateRotation(Screen2);
 
-        VirtualDisplayProfiles.EnsureValidSelection(Screen1);
-        VirtualDisplayProfiles.EnsureValidSelection(Screen2);
         TransmissionModeOptions.EnsureValidSelection(Screen1);
         TransmissionModeOptions.EnsureValidSelection(Screen2);
 

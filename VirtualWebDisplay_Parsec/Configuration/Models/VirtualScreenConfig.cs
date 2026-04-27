@@ -1,16 +1,34 @@
+using System.Text.Json.Serialization;
+
 namespace VirtualWebDisplay.Configuration.Models;
 
 public sealed class VirtualScreenConfig
 {
     public bool Enabled { get; set; } = true;
 
-    public int Width { get; set; } = 800;
-    public int Height { get; set; } = 1280;
+    /// <summary>Resolución efectiva en runtime. No se persiste: la gestiona VirtualDisplayResolutionStore.</summary>
+    [JsonIgnore]
+    public int Width { get; set; } = 1080;
 
+    /// <summary>Resolución efectiva en runtime. No se persiste: la gestiona VirtualDisplayResolutionStore.</summary>
+    [JsonIgnore]
+    public int Height { get; set; } = 1920;
+
+    /// <summary>Perfil de resolución de la UI. No se persiste: la resolución activa viene de VirtualDisplayResolutionStore.</summary>
+    [JsonIgnore]
     public string Profile { get; set; } = string.Empty;
+
+    /// <summary>Orientación calculada en runtime. No se persiste.</summary>
+    [JsonIgnore]
     public bool Landscape { get; set; }
-    public int CustomWidth { get; set; } = 800;
-    public int CustomHeight { get; set; } = 1280;
+
+    /// <summary>Ancho personalizado de la UI. No se persiste.</summary>
+    [JsonIgnore]
+    public int CustomWidth { get; set; } = 1080;
+
+    /// <summary>Alto personalizado de la UI. No se persiste.</summary>
+    [JsonIgnore]
+    public int CustomHeight { get; set; } = 1920;
 
     /// <summary>
     /// Retransmission mode exposed by the local web server.
