@@ -34,13 +34,7 @@ internal static class WebApiEndpoints
             CaptureHandler.HandleMjpeg(ctx, runtimes));
 
         app.MapGet("/keepalive", (HttpContext ctx) =>
-        {
-            var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
-            if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
-                return RuntimeAccessHelper.UnauthorizedResult(runtime);
-
-            return Results.NoContent();
-        });
+            KeepaliveHandler.HandleKeepalive(ctx, runtimes));
 
         app.MapPost("/webrtc/offer", (HttpContext ctx, WebRtcSessionOffer offer, CancellationToken ct) =>
             WebRtcHandler.HandleOffer(ctx, offer, runtimes, ct));
@@ -55,18 +49,6 @@ internal static class WebApiEndpoints
             Results.Bytes(tlsCertDerBytes, "application/x-x509-ca-cert", LocalCertificateProvider.CrtDownloadFileName));
 
         app.MapGet("/config", (HttpContext ctx) =>
-        {
-            var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
-            if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
-                return RuntimeAccessHelper.UnauthorizedResult(runtime);
-
-            return Results.Json(new
-            {
-                runtime.DisplayName,
-                runtime.Config,
-                runtime.HostUrl,
-                runtime.IpUrl,
-            });
-        });
+            ConfigHandler.HandleConfig(ctx, runtimes));
     }
 }

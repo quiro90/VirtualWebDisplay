@@ -11,6 +11,8 @@ public sealed class RtcPageTemplate : IHtmlTemplate
     {
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
         var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
+        var intervalMsObj = parameters.GetValueOrDefault("intervalMs", 250);
+        var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
         var htmlLang = AppText.HtmlLang;
         var statusConnecting = AppText.Get("WebRtc_Status_Connecting");
         var statusNegotiating = AppText.Get("WebRtc_Status_Negotiating");
@@ -248,23 +250,9 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                     window.addEventListener('resize', syncCanvasSize);
                     syncCanvasSize();
 
-                    function startKeepAliveSignal() {
-                        function ping() {
-                            fetch('/keepalive?t=' + Date.now(), {
-                                method: 'GET',
-                                cache: 'no-store',
-                                keepalive: true,
-                                credentials: 'same-origin'
-                            }).catch(function () {});
-                        }
+                    {{TouchInputScriptHelper.GenerateKeepAliveScript()}}
 
-                        ping();
-                        setInterval(ping, 10000);
-                    }
-
-                    startKeepAliveSignal();
-
-                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", 50)}}
+                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)))}}
 
                     connect().catch(function () {
                         setStatus('{{statusStartFailed}}');

@@ -6,6 +6,30 @@ namespace VirtualWebDisplay.UI.HtmlTemplates;
 /// </summary>
 internal static class TouchInputScriptHelper
 {
+    public static string GenerateKeepAliveScript(int intervalMs = 10000)
+    {
+        if (intervalMs < 1000)
+            intervalMs = 1000;
+
+        return $$"""
+            function startKeepAliveSignal() {
+                function ping() {
+                    fetch('/keepalive?t=' + Date.now(), {
+                        method: 'GET',
+                        cache: 'no-store',
+                        keepalive: true,
+                        credentials: 'same-origin'
+                    }).catch(function () {});
+                }
+
+                ping();
+                setInterval(ping, {{intervalMs}});
+            }
+
+            startKeepAliveSignal();
+            """;
+    }
+
     /// <summary>
     /// Genera el script JavaScript para capturar y enviar eventos táctiles.
     /// Se inyecta en ambos templates (WebImage y WebRTC).

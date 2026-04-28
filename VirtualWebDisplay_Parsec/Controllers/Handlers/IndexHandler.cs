@@ -23,20 +23,13 @@ internal static class IndexHandler
 
         if (!runtime.ViewerLimiter.IsUnlimited)
         {
-            if (TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod))
-            {
-                var canContinue = isAuthorized
-                    ? runtime.ViewerLimiter.TryRegisterPolling(RuntimeAccessHelper.ResolveViewerKey(ctx, runtime))
-                    : runtime.ViewerLimiter.CanAcceptViewer();
+            var isWebImage = TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod);
+            var canContinue = isWebImage && isAuthorized
+                ? runtime.ViewerLimiter.TryRegisterPolling(RuntimeAccessHelper.ResolveViewerKey(ctx, runtime))
+                : runtime.ViewerLimiter.CanAcceptViewer();
 
-                if (!canContinue)
-                    return Results.Content(viewerLimitPageTemplate.Generate(runtime), "text/html");
-            }
-            else
-            {
-                if (!runtime.ViewerLimiter.CanAcceptViewer())
-                    return Results.Content(viewerLimitPageTemplate.Generate(runtime), "text/html");
-            }
+            if (!canContinue)
+                return Results.Content(viewerLimitPageTemplate.Generate(runtime), "text/html");
         }
 
         if (!isAuthorized)
@@ -61,6 +54,7 @@ internal static class IndexHandler
             {
                 ["title"]           = runtime.DisplayName,
                 ["browserImageFit"] = browserImageFit,
+                ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
             };
             html = rtcTemplate.Generate(parameters);
         }

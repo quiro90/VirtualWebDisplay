@@ -119,20 +119,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                     document.addEventListener('gesturestart', preventNative, { passive: false });
                     document.addEventListener('gesturechange', preventNative, { passive: false });
 
-                    function startKeepAliveSignal() {
-                        function ping() {
-                            fetch('/keepalive?t=' + Date.now(), {
-                                method: 'GET',
-                                cache: 'no-store',
-                                keepalive: true,
-                                credentials: 'same-origin'
-                            }).catch(function () {});
-                        }
-                        ping();
-                        setInterval(ping, 10000);
-                    }
-
-                    startKeepAliveSignal();
+                    {{TouchInputScriptHelper.GenerateKeepAliveScript()}}
 
                     {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)))}}
                 })();
