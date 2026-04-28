@@ -361,7 +361,7 @@ public sealed class VirtualDisplayManager : IDisposable
     }
 
     private static string NormalizePlacementLabel(string? placement) =>
-        VirtualDisplayPlacementOptions.GetDisplayLabel(placement);
+        AppText.Get(VirtualDisplayPlacementOptions.GetLocalizationKey(placement));
 
     /// <summary>
     /// Devuelve la resolución actual del monitor con el nombre de dispositivo dado,

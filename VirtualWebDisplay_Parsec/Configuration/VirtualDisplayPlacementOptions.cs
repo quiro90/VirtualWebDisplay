@@ -16,21 +16,21 @@ public static class VirtualDisplayPlacementOptions
     public static string Normalize(string? placement) =>
         placement?.Trim().ToLowerInvariant() switch
         {
-            Left or "izquierda" => Left,
-            Top or "up" or "arriba" => Top,
-            Bottom or "down" or "abajo" => Bottom,
-            Duplicate or "duplicar" => Duplicate,
+            Left => Left,
+            Top or "up" => Top,
+            Bottom or "down" => Bottom,
+            Duplicate => Duplicate,
             _ => Right,
         };
 
-    public static string GetDisplayLabel(string? placement) =>
+    public static string GetLocalizationKey(string? placement) =>
         Normalize(placement) switch
         {
-            Left => "izquierda",
-            Top => "arriba",
-            Bottom => "abajo",
-            Duplicate => "duplicado (clone)",
-            _ => "derecha",
+            Left => "Tab_Placement_Left",
+            Top => "Tab_Placement_Top",
+            Bottom => "Tab_Placement_Bottom",
+            Duplicate => "Tab_Placement_Duplicate",
+            _ => "Tab_Placement_Right",
         };
 
     public static Point GetPosition(Rectangle primaryBounds, string? placement, int width, int height) =>
