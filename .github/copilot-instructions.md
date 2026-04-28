@@ -15,8 +15,26 @@
 - **TouchModeItem**: Record con `(PreserveCursor: bool, GesturesEnabled: bool, DisplayName: string)` para representar modos táctiles.
 
 ## Componentes clave de entrada táctil
-- `UI/Forms/ScreenTabControls.cs`: UI de configuración por pantalla, ComboBox de modos, eventos hot-reload
+- `UI/Forms/ScreenTabControls.cs`: UI de configuración por pantalla, ComboBox de modos, eventos hot-reload, método `GetAccessUrl()`
 - `Controllers/Handlers/InputHandler.cs`: Procesamiento de eventos táctiles, gates por config, helpers consolidados
 - `UI/HtmlTemplates/TouchInputScriptHelper.cs`: Script cliente compartido para WebImage/WebRTC
 - `Configuration/Models/VirtualScreenConfig.cs`: Propiedades táctiles persistidas
 - `UI/TrayIcon/ConfigurationFormPresenter.cs`: Orquestador de cambios, hot-reload sin reinicio
+- `UI/Forms/ResolutionConfigurationForm.cs`: Formulario principal, gestión de indicadores de pantalla
+
+## Arquitectura de UI y Configuración
+- **Indicadores de pantalla**: URLs mostradas mediante `1↗: 📺` en parte inferior del formulario, NO en tabs
+  - Solo visibles cuando servicio iniciado (`_wasStarted == true`)
+  - Factory method `CreateScreenIndicator()` evita duplicación
+  - Handler genérico usa `Tag` property para referencia a `ScreenTabControls`
+  - Click número/flecha → abre navegador, click 📺 → copia URL
+- **Visibilidad centralizada**: `UpdateScreenIndicatorsVisibility()` gestiona estado
+- **Ciclo de vida**: `NotifyServiceStarted()` / `NotifyServiceStopped()` controlan visibilidad
+- **Acceso a URL**: `ScreenTabControls.GetAccessUrl()` retorna URL actual
+
+## Principios de Código Limpio
+- **DRY**: Factory methods, helpers centralizados, métodos genéricos
+- **Single Responsibility**: Una responsabilidad por método
+- **Pattern Matching**: Early returns en vez de anidamiento
+- **Uso de Tag**: Para metadatos en controles (patrón existente en `FormThemeApplicator`)
+- **Localización**: Eliminar claves `.resx` obsoletas al eliminar código
