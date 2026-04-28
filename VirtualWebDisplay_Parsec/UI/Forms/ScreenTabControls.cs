@@ -207,17 +207,15 @@ public sealed class ScreenTabControls
 
         currentTop += 28;
 
-        // Fila 6: Tactil + Gestos (ms)
-        _touchInputLabel = CreateLabel(AppText.Get("Tab_Label_TouchInput"), 300, currentTop + 3);
+        // Fila 6: Checkbox Táctil/Normal + Gestos (ms) alineados
         _touchInputCheckBox = new CheckBox
         {
-            Left = 344,
+            Left = 300,
             Top = currentTop + 1,
-            Width = 44,
-            Text = AppText.Get("Tab_Touch_No"),
+            Width = 70,
+            Text = "Normal",
         };
-
-        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), 392, currentTop + 3);
+        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), 380, currentTop + 3);
         _touchGestureInput = new ThemedNumericUpDown
         {
             Left = 446,
@@ -228,9 +226,7 @@ public sealed class ScreenTabControls
             DecimalPlaces = 0,
             Increment = 10M,
         };
-
         _touchGestureSuffixLabel = CreateLabel("ms", 492, currentTop + 3);
-
         currentTop += 28;
 
         _screenSecurityCheckBox = new CheckBox
@@ -296,7 +292,6 @@ public sealed class ScreenTabControls
             _browserImageFitCombo,
             _maxViewersLabel,
             _maxViewersInput,
-            _touchInputLabel,
             _touchInputCheckBox,
             _touchGestureLabel,
             _touchGestureInput,
@@ -353,7 +348,7 @@ public sealed class ScreenTabControls
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
-        _touchInputLabel.Text = AppText.Get("Tab_Label_TouchInput");
+        // _touchInputLabel eliminado
         _touchGestureLabel.Text = AppText.Get("Tab_Label_TouchGestures");
         _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
@@ -539,9 +534,7 @@ public sealed class ScreenTabControls
 
     private void UpdateTouchInputToggleText()
     {
-        _touchInputCheckBox.Text = _touchInputCheckBox.Checked
-            ? AppText.Get("Tab_Touch_Yes")
-            : AppText.Get("Tab_Touch_No");
+        _touchInputCheckBox.Text = _touchInputCheckBox.Checked ? "Táctil" : "Normal";
     }
 
     private void SetHelpToolTip(string text, params Control[] controls)

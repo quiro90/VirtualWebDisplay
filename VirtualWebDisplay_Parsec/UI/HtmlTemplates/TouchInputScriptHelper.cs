@@ -202,6 +202,7 @@ internal static class TouchInputScriptHelper
                     state.mode = 'pendingScroll';
                     var center = getCenter(touches, rect);
                     state.centerY = center.y;
+                    state.centerX = center.x;
 
                     clearHoldTimer();
                     state.holdTimer = setTimeout(function () {
@@ -279,9 +280,15 @@ internal static class TouchInputScriptHelper
                     if (state.mode === 'scroll' && fingerCount >= 2) {
                         var center = getCenter(e.touches, rect);
                         var deltaY = center.y - state.centerY;
+                        var deltaX = center.x - state.centerX;
                         state.centerY = center.y;
+                        state.centerX = center.x;
 
-                        if (Math.abs(deltaY) < 1)
+                        // Invertir ambos sentidos para sensación natural
+                        var invDeltaY = -deltaY;
+                        var invDeltaX = -deltaX;
+
+                        if (Math.abs(invDeltaY) < 1 && Math.abs(invDeltaX) < 1)
                             return;
 
                         touchEventCount++;
@@ -295,7 +302,8 @@ internal static class TouchInputScriptHelper
                             viewportWidth: rect.width,
                             viewportHeight: rect.height,
                             fingers: 2,
-                            scrollDeltaY: deltaY,
+                            scrollDeltaY: invDeltaY,
+                            scrollDeltaX: invDeltaX,
                             timestamp: now
                         });
                     }

@@ -33,7 +33,7 @@ internal static class InputHandler
     private static bool _dragIsActive;
     private static long _dragLastActivityUnixMs;
     private const int DRAG_STALE_TIMEOUT_MS = 1200;
-    private static readonly System.Threading.Timer _dragSafetyTimer = new(_ => ReleaseDragIfStale(), null, 500, 200);
+    private static readonly System.Threading.Timer _dragSafetyTimer = new(_ => ReleaseDragIfStale(), null, 750, 200);
 
     /// <summary>
     /// POST /input/touch - Recibe eventos táctiles y los convierte en clics de mouse.
@@ -137,7 +137,10 @@ internal static class InputHandler
                     break;
                 case "scrollmove":
                     EndDragIfActive();
-                    MouseInputHelper.ScrollWheel((int)request.ScrollDeltaY);
+                    // Soporte horizontal y vertical, ambos opcionales
+                    int dy = request.ScrollDeltaY != null ? (int)request.ScrollDeltaY : 0;
+                    int dx = request.ScrollDeltaX != null ? (int)request.ScrollDeltaX : 0;
+                    MouseInputHelper.Scroll(dy, dx);
                     break;
                 case "scrollend":
                     EndDragIfActive();

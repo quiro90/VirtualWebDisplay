@@ -54,8 +54,14 @@ public sealed class TouchInputRequest
     public string Action { get; set; } = string.Empty;
 
     /// <summary>
-    /// Delta de scroll en píxeles (positivo = abajo, negativo = arriba).
+    /// Delta de scroll vertical en píxeles (positivo = abajo, negativo = arriba).
     /// Solo presente en action "scrollmove".
     /// </summary>
     public double ScrollDeltaY { get; set; }
+
+    /// <summary>
+    /// Delta de scroll horizontal en píxeles (positivo = derecha, negativo = izquierda).
+    /// Solo presente en action "scrollmove".
+    /// </summary>
+    public double ScrollDeltaX { get; set; }
 }

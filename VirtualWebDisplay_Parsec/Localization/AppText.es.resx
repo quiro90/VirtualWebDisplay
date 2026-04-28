@@ -63,9 +63,6 @@
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Número máximo de espectadores:</value></data>
-  <data name="Tab_Label_TouchInput" xml:space="preserve"><value>Táctil:</value></data>
-  <data name="Tab_Touch_Yes" xml:space="preserve"><value>Sí</value></data>
-  <data name="Tab_Touch_No" xml:space="preserve"><value>No</value></data>
   <data name="Tab_Label_TouchGestures" xml:space="preserve"><value>Gestos:</value></data>
   <data name="Tab_Help_TouchGestures" xml:space="preserve"><value>Tiempo de mantener para activar gestos táctiles. Menor valor responde más rápido; mayor valor reduce activaciones accidentales.</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>Es la cantidad máxima de dispositivos que pueden ver la transmisión de tu pantalla. Si es 0, no hay límite.</value></data>

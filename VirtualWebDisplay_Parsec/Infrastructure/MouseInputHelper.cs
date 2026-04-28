@@ -252,22 +252,35 @@ internal static class MouseInputHelper
     /// Envia un evento de rueda de scroll a partir de delta tactil vertical.
     /// Esta configurado en modo "natural invertido" segun preferencia: arrastre hacia abajo => scroll arriba.
     /// </summary>
-    public static void ScrollWheel(int deltaY)
+    /// <summary>
+    /// Envía eventos de scroll vertical y/u horizontal (ambos opcionales, pueden ser 0).
+    /// </summary>
+    public static void Scroll(int deltaY, int deltaX)
     {
-        if (deltaY == 0) return;
-        // Aumentamos la ganancia para que el scroll tactil tenga mas "fuerza" percibida.
-        var wheelDelta = (int)Math.Round(deltaY * TOUCH_SCROLL_GAIN);
-        if (wheelDelta == 0)
-            wheelDelta = deltaY > 0 ? 1 : -1;
-
-        var inputs = new INPUT[]
+        var inputs = new List<INPUT>(2);
+        if (deltaY != 0)
         {
-            new INPUT {
+            var wheelDeltaY = (int)Math.Round(deltaY * TOUCH_SCROLL_GAIN);
+            if (wheelDeltaY == 0)
+                wheelDeltaY = deltaY > 0 ? 1 : -1;
+            inputs.Add(new INPUT {
                 type = INPUT_MOUSE,
-                mi = new MOUSEINPUT { dwFlags = MOUSEEVENTF_WHEEL, mouseData = (uint)wheelDelta }
-            }
-        };
-        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
+                mi = new MOUSEINPUT { dwFlags = MOUSEEVENTF_WHEEL, mouseData = (uint)wheelDeltaY }
+            });
+        }
+        if (deltaX != 0)
+        {
+            var wheelDeltaX = (int)Math.Round(deltaX * TOUCH_SCROLL_GAIN);
+            if (wheelDeltaX == 0)
+                wheelDeltaX = deltaX > 0 ? 1 : -1;
+            // 0x1000 = MOUSEEVENTF_HWHEEL (horizontal)
+            inputs.Add(new INPUT {
+                type = INPUT_MOUSE,
+                mi = new MOUSEINPUT { dwFlags = 0x1000, mouseData = (uint)wheelDeltaX }
+            });
+        }
+        if (inputs.Count > 0)
+            SendInput((uint)inputs.Count, inputs.ToArray(), Marshal.SizeOf<INPUT>());
     }
 
     public static bool TryGetCursorPosition(out int x, out int y)
