@@ -61,13 +61,38 @@ Rol: abrir formularios y aplicar cambios sobre settings/runtimes.
 - Hot-reload: todos los cambios táctiles se aplican sin reiniciar el servicio
 
 ### `UI/Forms/ResolutionConfigurationForm.cs`
-Rol: formulario principal de configuracion.
+Rol: formulario principal de configuración.
+
+**Indicadores de pantalla (nuevo)**:
+- Muestra indicadores `1↗: 📺` y `2↗: 📺` en la parte inferior izquierda
+- **Solo visibles cuando el servicio está iniciado** (control mediante `_wasStarted`)
+- Click en número/flecha → abre navegador con la URL
+- Click en 📺 → copia URL al portapapeles
+- Tooltip dinámico muestra "Ingrese a: http://IP:PORT" (localizado EN/ES)
+- Se actualiza automáticamente cuando cambia el puerto
+- Screen 2 solo visible si está habilitada Y el servicio está corriendo
+- Arquitectura:
+  - `CreateScreenIndicator()`: factory method para crear indicadores (DRY)
+  - `UpdateScreenIndicatorsVisibility()`: método centralizado para gestionar visibilidad
+  - `ScreenIndicator_Click()`: handler genérico usando `Tag` para identificar el control
+  - Integrado con `NotifyServiceStarted()` / `NotifyServiceStopped()`
 
 ### `UI/Forms/ScreenTabControls.cs`
 Rol: controles por pantalla. Emite eventos en caliente para:
 - `TouchInputChanged` (Táctil/Normal toggle)
 - `TouchModeChanged` (modo táctil: Tap only vs Gestures)
 - `TouchGestureHoldDelayChanged` (ms de hold para gestos)
+
+**Métodos públicos**:
+- `GetAccessUrl()`: retorna la URL de acceso actual `http://{IP}:{Port}` (usado por indicadores)
+- `ApplyLocalization()`: actualiza textos según idioma activo
+- `SetServiceRunning(bool)`: bloquea/desbloquea controles según estado del servicio
+- `SetRuntimeSecurityCode(string)`: actualiza el código de seguridad mostrado
+
+**Cambios recientes**:
+- ❌ Eliminados `_accessUrlPrefixLabel` y `_httpUrlLink` de las tabs (movido a indicadores del formulario)
+- ✅ La URL ahora se accede mediante indicadores en el formulario principal
+- ✅ Método `GetAccessUrl()` agregado para exponer la URL sin mostrarla en la tab
 
 **Arquitectura de Touch Mode**:
 - Usa un `ComboBox` con 2 opciones mutuamente exclusivas (reemplazó 2 checkboxes contradictorios)

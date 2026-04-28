@@ -198,7 +198,48 @@ Cuando `VirtualDisplayPlacement = "duplicate"`, **no se crea ningún monitor vir
 - `VirtualDisplayPlacementOptions`: normalización (acepta español e inglés), etiqueta visible y cálculo de posición Win32 del monitor virtual.
 - `NetworkAddressHelper`: detección de IP local y construcción de URLs HTTP de acceso.
 - `TransmissionModeOptions`: constantes, normalización, validación de rangos (`CaptureIntervalSeconds`, `JpegQuality`).
-- `ScreenSecurityGate`: login por clave, cookie HTTP-only y rate limit por IP.
+
+## Localización (i18n)
+
+### Sistema de localización
+- Basado en archivos `.resx` en `Localization/`
+- Idiomas soportados: **Inglés** (EN) y **Español** (ES)
+- Cambio de idioma en vivo sin reiniciar la aplicación
+- Clase principal: `AppText.cs`
+
+### Métodos principales
+```csharp
+AppText.Get("Key")                    // Obtiene texto localizado
+AppText.Format("Key", arg1, arg2)     // Texto con formato
+AppText.ApplyCulture("es")            // Cambia idioma en runtime
+AppText.NormalizeLanguage("en")       // Normaliza código de idioma
+```
+
+### Claves de localización para UI (relevantes a cambios recientes)
+
+#### Indicadores de pantalla
+- `Form_Config_ScreenIndicator_Tooltip`: "Access at: {0}" / "Ingrese a: {0}"
+- `Form_Config_ScreenIndicator_UrlCopied`: "URL copied to clipboard" / "URL copiada al portapapeles"
+
+#### Entrada táctil
+- `Tab_Section_TouchInput`: "Touch Input" / "Entrada Táctil"
+- `Tab_Label_TouchMode`: "Touch mode:" / "Modo táctil:"
+- `Tab_TouchMode_TapOnly`: "Tap only (cursor not affected)" / "Solo toques (no afecta cursor)"
+- `Tab_TouchMode_Gestures`: "Gestures (cursor affected)" / "Gestos (afecta cursor)"
+
+#### Claves obsoletas eliminadas
+Las siguientes claves fueron eliminadas de los archivos `.resx` por no tener uso:
+- ~~`Tab_TouchInput_Enabled`~~ - Ya no se usa (checkbox ahora tiene texto fijo)
+- ~~`Tab_TouchInput_Disabled`~~ - Ya no se usa
+- ~~`Tab_AccessUrlPrefix`~~ - Eliminado (URL ahora en indicadores)
+- ~~`Tab_Help_AccessUrl`~~ - Eliminado (tooltip ahora en indicadores)
+
+### Convención de nombres
+- `Form_Config_*`: Elementos del formulario de configuración principal
+- `Tab_*`: Elementos dentro de las tabs de pantalla
+- `Tab_Help_*`: Tooltips de ayuda
+- `*_Title`, `*_Message`: Títulos y mensajes de diálogos
+
 - `ViewerLimiter`: cupo de viewers y expiración de viewers por polling.
 
 ## Convenciones útiles para futuras IAs

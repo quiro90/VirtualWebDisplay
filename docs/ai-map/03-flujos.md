@@ -79,6 +79,39 @@ En WebImage se bloquea drag/long-press nativo con:
 5. `VirtualScreenSettingsStore.Save(...)` persiste JSON.
 6. La UI avisa con balloon tip que hace falta reiniciar solo para cambios estructurales (pantallas, puertos, etc).
 
+### Ciclo de vida de indicadores de pantalla
+**Servicio detenido**:
+- Botón muestra: "Iniciar" / "Start"
+- Indicadores `1↗: 📺` y `2↗: 📺` están **ocultos**
+
+**Al presionar "Iniciar"**:
+- `StartupConfirmed?.Invoke()` → inicia el servicio
+- `NotifyServiceStarted(screenRuntimes)` es llamado
+- `_wasStarted = true`
+- `UpdateScreenIndicatorsVisibility()` → muestra los indicadores
+- Screen 1 siempre visible, Screen 2 solo si está habilitada
+- Botón cambia a: "Detener" / "Stop"
+
+**Durante ejecución**:
+- Tooltip muestra URL actualizada al pasar el mouse: "Ingrese a: http://IP:PORT"
+- Click en número/flecha (zona izquierda) → `OpenUrl()` abre navegador
+- Click en 📺 (zona derecha) → `Clipboard.SetText()` + tooltip temporal "URL copiada"
+- Si se habilita/deshabilita Screen 2 → solo afecta visibilidad si `_wasStarted == true`
+- Al cambiar puerto → tooltip se actualiza automáticamente
+
+**Al presionar "Detener"**:
+- `StopRequested?.Invoke()` → detiene el servicio
+- `NotifyServiceStopped()` es llamado
+- `_wasStarted = false`
+- `UpdateScreenIndicatorsVisibility()` → oculta ambos indicadores
+- Botón vuelve a: "Iniciar" / "Start"
+
+**Arquitectura**:
+- `CreateScreenIndicator()`: factory method (DRY)
+- `UpdateScreenIndicatorsVisibility()`: método centralizado de visibilidad
+- Usa `Tag` property para almacenar referencia a `ScreenTabControls`
+- Handler genérico `ScreenIndicator_Click()` para ambos indicadores
+
 ### Qué no se puede cambiar en caliente
 - Puertos (solo editables en el arranque inicial).
 - Creación/destrucción de pantallas virtuales (requiere reinicio).
