@@ -38,7 +38,6 @@ public sealed class ScreenTabControls
     private readonly ThemedNumericUpDown _touchGestureInput;
     private readonly Label _touchGestureSuffixLabel;
     private readonly Panel _touchSectionDivider;
-    private readonly Label _touchSectionLabel;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
@@ -269,20 +268,15 @@ public sealed class ScreenTabControls
 
         currentTop += 10;
 
-        _touchSectionLabel = CreateLabel(AppText.Get("Tab_Section_TouchInput"), 14, currentTop);
-        _touchSectionLabel.Font = new Font(_touchSectionLabel.Font, FontStyle.Bold);
-
-        currentTop += 22;
-
         int blockLeft = 14;
 
-        // Fila 1: CheckBox "Táctil"
+        // CheckBox "Entrada Táctil" (reemplaza label + checkbox)
         _touchInputCheckBox = new CheckBox
         {
             Left = blockLeft,
-            Top = currentTop + 1,
-            Width = 80,
-            Text = "Normal",
+            Top = currentTop,
+            Width = 150,
+            Text = AppText.Get("Tab_Section_TouchInput"),
         };
 
         currentTop += 28;
@@ -336,7 +330,6 @@ public sealed class ScreenTabControls
             _accessUrlPrefixLabel,
             _windowsDisplayButton,
             _touchSectionDivider,
-            _touchSectionLabel,
             _touchInputCheckBox,
             _touchModeLabel,
             _touchModeCombo,
@@ -401,13 +394,12 @@ public sealed class ScreenTabControls
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
-        _touchSectionLabel.Text = AppText.Get("Tab_Section_TouchInput");
+        _touchInputCheckBox.Text = AppText.Get("Tab_Section_TouchInput");
         _touchModeLabel.Text = AppText.Get("Tab_Label_TouchMode");
         _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
         _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
-        UpdateTouchInputToggleText();
 
         RefreshTransmissionOptions();
         RefreshPlacementOptions();
@@ -499,7 +491,6 @@ public sealed class ScreenTabControls
             _touchModeCombo,
             _touchGestureInput,
             _touchGestureSuffixLabel,
-            _touchSectionLabel,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton
         };
@@ -518,7 +509,6 @@ public sealed class ScreenTabControls
         }
 
         _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
-        UpdateTouchInputToggleText();
 
         var port = (int)_portInput.Value;
         _httpUrlLink.Text = $"http://{_localIp}:{port}";
@@ -627,16 +617,7 @@ public sealed class ScreenTabControls
         _touchGestureSuffixLabel.Enabled = gesturesEnabled;
     }
 
-    /// <summary>
-    /// Actualiza el texto del checkbox de entrada táctil según su estado.
-    /// Usa las claves de localización para soportar cambio de idioma en vivo.
-    /// </summary>
-    private void UpdateTouchInputToggleText()
-    {
-        _touchInputCheckBox.Text = _touchInputCheckBox.Checked 
-            ? AppText.Get("Tab_TouchInput_Enabled") 
-            : AppText.Get("Tab_TouchInput_Disabled");
-    }
+
 
     private void SetHelpToolTip(string text, params Control[] controls)
     {
