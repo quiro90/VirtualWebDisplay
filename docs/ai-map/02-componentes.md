@@ -58,7 +58,10 @@ Rol: abrir formularios y aplicar cambios sobre settings/runtimes.
 Rol: formulario principal de configuracion.
 
 ### `UI/Forms/ScreenTabControls.cs`
-Rol: controles por pantalla. Emite `TouchInputChanged` para aplicar `TouchInputEnabled` en caliente.
+Rol: controles por pantalla. Emite eventos en caliente para:
+- `TouchInputChanged` (Táctil/Normal)
+- `TouchGestureHoldDelayChanged` (Gestos ms)
+Ambos se aplican y persisten al instante, sin reinicio. La UI de ambos campos está alineada en una sola línea, sin label extra.
 
 ## HTML templates cliente
 
@@ -71,9 +74,13 @@ Modo WebRTC (DataChannel + render cliente).
 ### `UI/HtmlTemplates/TouchInputScriptHelper.cs`
 Script touch compartido para ambos modos.
 Gestos actuales:
-- 1 dedo: click izquierdo
-- 2 dedos: click derecho
+- 1 dedo: tap/click izquierdo, hold = drag
+- 2 dedos: scroll vertical y horizontal (ambos sentidos, inversión natural, configurable por ms de hold)
+- 2 dedos tap: click derecho
 - 3+ dedos: click central
+El script emite scroll horizontal y vertical tras el hold configurado, y ambos sentidos están invertidos para sensación natural.
+### `Controllers/Handlers/InputHandler.cs`
+Rol: endpoint `/input/touch` para traducir eventos táctiles a mouse. Soporta drag, tap y scroll vertical y horizontal (ambos sentidos, inversión natural). La lógica es compacta y no duplica código: ambos ejes se procesan en un solo método.
 
 ## Configuracion y persistencia
 

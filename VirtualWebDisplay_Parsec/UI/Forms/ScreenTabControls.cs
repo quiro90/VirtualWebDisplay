@@ -195,30 +195,32 @@ public sealed class ScreenTabControls
         currentTop += 54;
 
         // Fila 5: Numero de receptores permitidos
+
+        // Input de espectadores pegado al label
         _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
         _maxViewersInput = new ThemedNumericUpDown
         {
-            Left = 248,
+            Left = _maxViewersLabel.Width + 100, // pegado al label
             Top = currentTop,
             Width = 62,
             Minimum = 0,
             Maximum = 99,
         };
 
+        // Bloque táctil/gestos debajo de espectadores
         currentTop += 28;
-
-        // Fila 6: Checkbox Táctil/Normal + Gestos (ms) alineados
+        int blockLeft = 14;
         _touchInputCheckBox = new CheckBox
         {
-            Left = 300,
+            Left = blockLeft,
             Top = currentTop + 1,
             Width = 70,
             Text = "Normal",
         };
-        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), 380, currentTop + 3);
+        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), blockLeft + 135, currentTop + 3);
         _touchGestureInput = new ThemedNumericUpDown
         {
-            Left = 446,
+            Left = blockLeft + 185,
             Top = currentTop,
             Width = 44,
             Minimum = TouchGestureOptions.MinHoldDelayMs,
@@ -226,7 +228,7 @@ public sealed class ScreenTabControls
             DecimalPlaces = 0,
             Increment = 10M,
         };
-        _touchGestureSuffixLabel = CreateLabel("ms", 492, currentTop + 3);
+        _touchGestureSuffixLabel = CreateLabel("(ms)", blockLeft + 235, currentTop + 3);
         currentTop += 28;
 
         _screenSecurityCheckBox = new CheckBox

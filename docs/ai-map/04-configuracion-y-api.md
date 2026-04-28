@@ -34,7 +34,8 @@ Screen2: VirtualScreenConfig
 | `CaptureIntervalSeconds` | 0.25 | Ritmo de generación/emisión (compartido por ambos modos) |
 | `JpegQuality` | 40 | Calidad de compresión 10-100 (compartido por ambos modos) |
 | `MaxViewers` | 1 | Máximo de viewers simultáneos (`0` = sin límite) |
-| `TouchInputEnabled` | false | Habilita touch remoto para esa pantalla |
+| `TouchInputEnabled` | false | Habilita touch remoto para esa pantalla (editable en caliente, por pantalla, sin reinicio) |
+| `TouchGestureHoldDelayMs` | 300 | Tiempo de hold (ms) para activar drag/scroll con 1 o 2 dedos. Permite configurar el umbral de activación de gestos y scroll (editable en caliente, por pantalla, sin reinicio). |
 | `MonitorIndex` | -1 | -1=auto (VDD creado), 0=primario, 1+=otros |
 | `VirtualDisplayPlacement` | "right" | right / left / top / bottom / **duplicate** |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |

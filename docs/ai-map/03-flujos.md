@@ -74,9 +74,10 @@ En WebImage se bloquea drag/long-press nativo con:
 ## 6. Cambio de configuración en runtime
 1. El usuario abre `Configuración...` desde el tray (doble clic o menú contextual).
 2. `ResolutionConfigurationForm` trabaja sobre una copia clonada de settings (`Screen1.Clone()` + `Screen2.Clone()`).
-3. Si acepta, `ApplySelection(...)` copia valores al objeto real vía `VirtualScreenConfig.CopyTo(...)`.
-4. `VirtualScreenSettingsStore.Save(...)` persiste JSON.
-5. La UI avisa con balloon tip que hace falta reiniciar para recrear pantallas y puertos.
+3. Cambios en “Gestos ms” y “Táctil/Normal” se aplican y persisten en caliente, por pantalla, sin reinicio.
+4. Si acepta, `ApplySelection(...)` copia valores al objeto real vía `VirtualScreenConfig.CopyTo(...)`.
+5. `VirtualScreenSettingsStore.Save(...)` persiste JSON.
+6. La UI avisa con balloon tip que hace falta reiniciar solo para cambios estructurales (pantallas, puertos, etc).
 
 ### Qué no se puede cambiar en caliente
 - Puertos (solo editables en el arranque inicial).

@@ -54,9 +54,12 @@ Controllers/Handlers
 ## Touch input (actual)
 
 - Gestos:
-  - 1 dedo: click izquierdo
-  - 2 dedos: click derecho
+  - 1 dedo: tap/click izquierdo, hold = drag
+  - 2 dedos: scroll vertical y horizontal (ambos sentidos, inversión natural, configurable por ms de hold)
+  - 2 dedos tap: click derecho
   - 3+ dedos: click central
+- El scroll se activa tras el hold configurado por pantalla (Gestos ms). El sentido es natural: deslizar a la izquierda mueve el contenido a la derecha, y viceversa (igual para arriba/abajo).
+- La configuración de gestos y modo táctil es editable en caliente, por pantalla, y se persiste al instante.
 - Se preserva la posición del cursor local (no movimiento persistente del puntero original).
 - El gate de habilitación es **backend** (`runtime.Config.TouchInputEnabled`) y puede cambiar en caliente desde la app.
 
