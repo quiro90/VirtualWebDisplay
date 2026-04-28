@@ -38,6 +38,7 @@ public sealed class ScreenTabControls
     private readonly ThemedNumericUpDown _touchGestureInput;
     private readonly Label _touchGestureSuffixLabel;
     private readonly Panel _touchSectionDivider;
+    private readonly Panel _securitySectionDivider;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
@@ -114,20 +115,18 @@ public sealed class ScreenTabControls
             new TransmissionMethodItem(TransmissionModeOptions.Rtc, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.Rtc)),
         ]);
 
-        _placementLabel = CreateLabel(AppText.Get("Tab_Label_Placement"), 280, currentTop);
-        _placementCombo = new ThemedComboBox
+        _fitLabel = CreateLabel(AppText.Get("Tab_Label_BrowserFit"), 280, currentTop);
+        _browserImageFitCombo = new ThemedComboBox
         {
             Left = 280,
             Top = currentTop + 18,
             Width = 180,
         };
-        _placementCombo.Items.AddRange(
+        _browserImageFitCombo.Items.AddRange(
         [
-            new PlacementItem("right", AppText.Get("Tab_Placement_Right")),
-            new PlacementItem("left", AppText.Get("Tab_Placement_Left")),
-            new PlacementItem("top", AppText.Get("Tab_Placement_Top")),
-            new PlacementItem("bottom", AppText.Get("Tab_Placement_Bottom")),
-            new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, AppText.Get("Tab_Placement_Duplicate")),
+            new ImageFitItem("fill", AppText.Get("Tab_BrowserFit_Fill")),
+            new ImageFitItem("cover", AppText.Get("Tab_BrowserFit_Cover")),
+            new ImageFitItem("contain", AppText.Get("Tab_BrowserFit_Contain")),
         ]);
 
         currentTop += 54;
@@ -166,19 +165,21 @@ public sealed class ScreenTabControls
 
         currentTop += 54;
 
-        // Fila 4: Ajuste | Botón configuración Windows
-        _fitLabel = CreateLabel(AppText.Get("Tab_Label_BrowserFit"), 14, currentTop);
-        _browserImageFitCombo = new ThemedComboBox
+        // Fila: Posición | Botón configuración Windows
+        _placementLabel = CreateLabel(AppText.Get("Tab_Label_Placement"), 14, currentTop);
+        _placementCombo = new ThemedComboBox
         {
             Left = 14,
             Top = currentTop + 18,
             Width = 192,
         };
-        _browserImageFitCombo.Items.AddRange(
+        _placementCombo.Items.AddRange(
         [
-            new ImageFitItem("fill", AppText.Get("Tab_BrowserFit_Fill")),
-            new ImageFitItem("cover", AppText.Get("Tab_BrowserFit_Cover")),
-            new ImageFitItem("contain", AppText.Get("Tab_BrowserFit_Contain")),
+            new PlacementItem("right", AppText.Get("Tab_Placement_Right")),
+            new PlacementItem("left", AppText.Get("Tab_Placement_Left")),
+            new PlacementItem("top", AppText.Get("Tab_Placement_Top")),
+            new PlacementItem("bottom", AppText.Get("Tab_Placement_Bottom")),
+            new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, AppText.Get("Tab_Placement_Duplicate")),
         ]);
 
         _windowsDisplayButton = new Button
@@ -197,7 +198,19 @@ public sealed class ScreenTabControls
 
         currentTop += 55;
 
-        // Fila 5: Numero de receptores permitidos | Seguridad
+        // ── Sección: Seguridad y Espectadores ──────────────────────────────
+        _securitySectionDivider = new Panel
+        {
+            Left = 14,
+            Top = currentTop,
+            Width = 460,
+            Height = 1,
+            BorderStyle = BorderStyle.FixedSingle,
+        };
+
+        currentTop += 10;
+
+        // Fila: Numero de receptores permitidos | Seguridad
         _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
         _maxViewersInput = new ThemedNumericUpDown
         {
@@ -329,6 +342,7 @@ public sealed class ScreenTabControls
             _screenSecurityCodeToggleButton,
             _accessUrlPrefixLabel,
             _windowsDisplayButton,
+            _securitySectionDivider,
             _touchSectionDivider,
             _touchInputCheckBox,
             _touchModeLabel,
