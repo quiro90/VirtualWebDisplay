@@ -23,6 +23,9 @@
     "JpegQuality": 40,
     "MaxViewers": 1,
     "TouchInputEnabled": false,
+    "TouchGesturesEnabled": true,
+    "TouchPreserveCursor": false,
+    "TouchGestureHoldDelayMs": 300,
     "ScreenSecurityEnabled": true,
     "MonitorIndex": -1,
     "VirtualDisplayPlacement": "right",
@@ -38,6 +41,9 @@
     "JpegQuality": 45,
     "MaxViewers": 0,
     "TouchInputEnabled": true,
+    "TouchGesturesEnabled": true,
+    "TouchPreserveCursor": false,
+    "TouchGestureHoldDelayMs": 300,
     "ScreenSecurityEnabled": false,
     "MonitorIndex": -1,
     "VirtualDisplayPlacement": "left",
@@ -76,11 +82,22 @@
 
 - Endpoint de entrada: `POST /input/touch`
 - Estadisticas: `GET /input/stats`
-- Gestos:
-  - 1 dedo: click izquierdo (preservando cursor original)
-  - 2 dedos: click derecho (preservando cursor original)
-  - 3+ dedos: click central (preservando cursor original)
-- El flag `TouchInputEnabled` se puede cambiar en caliente desde la UI por pantalla.
+- **Modos de Entrada Táctil** (configurables por pantalla):
+  - **Tap only (cursor not affected)**: Solo taps/clicks sin gestos. El cursor NO se mueve al tocar.
+    - 1 dedo tap: click izquierdo
+    - 2 dedos tap: click derecho
+    - 3+ dedos tap: click central
+  - **Gestures (cursor affected)**: Gestos completos con drag, scroll y clicks. El cursor SE MUEVE al tocar.
+    - 1 dedo tap: click izquierdo
+    - 1 dedo hold + drag: arrastrar (drag)
+    - 2 dedos hold + drag: scroll vertical y horizontal (ambos sentidos, inversión natural)
+    - 2 dedos tap: click derecho
+    - 3+ dedos tap: click central
+- **Configuración en Caliente** (sin reiniciar servicio):
+  - `TouchInputEnabled`: activa/desactiva entrada táctil por pantalla (Táctil/Normal toggle)
+  - `TouchGesturesEnabled`: habilita gestos de arrastre y scroll (cuando modo Gestures seleccionado)
+  - `TouchPreserveCursor`: preserva posición del cursor (cuando modo Tap only seleccionado)
+  - `TouchGestureHoldDelayMs`: tiempo de hold en ms para activar drag/scroll (300ms por defecto, solo en modo Gestures)
 
 ## WebImage en iPad/Safari
 

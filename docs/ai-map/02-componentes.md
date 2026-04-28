@@ -54,14 +54,29 @@ Rol: icono de bandeja, menu y coordinacion de start/stop.
 ### `UI/TrayIcon/ConfigurationFormPresenter.cs`
 Rol: abrir formularios y aplicar cambios sobre settings/runtimes.
 
+**Optimizaciones recientes**:
+- `ApplyScreenPropertyChange(screenId, Action)`: helper genérico para eliminar duplicación
+- `ApplyTouchModeChange(screenId, preserveCursor, gesturesEnabled)`: handler consolidado para modo táctil
+- Consolidación de eventos: 6 eventos originales → 4 eventos optimizados
+- Hot-reload: todos los cambios táctiles se aplican sin reiniciar el servicio
+
 ### `UI/Forms/ResolutionConfigurationForm.cs`
 Rol: formulario principal de configuracion.
 
 ### `UI/Forms/ScreenTabControls.cs`
 Rol: controles por pantalla. Emite eventos en caliente para:
-- `TouchInputChanged` (Táctil/Normal)
-- `TouchGestureHoldDelayChanged` (Gestos ms)
-Ambos se aplican y persisten al instante, sin reinicio. La UI de ambos campos está alineada en una sola línea, sin label extra.
+- `TouchInputChanged` (Táctil/Normal toggle)
+- `TouchModeChanged` (modo táctil: Tap only vs Gestures)
+- `TouchGestureHoldDelayChanged` (ms de hold para gestos)
+
+**Arquitectura de Touch Mode**:
+- Usa un `ComboBox` con 2 opciones mutuamente exclusivas (reemplazó 2 checkboxes contradictorios)
+- `TouchModeItem` record: `(PreserveCursor: bool, GesturesEnabled: bool, DisplayName: string)`
+- **Tap only**: `PreserveCursor=true, GesturesEnabled=false` - cursor no se mueve al tocar
+- **Gestures**: `PreserveCursor=false, GesturesEnabled=true` - cursor se mueve, drag/scroll habilitados
+- Master/slave logic: el ComboBox de modo controla el `Enabled` del NumericUpDown de ms
+- Todos los cambios se aplican y persisten al instante, sin reinicio
+- Localización completa vía AppText (EN/ES) con cambio de idioma en vivo
 
 ## HTML templates cliente
 

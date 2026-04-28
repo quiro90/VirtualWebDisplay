@@ -382,10 +382,178 @@ public sealed class CaptureService : BackgroundService
 | `BrowserImageFit` | string | "contain", "cover", "fill" |
 | `ScreenSecurityEnabled` | bool | Activa clave de acceso por pantalla |
 | `MonitorIndex` | int | Índice en Screen.AllScreens (-1 = auto) |
+| `TouchInputEnabled` | bool | Activa/desactiva entrada táctil por pantalla |
+| `TouchGesturesEnabled` | bool | Habilita gestos (drag/scroll) - true por defecto |
+| `TouchPreserveCursor` | bool | Preserva cursor al tocar - false por defecto |
+| `TouchGestureHoldDelayMs` | int | Umbral de hold para gestos en ms (300 por defecto) |
 
 ---
 
-## 🔥 ÁREAS SENSIBLES (Modificar con Cuidado)
+## 🎮 ENTRADA TÁCTIL
+
+### Arquitectura General
+
+**Flujo completo**:
+```
+Cliente (Navegador)
+  ├─ TouchInputScriptHelper.cs genera eventos tactiles
+  ├─ POST /input/touch con (fingerCount, action, normalizedX/Y, deltaX/Y)
+  └─ InputHandler.cs procesa eventos
+      ├─ Gate: TouchInputEnabled (NoContent si false)
+      ├─ Gate: TouchGesturesEnabled (NoContent si false para gestos)
+      ├─ Convierte coordenadas normalizadas → píxeles
+      ├─ Ejecuta acción según modo:
+      │   ├─ Tap only: MouseInputHelper.ClickPreservingCursor()
+      │   └─ Gestures: MouseInputHelper.Click() + Drag/Scroll
+      └─ Actualiza métricas (eventsPerSecond, avgLatencyMs)
+```
+
+### Modos Táctiles (Mutuamente Exclusivos)
+
+**UI: ComboBox con 2 opciones**:
+
+| Modo UI | TouchGesturesEnabled | TouchPreserveCursor | Comportamiento |
+|---------|---------------------|---------------------|----------------|
+| **Tap only (cursor not affected)** | `false` | `true` | Solo taps, cursor NO se mueve |
+| **Gestures (cursor affected)** | `true` | `false` | Taps + drag + scroll, cursor SE MUEVE |
+
+**Gestos por Modo**:
+
+**Tap only**:
+- 1 dedo tap → click izquierdo (cursor no se mueve)
+- 2 dedos tap → click derecho (cursor no se mueve)
+- 3+ dedos tap → click central (cursor no se mueve)
+
+**Gestures**:
+- 1 dedo tap → click izquierdo (cursor se mueve)
+- 1 dedo hold + drag → arrastrar (drag)
+- 2 dedos tap → click derecho (cursor se mueve)
+- 2 dedos hold + drag → scroll vertical/horizontal (inversión natural)
+- 3+ dedos tap → click central (cursor se mueve)
+- Umbral: `TouchGestureHoldDelayMs` (300ms por defecto)
+
+### Componentes Clave
+
+**1. UI/Forms/ScreenTabControls.cs**:
+- `TouchModeItem` record: `(PreserveCursor: bool, GesturesEnabled: bool, DisplayName: string)`
+- ComboBox con 2 items mutuamente exclusivos (reemplazó 2 checkboxes contradictorios)
+- Master/slave logic: ComboBox controla `Enabled` del NumericUpDown de ms
+- Eventos: `TouchInputChanged`, `TouchModeChanged`, `TouchGestureHoldDelayChanged`
+- Localización completa vía `AppText` (EN/ES)
+
+**2. Controllers/Handlers/InputHandler.cs**:
+- `ExecuteClick(type, x, y, preserveCursor)`: helper consolidado para clicks
+- `ExecuteGestureAction(action, nowMs, request)`: procesamiento centralizado de gestos
+- Gate por `TouchGesturesEnabled`: retorna `NoContent` cuando gestos deshabilitados
+- Soporta scroll horizontal y vertical simultáneo (inversión natural)
+
+**3. UI/HtmlTemplates/TouchInputScriptHelper.cs**:
+- Script compartido para WebImage y WebRTC
+- Emite eventos por `POST /input/touch`
+- Scroll invertido naturalmente (drag hacia abajo = scroll hacia abajo)
+- Previene comportamiento nativo de Safari (drag-and-drop, long-press)
+
+**4. Configuration/Models/VirtualScreenConfig.cs**:
+- Propiedades: `TouchInputEnabled`, `TouchGesturesEnabled`, `TouchPreserveCursor`, `TouchGestureHoldDelayMs`
+- Incluidas en `Clone()` y `CopyTo()` para persistencia
+
+**5. UI/TrayIcon/ConfigurationFormPresenter.cs**:
+- `ApplyTouchModeChange(screenId, preserveCursor, gesturesEnabled)`: handler consolidado
+- `ApplyScreenPropertyChange(screenId, Action)`: helper genérico para eliminar duplicación
+- Hot-reload: todos los cambios se aplican sin reiniciar servicio
+
+### Hot-Reload de Configuración Táctil
+
+**Sin reiniciar servicio**, los cambios se aplican en vivo:
+1. Usuario cambia control en UI (`ScreenTabControls`)
+2. Evento emitido → `ResolutionConfigurationForm`
+3. Form invoca → `ConfigurationFormPresenter`
+4. Presenter actualiza → `VirtualWebDisplaySettings` (en memoria + JSON)
+5. Presenter aplica → `ScreenRuntimeContext.Config` (runtime activo)
+6. Próxima request a `/input/touch` usa nueva configuración
+
+**Controles hot-reload**:
+- Checkbox "Táctil/Normal" (`TouchInputEnabled`)
+- ComboBox de modo (`TouchGesturesEnabled` + `TouchPreserveCursor`)
+- NumericUpDown de ms (`TouchGestureHoldDelayMs`)
+
+### Endpoints Táctiles
+
+**POST /input/touch**:
+```json
+// Request
+{
+  "fingerCount": 1,
+  "action": "tap",
+  "normalizedX": 0.5,
+  "normalizedY": 0.5,
+  "deltaX": 0,
+  "deltaY": 0
+}
+
+// Response
+200 OK (procesado)
+204 No Content (ignorado por gate)
+```
+
+**GET /input/stats**:
+```json
+// Response
+{
+  "eventsPerSecond": 15.3,
+  "avgLatencyMs": 12.5,
+  "totalEvents": 4523,
+  "errorCount": 2,
+  "rateLimitHits": 0,
+  "lastEventTimestamp": "2025-01-15T14:30:45Z"
+}
+```
+
+### Scroll Natural (Inversión)
+
+**Implementación**:
+```javascript
+// Cliente (TouchInputScriptHelper.cs)
+const deltaX = -(currentX - lastX);  // Invertido
+const deltaY = -(currentY - lastY);  // Invertido
+
+// Backend (InputHandler.cs) traduce a scroll de Windows
+MouseInputHelper.Scroll(deltaX, deltaY);
+```
+
+**Comportamiento**:
+- Drag hacia **abajo** → scroll hacia **abajo**
+- Drag hacia **arriba** → scroll hacia **arriba**
+- Drag hacia **derecha** → scroll hacia **derecha**
+- Drag hacia **izquierda** → scroll hacia **izquierda**
+
+### Compatibilidad iPad/Safari
+
+**Problema**: Safari tiene drag-and-drop y long-press nativos sobre imágenes.
+
+**Solución**:
+- WebImage usa `div#screen` con `background-image` (no `<img>`)
+- Prevención de eventos: `touchstart`, `touchmove`, `contextmenu`, `dragstart`, `gesturestart`
+- `{ passive: false }` para permitir `preventDefault()`
+
+### Historial de Refactoring Táctil
+
+**Cambios recientes (commits del día)**:
+1. ✅ Reemplazados 2 checkboxes contradictorios por 1 ComboBox
+2. ✅ `TouchModeItem` record con 2 modos mutuamente exclusivos
+3. ✅ Consolidación de eventos (6 eventos → 4 eventos)
+4. ✅ Helper `ApplyScreenPropertyChange` para eliminar duplicación
+5. ✅ Localización completa (AppText EN/ES) con cambio de idioma en vivo
+6. ✅ Hot-reload para todos los controles táctiles
+7. ✅ Master/slave logic: ComboBox controla NumericUpDown
+
+**Principios aplicados**:
+- DRY (Don't Repeat Yourself): helpers genéricos
+- Mutually exclusive states: ComboBox en vez de checkboxes independientes
+- Hot-reload: eventos → presenter → settings → runtime
+- Localización: todos los textos vía AppText.Get()
+
+
 
 ### 1. VirtualDisplayManager.cs
 **Por qué**: Usa `unsafe` code y P/Invoke al driver Parsec VDD.
@@ -520,5 +688,6 @@ dotnet run
 
 ---
 
-**Última actualización**: 2024-01-26  
-**Versión del proyecto**: 1.0.0 (Post-Refactorización)
+**Última actualización**: 2025-01-15  
+**Versión del proyecto**: 1.0.0 (Post-Refactorización Táctil)  
+**Cambios recientes**: Arquitectura táctil completa (Tap only vs Gestures, hot-reload, localización)

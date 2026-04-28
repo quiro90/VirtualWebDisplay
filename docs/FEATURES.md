@@ -628,24 +628,166 @@ if (!createdNew)
 
 ## Entrada Táctil
 
-### Gestos actuales
+### Descripción General
 
-- 1 dedo: click izquierdo
-- 2 dedos: click derecho
-- 3+ dedos: click central
+VirtualWebDisplay soporta entrada táctil remota desde dispositivos móviles/tablets hacia la pantalla virtual de Windows. Los eventos táctiles se traducen a eventos de mouse nativos de Windows.
 
-Todos los clicks preservan la posición original del cursor local del host.
+### Modos de Entrada Táctil
 
-### Configuración por pantalla
+**Dos modos mutuamente exclusivos** configurables por pantalla desde la UI:
 
-- Campo: `TouchInputEnabled`
-- Se puede activar/desactivar en caliente desde la app, sin reiniciar servicio.
-- El backend aplica el gate por request en `/input/touch`.
+#### 1. **Tap only (cursor not affected)**
+- Solo taps/clicks, sin gestos de drag ni scroll
+- **Cursor NO se mueve** al tocar (preserva posición original)
+- Ideal para: Dashboards estáticos, botones, interfaces sin scroll
+
+**Gestos soportados**:
+- 1 dedo tap: click izquierdo
+- 2 dedos tap: click derecho
+- 3+ dedos tap: click central
+
+#### 2. **Gestures (cursor affected)**
+- Taps, drag y scroll completos
+- **Cursor SE MUEVE** a la posición tocada
+- Ideal para: Interfaces interactivas, navegación completa, gaming casual
+
+**Gestos soportados**:
+- 1 dedo tap: click izquierdo
+- 1 dedo hold + drag: arrastrar (drag)
+- 2 dedos tap: click derecho
+- 2 dedos hold + drag: scroll vertical y horizontal (ambos sentidos, inversión natural)
+- 3+ dedos tap: click central
+- Umbral de activación: `TouchGestureHoldDelayMs` (300ms por defecto)
+
+### Configuración por Pantalla
+
+**Controles en UI**:
+- **Toggle Táctil/Normal**: Activa/desactiva entrada táctil globalmente para esa pantalla
+- **ComboBox de Modo**: Selecciona entre "Tap only" o "Gestures"
+- **Tiempo de Hold (ms)**: Configurable solo en modo Gestures (300ms por defecto)
+
+**Hot-Reload**: Todos los cambios se aplican **al instante sin reiniciar** el servicio.
+
+**Campos de Configuración**:
+```json
+{
+  "TouchInputEnabled": true,           // Activa/desactiva entrada táctil
+  "TouchGesturesEnabled": true,        // true=Gestures, false=Tap only
+  "TouchPreserveCursor": false,        // true=Tap only, false=Gestures
+  "TouchGestureHoldDelayMs": 300       // Umbral para activar drag/scroll
+}
+```
+
+**Relación entre campos**:
+| Modo UI | TouchGesturesEnabled | TouchPreserveCursor |
+|---------|---------------------|---------------------|
+| Tap only | `false` | `true` |
+| Gestures | `true` | `false` |
+
+### Implementación Técnica
+
+**Endpoints**:
+- `POST /input/touch`: Recibe eventos táctiles del cliente
+- `GET /input/stats`: Métricas de entrada (eventos/segundo, latencia promedio, errores)
+
+**Estructura de Request**:
+```json
+{
+  "fingerCount": 1,
+  "action": "tap",           // tap, dragStart, drag, dragEnd, scrollStart, scroll, scrollEnd
+  "normalizedX": 0.5,        // 0.0-1.0
+  "normalizedY": 0.5,        // 0.0-1.0
+  "deltaX": 0,               // Para scroll
+  "deltaY": 0                // Para scroll
+}
+```
+
+**Procesamiento Backend**:
+```csharp
+// En InputHandler.cs
+if (!config.TouchInputEnabled)
+    return Results.NoContent();  // Gate global
+
+if (!config.TouchGesturesEnabled && isGesture)
+    return Results.NoContent();  // Solo permite taps
+
+// Conversión de coordenadas normalizadas a píxeles
+int pixelX = (int)(normalizedX * screenWidth);
+int pixelY = (int)(normalizedY * screenHeight);
+
+// Ejecución según modo
+if (config.TouchPreserveCursor)
+    MouseInputHelper.ClickPreservingCursor(type, pixelX, pixelY);
+else
+    MouseInputHelper.Click(type, pixelX, pixelY);
+```
 
 ### Compatibilidad iPad/Safari (WebImage)
 
-- WebImage usa `div#screen` con `background-image` para evitar drag-and-drop nativo.
-- Se bloquean eventos nativos de `dragstart`, `contextmenu`, `gesture*` y touch relevantes.
+**Problema**: Safari en iOS tiene comportamiento nativo de drag-and-drop y long-press sobre imágenes.
+
+**Solución**: WebImage renderiza la vista como `div#screen` con `background-image` en lugar de `<img>`.
+
+**Prevención de eventos nativos**:
+```javascript
+// En TouchInputScriptHelper.cs
+canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('dragstart', (e) => e.preventDefault());
+```
+
+### Scroll Natural (Inversión)
+
+**Comportamiento**: El scroll sigue la dirección natural del dedo (como en dispositivos móviles).
+
+- Drag hacia **abajo** con 2 dedos → scroll hacia **abajo**
+- Drag hacia **arriba** con 2 dedos → scroll hacia **arriba**
+- Drag hacia **derecha** con 2 dedos → scroll hacia **derecha**
+- Drag hacia **izquierda** con 2 dedos → scroll hacia **izquierda**
+
+**Implementación**:
+```javascript
+// Inversión en el cliente (TouchInputScriptHelper.cs)
+const deltaX = -(currentX - lastX);  // Invertido
+const deltaY = -(currentY - lastY);  // Invertido
+
+// Backend traduce a scroll de Windows (InputHandler.cs)
+MouseInputHelper.Scroll(deltaX, deltaY);
+```
+
+### Métricas y Estadísticas
+
+**Endpoint**: `GET /input/stats`
+
+**Respuesta**:
+```json
+{
+  "eventsPerSecond": 15.3,
+  "avgLatencyMs": 12.5,
+  "totalEvents": 4523,
+  "errorCount": 2,
+  "rateLimitHits": 0,
+  "lastEventTimestamp": "2025-01-15T14:30:45Z"
+}
+```
+
+### Limitaciones Actuales
+
+1. **No soporta teclado**: Solo entrada táctil/mouse
+2. **Drag limitado a 1 dedo**: No soporta multi-touch drag simultáneo
+3. **Zoom no soportado**: Pinch-to-zoom no traduce a zoom de Windows
+4. **Rotación no soportada**: Gestos de rotación no implementados
+
+### Futuro Planificado
+
+- [ ] **Teclado virtual**: Entrada de texto desde dispositivos móviles
+- [ ] **Zoom por pinch**: Traducción a zoom de Windows (Ctrl + Mouse Wheel)
+- [ ] **Rotación**: Gestos de rotación de 2 dedos
+- [ ] **Multi-touch avanzado**: Soporte para 4+ dedos simultáneos
+- [x] **Hot-reload**: Cambios en vivo sin reiniciar ✅
+- [x] **Modo Tap only vs Gestures**: Control fino del comportamiento del cursor ✅
+- [x] **Scroll bidireccional**: Horizontal y vertical simultáneo ✅
 
 ---
 
