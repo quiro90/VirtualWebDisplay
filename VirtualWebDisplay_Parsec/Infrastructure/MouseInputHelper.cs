@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace VirtualWebDisplay.Infrastructure;
 
@@ -28,6 +28,9 @@ internal static class MouseInputHelper
     private const uint MOUSEEVENTF_RIGHTUP    = 0x0010;
     private const uint MOUSEEVENTF_MIDDLEDOWN = 0x0020;
     private const uint MOUSEEVENTF_MIDDLEUP   = 0x0040;
+
+    private const uint MOUSEEVENTF_WHEEL = 0x0800;
+    private const double TOUCH_SCROLL_GAIN = 1.6;
 
     // Constantes INPUT
     private const int INPUT_MOUSE = 0;
@@ -126,6 +129,18 @@ internal static class MouseInputHelper
         };
 
         SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
+    }
+
+    /// <summary>
+    /// Posiciona el cursor en las coordenadas objetivo, envia LEFTDOWN y luego restaura
+    /// la posicion original del cursor. El boton queda presionado sin mover el puntero real.
+    /// </summary>
+    public static void LeftDownPreservingCursor(int screenX, int screenY)
+    {
+        var hasOriginal = GetCursorPos(out var original);
+        LeftDownAt(screenX, screenY);
+        if (hasOriginal)
+            MoveMouse(original.X, original.Y);
     }
 
     /// <summary>
@@ -234,8 +249,27 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Devuelve la posición actual del cursor del sistema.
+    /// Envia un evento de rueda de scroll. deltaY positivo = abajo, negativo = arriba.
+    /// Windows WHEEL usa unidades WHEEL_DELTA (120 = un notch); escalamos desde pixeles.
     /// </summary>
+    public static void ScrollWheel(int deltaY)
+    {
+        if (deltaY == 0) return;
+        // Aumentamos la ganancia para que el scroll tactil tenga mas "fuerza" percibida.
+        var wheelDelta = (int)Math.Round(deltaY * TOUCH_SCROLL_GAIN);
+        if (wheelDelta == 0)
+            wheelDelta = deltaY > 0 ? 1 : -1;
+
+        var inputs = new INPUT[]
+        {
+            new INPUT {
+                type = INPUT_MOUSE,
+                mi = new MOUSEINPUT { dwFlags = MOUSEEVENTF_WHEEL, mouseData = (uint)wheelDelta }
+            }
+        };
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
+    }
+
     public static bool TryGetCursorPosition(out int x, out int y)
     {
         if (GetCursorPos(out var point))

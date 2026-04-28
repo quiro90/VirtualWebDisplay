@@ -43,4 +43,19 @@ public sealed class TouchInputRequest
     /// Útil para tracking y debugging.
     /// </summary>
     public long Timestamp { get; set; }
+
+    /// <summary>
+    /// Acción semántica decidida por el cliente:
+    /// "tap" = click rápido, "dragstart" = inicio de drag (hold 1 dedo),
+    /// "dragmove" = movimiento durante drag, "dragend" = fin de drag,
+    /// "scrollmove" = scroll con 2 dedos, "scrollend" = fin de scroll.
+    /// Vacío = comportamiento legacy por Type/Fingers.
+    /// </summary>
+    public string Action { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Delta de scroll en píxeles (positivo = abajo, negativo = arriba).
+    /// Solo presente en action "scrollmove".
+    /// </summary>
+    public double ScrollDeltaY { get; set; }
 }

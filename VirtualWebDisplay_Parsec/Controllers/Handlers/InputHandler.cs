@@ -1,4 +1,4 @@
-using VirtualWebDisplay.Infrastructure;
+﻿using VirtualWebDisplay.Infrastructure;
 using System.Windows.Forms;
 
 namespace VirtualWebDisplay.Controllers.Handlers;
@@ -27,6 +27,13 @@ internal static class InputHandler
     private static long _lastInputUnixMs;
     private static readonly Queue<long> _eventsWindowMs = new();
     private static readonly object _statsLock = new object();
+
+    // Failsafe para evitar LEFTDOWN colgado si se pierde touchend en cliente/red.
+    private static readonly object _dragStateLock = new object();
+    private static bool _dragIsActive;
+    private static long _dragLastActivityUnixMs;
+    private const int DRAG_STALE_TIMEOUT_MS = 1200;
+    private static readonly System.Threading.Timer _dragSafetyTimer = new(_ => ReleaseDragIfStale(), null, 500, 200);
 
     /// <summary>
     /// POST /input/touch - Recibe eventos táctiles y los convierte en clics de mouse.
@@ -89,24 +96,54 @@ internal static class InputHandler
                 $"[InputHandler] Bounds({targetBounds.Left},{targetBounds.Top},{targetBounds.Width}x{targetBounds.Height}) " +
                 $"Config({runtime.Config.Width}x{runtime.Config.Height}) -> desktop({desktopX},{desktopY})");
 
-            // Procesar según tipo de evento táctil
-            switch (request.Type.ToLowerInvariant())
+            // Procesar segun accion semantica (decidida por el cliente JS)
+            var action = (request.Action ?? string.Empty).ToLowerInvariant();
+            if (string.IsNullOrEmpty(action))
             {
-                case "touchstart":
-                    ProcessTouchStart(desktopX, desktopY, request.Fingers);
-                    break;
+                if (!ProcessLegacyEvent(request, desktopX, desktopY))
+                {
+                    RegisterError();
+                    return Results.BadRequest(new { error = $"Unknown legacy type: {request.Type}" });
+                }
 
-                case "touchmove":
-                    ProcessTouchMove(desktopX, desktopY);
-                    break;
+                return Results.Ok();
+            }
 
-                case "touchend":
-                    ProcessTouchEnd();
+            switch (action)
+            {
+                case "tap":
+                    EndDragIfActive();
+                    MouseInputHelper.LeftClickPreservingCursor(desktopX, desktopY);
                     break;
-
+                case "rightclick":
+                    EndDragIfActive();
+                    MouseInputHelper.RightClickPreservingCursor(desktopX, desktopY);
+                    break;
+                case "middleclick":
+                    EndDragIfActive();
+                    MouseInputHelper.MiddleClickPreservingCursor(desktopX, desktopY);
+                    break;
+                case "dragstart":
+                    MouseInputHelper.LeftDownAt(desktopX, desktopY);
+                    MarkDragStarted(nowMs);
+                    break;
+                case "dragmove":
+                    MouseInputHelper.MoveMouse(desktopX, desktopY);
+                    MarkDragActivity(nowMs);
+                    break;
+                case "dragend":
+                    EndDragIfActive();
+                    break;
+                case "scrollmove":
+                    EndDragIfActive();
+                    MouseInputHelper.ScrollWheel((int)request.ScrollDeltaY);
+                    break;
+                case "scrollend":
+                    EndDragIfActive();
+                    break;
                 default:
                     RegisterError();
-                    return Results.BadRequest(new { error = $"Unknown event type: {request.Type}" });
+                    return Results.BadRequest(new { error = $"Unknown action: {action}" });
             }
 
             return Results.Ok();
@@ -212,17 +249,20 @@ internal static class InputHandler
     {
         if (fingers == 1)
         {
-            // Un dedo = click izquierdo, restaurando el cursor original del PC.
-            MouseInputHelper.LeftClickPreservingCursor(screenX, screenY);
+            // Un dedo: LEFTDOWN mantenido hasta touchend (permite press-and-hold)
+            MouseInputHelper.LeftDownPreservingCursor(screenX, screenY);
+            MarkDragStarted(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         }
         else if (fingers == 2)
         {
             // Dos dedos = click derecho, restaurando el cursor original del PC.
+            EndDragIfActive();
             MouseInputHelper.RightClickPreservingCursor(screenX, screenY);
         }
         else if (fingers >= 3)
         {
-            // Tres o más dedos = click central, restaurando el cursor original del PC.
+            // Tres o mas dedos = click central, restaurando el cursor original del PC.
+            EndDragIfActive();
             MouseInputHelper.MiddleClickPreservingCursor(screenX, screenY);
         }
 
@@ -232,7 +272,6 @@ internal static class InputHandler
 
     /// <summary>
     /// Procesa evento touchmove: mueve el cursor sin hacer click.
-    /// Útil para aplicaciones que responden a movimiento de mouse.
     /// </summary>
     private static void ProcessTouchMove(int screenX, int screenY)
     {
@@ -241,11 +280,84 @@ internal static class InputHandler
     }
 
     /// <summary>
-    /// Procesa evento touchend: limpieza si es necesaria.
+    /// Procesa evento touchend: suelta el boton izquierdo si estaba presionado.
     /// </summary>
     private static void ProcessTouchEnd()
     {
-        // Por ahora no hacemos nada, pero aquí va limpieza si es necesaria
+        EndDragIfActive();
+    }
+
+    private static bool ProcessLegacyEvent(TouchInputRequest request, int desktopX, int desktopY)
+    {
+        var type = (request.Type ?? string.Empty).ToLowerInvariant();
+        switch (type)
+        {
+            case "touchstart":
+                ProcessTouchStart(desktopX, desktopY, request.Fingers);
+                return true;
+            case "touchmove":
+                ProcessTouchMove(desktopX, desktopY);
+                return true;
+            case "touchend":
+                ProcessTouchEnd();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static void MarkDragStarted(long nowMs)
+    {
+        lock (_dragStateLock)
+        {
+            _dragIsActive = true;
+            _dragLastActivityUnixMs = nowMs;
+        }
+    }
+
+    private static void MarkDragActivity(long nowMs)
+    {
+        lock (_dragStateLock)
+        {
+            if (_dragIsActive)
+                _dragLastActivityUnixMs = nowMs;
+        }
+    }
+
+    private static void EndDragIfActive()
+    {
+        bool shouldRelease;
+        lock (_dragStateLock)
+        {
+            shouldRelease = _dragIsActive;
+            _dragIsActive = false;
+            _dragLastActivityUnixMs = 0;
+        }
+
+        if (shouldRelease)
+            MouseInputHelper.LeftUp();
+    }
+
+    private static void ReleaseDragIfStale()
+    {
+        var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        bool shouldRelease;
+
+        lock (_dragStateLock)
+        {
+            shouldRelease = _dragIsActive && (nowMs - _dragLastActivityUnixMs) >= DRAG_STALE_TIMEOUT_MS;
+            if (shouldRelease)
+            {
+                _dragIsActive = false;
+                _dragLastActivityUnixMs = 0;
+            }
+        }
+
+        if (shouldRelease)
+        {
+            MouseInputHelper.LeftUp();
+            System.Diagnostics.Debug.WriteLine("[InputHandler] Drag failsafe released stale LEFTDOWN");
+        }
     }
 
     /// <summary>
