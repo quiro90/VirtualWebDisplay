@@ -120,10 +120,8 @@ internal sealed class ConfigurationFormPresenter
         form.Screen2TouchInputChanged += enabled => ApplyTouchInputChange("screen2", enabled);
         form.Screen1TouchGestureHoldDelayChanged += value => ApplyTouchGestureHoldDelayChange("screen1", value);
         form.Screen2TouchGestureHoldDelayChanged += value => ApplyTouchGestureHoldDelayChange("screen2", value);
-        form.Screen1TouchGesturesEnabledChanged += enabled => ApplyTouchGesturesEnabledChange("screen1", enabled);
-        form.Screen2TouchGesturesEnabledChanged += enabled => ApplyTouchGesturesEnabledChange("screen2", enabled);
-        form.Screen1TouchPreserveCursorChanged += enabled => ApplyTouchPreserveCursorChange("screen1", enabled);
-        form.Screen2TouchPreserveCursorChanged += enabled => ApplyTouchPreserveCursorChange("screen2", enabled);
+        form.Screen1TouchModeChanged += (preserveCursor, gesturesEnabled) => ApplyTouchModeChange("screen1", preserveCursor, gesturesEnabled);
+        form.Screen2TouchModeChanged += (preserveCursor, gesturesEnabled) => ApplyTouchModeChange("screen2", preserveCursor, gesturesEnabled);
         return form;
     }
 
@@ -157,14 +155,13 @@ internal sealed class ConfigurationFormPresenter
         ApplyScreenPropertyChange(screenId, screen => screen.TouchGestureHoldDelayMs = clamped);
     }
 
-    private void ApplyTouchGesturesEnabledChange(string screenId, bool enabled)
+    private void ApplyTouchModeChange(string screenId, bool preserveCursor, bool gesturesEnabled)
     {
-        ApplyScreenPropertyChange(screenId, screen => screen.TouchGesturesEnabled = enabled);
-    }
-
-    private void ApplyTouchPreserveCursorChange(string screenId, bool enabled)
-    {
-        ApplyScreenPropertyChange(screenId, screen => screen.TouchPreserveCursor = enabled);
+        ApplyScreenPropertyChange(screenId, screen =>
+        {
+            screen.TouchPreserveCursor = preserveCursor;
+            screen.TouchGesturesEnabled = gesturesEnabled;
+        });
     }
 
     /// <summary>

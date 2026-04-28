@@ -33,8 +33,8 @@ public sealed class ScreenTabControls
     private readonly Label _maxViewersLabel;
     private readonly ThemedNumericUpDown _maxViewersInput;
     private readonly CheckBox _touchInputCheckBox;
-    private readonly CheckBox _touchPreserveCursorCheckBox;
-    private readonly CheckBox _touchGesturesCheckBox;
+    private readonly Label _touchModeLabel;
+    private readonly ThemedComboBox _touchModeCombo;
     private readonly ThemedNumericUpDown _touchGestureInput;
     private readonly Label _touchGestureSuffixLabel;
     private readonly Panel _touchSectionDivider;
@@ -54,8 +54,7 @@ public sealed class ScreenTabControls
 
     public event Action<bool>? TouchInputChanged;
     public event Action<int>? TouchGestureHoldDelayChanged;
-    public event Action<bool>? TouchGesturesEnabledChanged;
-    public event Action<bool>? TouchPreserveCursorChanged;
+    public event Action<bool, bool>? TouchModeChanged; // (preserveCursor, gesturesEnabled)
 
     public ScreenTabControls(
         string title,
@@ -286,37 +285,33 @@ public sealed class ScreenTabControls
             Text = "Normal",
         };
 
-        // columna 2: CheckBox "Toque fantasma" (preservar cursor)
-        _touchPreserveCursorCheckBox = new CheckBox
-        {
-            Left = blockLeft + _touchInputCheckBox.Width + 10,
-            Top = currentTop + 1,
-            Width = 420,
-            Text = AppText.Get("Tab_Label_TouchPreserveCursor"),
-        };
-
         currentTop += 28;
 
-        // Fila 3: CheckBox "Gestos Táctiles" + Input ms
-        _touchGesturesCheckBox = new CheckBox
+        // Fila 2: Modo táctil (Toque simple vs Gestos) + Input ms
+        _touchModeLabel = CreateLabel(AppText.Get("Tab_Label_TouchMode"), blockLeft, currentTop);
+        _touchModeCombo = new ThemedComboBox
         {
             Left = blockLeft,
-            Top = currentTop + 1,
-            Width = 190,
-            Text = AppText.Get("Tab_Label_TouchGestures"),
+            Top = currentTop + 18,
+            Width = 220,
         };
+        _touchModeCombo.Items.AddRange(
+        [
+            new TouchModeItem(PreserveCursor: true, GesturesEnabled: false, DisplayName: AppText.Get("Tab_TouchMode_TapOnly")),
+            new TouchModeItem(PreserveCursor: false, GesturesEnabled: true, DisplayName: AppText.Get("Tab_TouchMode_Gestures")),
+        ]);
 
         _touchGestureInput = new ThemedNumericUpDown
         {
-            Left = blockLeft + _touchGesturesCheckBox.Width + 10,
-            Top = currentTop,
+            Left = blockLeft + 230,
+            Top = currentTop + 18,
             Width = 56,
             Minimum = TouchGestureOptions.MinHoldDelayMs,
             Maximum = TouchGestureOptions.MaxHoldDelayMs,
             DecimalPlaces = 0,
             Increment = 10M,
         };
-        _touchGestureSuffixLabel = CreateLabel("(ms)", blockLeft + _touchGesturesCheckBox.Width + _touchGestureInput.Width + 8, currentTop + 3);
+        _touchGestureSuffixLabel = CreateLabel("(ms)", blockLeft + 292, currentTop + 21);
 
         _managedControls =
         [
@@ -343,8 +338,8 @@ public sealed class ScreenTabControls
             _touchSectionDivider,
             _touchSectionLabel,
             _touchInputCheckBox,
-            _touchPreserveCursorCheckBox,
-            _touchGesturesCheckBox,
+            _touchModeLabel,
+            _touchModeCombo,
             _touchGestureInput,
             _touchGestureSuffixLabel,
         ];
@@ -372,16 +367,16 @@ public sealed class ScreenTabControls
             UpdateTouchDependentControls();
             TouchInputChanged?.Invoke(_touchInputCheckBox.Checked);
         };
-        _touchPreserveCursorCheckBox.CheckedChanged += (_, _) =>
-        {
-            UpdateState();
-            TouchPreserveCursorChanged?.Invoke(_touchPreserveCursorCheckBox.Checked);
-        };
-        _touchGesturesCheckBox.CheckedChanged += (_, _) =>
+        _touchModeCombo.SelectedIndexChanged += (_, _) =>
         {
             UpdateState();
             UpdateTouchDependentControls();
-            TouchGesturesEnabledChanged?.Invoke(_touchGesturesCheckBox.Checked);
+
+            var selectedMode = (TouchModeItem?)_touchModeCombo.SelectedItem;
+            if (selectedMode is not null)
+            {
+                TouchModeChanged?.Invoke(selectedMode.PreserveCursor, selectedMode.GesturesEnabled);
+            }
         };
         _touchGestureInput.ValueChanged += (_, _) =>
         {
@@ -407,8 +402,7 @@ public sealed class ScreenTabControls
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
         _touchSectionLabel.Text = AppText.Get("Tab_Section_TouchInput");
-        _touchGesturesCheckBox.Text = AppText.Get("Tab_Label_TouchGestures");
-        _touchPreserveCursorCheckBox.Text = AppText.Get("Tab_Label_TouchPreserveCursor");
+        _touchModeLabel.Text = AppText.Get("Tab_Label_TouchMode");
         _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
@@ -418,6 +412,7 @@ public sealed class ScreenTabControls
         RefreshTransmissionOptions();
         RefreshPlacementOptions();
         RefreshBrowserFitOptions();
+        RefreshTouchModeOptions();
         ApplyHelpTooltips();
         UpdateState();
     }
@@ -439,8 +434,11 @@ public sealed class ScreenTabControls
         config.JpegQuality = _jpegQualitySlider.Value;
         config.MaxViewers = (int)_maxViewersInput.Value;
         config.TouchInputEnabled = _touchInputCheckBox.Checked;
-        config.TouchGesturesEnabled = _touchGesturesCheckBox.Checked;
-        config.TouchPreserveCursor = _touchPreserveCursorCheckBox.Checked;
+
+        var touchMode = (TouchModeItem?)_touchModeCombo.SelectedItem;
+        config.TouchGesturesEnabled = touchMode?.GesturesEnabled ?? false;
+        config.TouchPreserveCursor = touchMode?.PreserveCursor ?? true;
+
         config.TouchGestureHoldDelayMs = (int)_touchGestureInput.Value;
         config.ScreenSecurityEnabled = _screenSecurityCheckBox.Checked;
         config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
@@ -462,8 +460,12 @@ public sealed class ScreenTabControls
         _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
         _maxViewersInput.Value = Math.Clamp(config.MaxViewers, 0, 99);
         _touchInputCheckBox.Checked = config.TouchInputEnabled;
-        _touchGesturesCheckBox.Checked = config.TouchGesturesEnabled;
-        _touchPreserveCursorCheckBox.Checked = config.TouchPreserveCursor;
+
+        // Seleccionar el modo táctil basado en la configuración
+        _touchModeCombo.SelectedItem = _touchModeCombo.Items.Cast<TouchModeItem>()
+            .FirstOrDefault(item => item.PreserveCursor == config.TouchPreserveCursor && item.GesturesEnabled == config.TouchGesturesEnabled)
+            ?? _touchModeCombo.Items.Cast<TouchModeItem>().First();
+
         _touchGestureInput.Value = Math.Clamp(config.TouchGestureHoldDelayMs, _touchGestureInput.Minimum, _touchGestureInput.Maximum);
         _screenSecurityCheckBox.Checked = config.ScreenSecurityEnabled;
 
@@ -493,8 +495,8 @@ public sealed class ScreenTabControls
         {
             _windowsDisplayButton,
             _touchInputCheckBox,
-            _touchPreserveCursorCheckBox,
-            _touchGesturesCheckBox,
+            _touchModeLabel,
+            _touchModeCombo,
             _touchGestureInput,
             _touchGestureSuffixLabel,
             _touchSectionLabel,
@@ -599,8 +601,8 @@ public sealed class ScreenTabControls
         SetHelpToolTip(AppText.Get("Tab_Help_Placement"), _placementLabel, _placementCombo);
         SetHelpToolTip(AppText.Get("Tab_Help_CaptureInterval"), _captureIntervalLabel, _captureIntervalInput);
         SetHelpToolTip(AppText.Get("Tab_Help_MaxViewers"), _maxViewersLabel, _maxViewersInput);
-        SetHelpToolTip(AppText.Get("Tab_Help_TouchGestures"), _touchGesturesCheckBox, _touchGestureInput, _touchGestureSuffixLabel);
-        SetHelpToolTip(AppText.Get("Tab_Help_TouchPreserveCursor"), _touchPreserveCursorCheckBox);
+        SetHelpToolTip(AppText.Get("Tab_Help_TouchMode"), _touchModeLabel, _touchModeCombo);
+        SetHelpToolTip(AppText.Get("Tab_Help_TouchGestures"), _touchGestureInput, _touchGestureSuffixLabel);
         SetHelpToolTip(AppText.Get("Tab_Help_ScreenSecurity"), _screenSecurityCheckBox, _screenSecurityCodeTextBox, _screenSecurityCodeToggleButton);
         SetHelpToolTip(AppText.Get("Tab_Help_AccessUrl"), _accessUrlPrefixLabel, _httpUrlLink);
     }
@@ -608,25 +610,32 @@ public sealed class ScreenTabControls
     /// <summary>
     /// Actualiza el estado de habilitación de los controles dependientes de touch.
     /// Master switch: si TouchInput está desmarcado, deshabilita todos los sub-controles.
-    /// Si TouchGestures está desmarcado, deshabilita el input de milisegundos.
+    /// Si el modo es "Toque simple", deshabilita el input de milisegundos.
     /// </summary>
     private void UpdateTouchDependentControls()
     {
         var touchEnabled = _touchInputCheckBox.Checked;
 
         // Si el touch está deshabilitado, deshabilitar todos los sub-controles
-        _touchPreserveCursorCheckBox.Enabled = touchEnabled;
-        _touchGesturesCheckBox.Enabled = touchEnabled;
+        _touchModeLabel.Enabled = touchEnabled;
+        _touchModeCombo.Enabled = touchEnabled;
 
-        // El input de ms solo está habilitado si touch Y gestures están habilitados
-        var gesturesEnabled = touchEnabled && _touchGesturesCheckBox.Checked;
+        // El input de ms solo está habilitado si touch está habilitado Y el modo es "Gestos"
+        var selectedMode = (TouchModeItem?)_touchModeCombo.SelectedItem;
+        var gesturesEnabled = touchEnabled && (selectedMode?.GesturesEnabled ?? false);
         _touchGestureInput.Enabled = gesturesEnabled;
         _touchGestureSuffixLabel.Enabled = gesturesEnabled;
     }
 
+    /// <summary>
+    /// Actualiza el texto del checkbox de entrada táctil según su estado.
+    /// Usa las claves de localización para soportar cambio de idioma en vivo.
+    /// </summary>
     private void UpdateTouchInputToggleText()
     {
-        _touchInputCheckBox.Text = _touchInputCheckBox.Checked ? "Táctil" : "Normal";
+        _touchInputCheckBox.Text = _touchInputCheckBox.Checked 
+            ? AppText.Get("Tab_TouchInput_Enabled") 
+            : AppText.Get("Tab_TouchInput_Disabled");
     }
 
     private void SetHelpToolTip(string text, params Control[] controls)
@@ -697,6 +706,25 @@ public sealed class ScreenTabControls
             ?? _browserImageFitCombo.Items.Cast<ImageFitItem>().First(item => item.Fit == "fill");
     }
 
+    private void RefreshTouchModeOptions()
+    {
+        var selectedMode = _touchModeCombo.SelectedItem as TouchModeItem;
+
+        _touchModeCombo.Items.Clear();
+        _touchModeCombo.Items.AddRange(
+        [
+            new TouchModeItem(PreserveCursor: true, GesturesEnabled: false, DisplayName: AppText.Get("Tab_TouchMode_TapOnly")),
+            new TouchModeItem(PreserveCursor: false, GesturesEnabled: true, DisplayName: AppText.Get("Tab_TouchMode_Gestures")),
+        ]);
+
+        // Intentar seleccionar el modo previo basado en las propiedades, o el primero por defecto
+        _touchModeCombo.SelectedItem = selectedMode is not null
+            ? _touchModeCombo.Items.Cast<TouchModeItem>()
+                .FirstOrDefault(item => item.PreserveCursor == selectedMode.PreserveCursor && item.GesturesEnabled == selectedMode.GesturesEnabled)
+                ?? _touchModeCombo.Items.Cast<TouchModeItem>().First()
+            : _touchModeCombo.Items.Cast<TouchModeItem>().First();
+    }
+
     private sealed record TransmissionMethodItem(string Method, string DisplayName)
     {
         public override string ToString() => DisplayName;
@@ -708,6 +736,11 @@ public sealed class ScreenTabControls
     }
 
     private sealed record ImageFitItem(string Fit, string DisplayName)
+    {
+        public override string ToString() => DisplayName;
+    }
+
+    private sealed record TouchModeItem(bool PreserveCursor, bool GesturesEnabled, string DisplayName)
     {
         public override string ToString() => DisplayName;
     }
