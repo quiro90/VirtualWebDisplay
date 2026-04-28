@@ -45,8 +45,6 @@ public sealed class ScreenTabControls
     private readonly ToolTip _helpToolTip;
     private readonly Control[] _managedControls;
     private readonly string _localIp;
-    private readonly LinkLabel _httpUrlLink;
-    private readonly Label _accessUrlPrefixLabel;
     private readonly Button _windowsDisplayButton;
     private string _runtimeSecurityCode = string.Empty;
     private bool _showSecurityCode;
@@ -256,19 +254,6 @@ public sealed class ScreenTabControls
 
         currentTop += 32;
 
-        // URL de acceso
-        _accessUrlPrefixLabel = CreateLabel(AppText.Get("Tab_AccessUrlPrefix"), 14, currentTop + 3);
-        _httpUrlLink = new LinkLabel
-        {
-            Left = 100,
-            Top = currentTop + 1,
-            Width = 380,
-            AutoSize = false,
-            Text = $"http://{_localIp}:{config.Port}",
-        };
-
-        currentTop += 30;
-
         // ── Sección operativa: Táctil/Gestos ────────────────────────────────
         _touchSectionDivider = new Panel
         {
@@ -340,7 +325,6 @@ public sealed class ScreenTabControls
             _screenSecurityCheckBox,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton,
-            _accessUrlPrefixLabel,
             _windowsDisplayButton,
             _securitySectionDivider,
             _touchSectionDivider,
@@ -352,9 +336,6 @@ public sealed class ScreenTabControls
         ];
 
         TabPage.Controls.AddRange(_managedControls);
-        TabPage.Controls.Add(_httpUrlLink);
-
-        _httpUrlLink.LinkClicked += (_, _) => OpenUrl(_httpUrlLink.Text);
 
         Initialize(config);
         ApplyHelpTooltips();
@@ -395,6 +376,8 @@ public sealed class ScreenTabControls
 
     public TabPage TabPage { get; }
 
+    public string GetAccessUrl() => $"http://{_localIp}:{(int)_portInput.Value}";
+
     public void ApplyLocalization()
     {
         _enabledCheckBox?.SetBounds(_enabledCheckBox.Left, _enabledCheckBox.Top, _enabledCheckBox.Width, _enabledCheckBox.Height);
@@ -410,7 +393,6 @@ public sealed class ScreenTabControls
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
         _touchInputCheckBox.Text = AppText.Get("Tab_Section_TouchInput");
         _touchModeLabel.Text = AppText.Get("Tab_Label_TouchMode");
-        _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
         _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
@@ -524,9 +506,6 @@ public sealed class ScreenTabControls
 
         _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
 
-        var port = (int)_portInput.Value;
-        _httpUrlLink.Text = $"http://{_localIp}:{port}";
-
         UpdateSecurityCodePreview(enabled);
     }
 
@@ -608,7 +587,6 @@ public sealed class ScreenTabControls
         SetHelpToolTip(AppText.Get("Tab_Help_TouchMode"), _touchModeLabel, _touchModeCombo);
         SetHelpToolTip(AppText.Get("Tab_Help_TouchGestures"), _touchGestureInput, _touchGestureSuffixLabel);
         SetHelpToolTip(AppText.Get("Tab_Help_ScreenSecurity"), _screenSecurityCheckBox, _screenSecurityCodeTextBox, _screenSecurityCodeToggleButton);
-        SetHelpToolTip(AppText.Get("Tab_Help_AccessUrl"), _accessUrlPrefixLabel, _httpUrlLink);
     }
 
     /// <summary>

@@ -178,4 +178,7 @@
   <data name="VDD_Status_NotReadyToReconfigure" xml:space="preserve"><value>The virtual monitor is not ready to be reconfigured yet.</value></data>
   <data name="VDD_Status_ReconfigureFailed" xml:space="preserve"><value>Could not reconfigure the virtual monitor: {0}</value></data>
   <data name="VDD_Status_ReadCurrentFailed" xml:space="preserve"><value>Could not read the current virtual monitor configuration; Windows will keep its current layout.</value></data>
+
+  <data name="Form_Config_ScreenIndicator_Tooltip" xml:space="preserve"><value>Access at: {0}</value></data>
+  <data name="Form_Config_ScreenIndicator_UrlCopied" xml:space="preserve"><value>URL copied to clipboard</value></data>
 </root>

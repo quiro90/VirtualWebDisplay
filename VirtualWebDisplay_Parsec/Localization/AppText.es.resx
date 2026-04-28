@@ -179,4 +179,7 @@
   <data name="VDD_Status_NotReadyToReconfigure" xml:space="preserve"><value>El monitor virtual todavía no está listo para reconfigurarse.</value></data>
   <data name="VDD_Status_ReconfigureFailed" xml:space="preserve"><value>No se pudo reconfigurar el monitor virtual: {0}</value></data>
   <data name="VDD_Status_ReadCurrentFailed" xml:space="preserve"><value>No se pudo leer la configuración actual del monitor virtual; queda con la disposición que asigne Windows.</value></data>
+
+  <data name="Form_Config_ScreenIndicator_Tooltip" xml:space="preserve"><value>Ingrese a: {0}</value></data>
+  <data name="Form_Config_ScreenIndicator_UrlCopied" xml:space="preserve"><value>URL copiada al portapapeles</value></data>
 </root>

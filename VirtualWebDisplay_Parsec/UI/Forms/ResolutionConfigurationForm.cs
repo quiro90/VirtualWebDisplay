@@ -36,6 +36,10 @@ public sealed class ResolutionConfigurationForm : Form
     private readonly bool _isInitialStartup;
     private readonly AppearanceSettingsStore? _appearanceStore;
 
+    private readonly Label _screen1Indicator;
+    private readonly Label _screen2Indicator;
+    private readonly ToolTip _screenIndicatorTooltip;
+
     private string _selectedLanguageCode;
     private string _selectedWindowTheme;
     private bool _wasStarted;
@@ -213,15 +217,36 @@ public sealed class ResolutionConfigurationForm : Form
         };
         _cancelButton.Click += (_, _) => Close();
 
+        // Indicadores de pantallas (inferior izquierdo)
+        _screenIndicatorTooltip = new ToolTip
+        {
+            AutoPopDelay = 5000,
+            InitialDelay = 300,
+            ReshowDelay = 150,
+            ShowAlways = true,
+        };
+
+        _screen1Indicator = CreateScreenIndicator(12, "1⇗: 📺", _screen1Controls);
+        _screen2Indicator = CreateScreenIndicator(100, "2⇗: 📺", _screen2Controls);
+        _screen2Indicator.Visible = false;
+
         _titleBarPanel.Controls.AddRange([_titleLabel, _configurationButton, _closeButton]);
-        Controls.AddRange([_titleBarPanel, _enableScreen2Check, _tabs, _acceptButton, _cancelButton]);
+        Controls.AddRange([_titleBarPanel, _enableScreen2Check, _tabs, _screen1Indicator, _screen2Indicator, _acceptButton, _cancelButton]);
 
         AcceptButton = _acceptButton;
         CancelButton = _cancelButton;
 
         _enableScreen2Check.Checked = workingCopy.Screen2.Enabled;
         _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
-        _enableScreen2Check.CheckedChanged += (_, _) => _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
+
+        // Los indicadores solo son visibles cuando el servicio está iniciado
+        UpdateScreenIndicatorsVisibility();
+
+        _enableScreen2Check.CheckedChanged += (_, _) =>
+        {
+            _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
+            UpdateScreenIndicatorsVisibility();
+        };
         _screen1Controls.TouchInputChanged += enabled => Screen1TouchInputChanged?.Invoke(enabled);
         _screen2Controls.TouchInputChanged += enabled => Screen2TouchInputChanged?.Invoke(enabled);
         _screen1Controls.TouchGestureHoldDelayChanged += value => Screen1TouchGestureHoldDelayChanged?.Invoke(value);
@@ -244,6 +269,7 @@ public sealed class ResolutionConfigurationForm : Form
         UpdateAcceptButtonState();
         ApplyRuntimeSecurityCodes(screenRuntimes);
         SetConfigurationControlsLocked(true);
+        UpdateScreenIndicatorsVisibility();
     }
 
     private void AcceptButton_Click(object? sender, EventArgs e)
@@ -334,6 +360,11 @@ public sealed class ResolutionConfigurationForm : Form
         UpdateAcceptButtonState();
         _cancelButton.Text = _isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close");
 
+        // Actualizar tooltips de indicadores de pantalla
+        UpdateScreenIndicatorTooltip(_screen1Indicator, _screen1Controls.GetAccessUrl());
+        if (_screen2Indicator.Visible)
+            UpdateScreenIndicatorTooltip(_screen2Indicator, _screen2Controls.GetAccessUrl());
+
         BuildConfigurationMenu();
     }
 
@@ -422,6 +453,7 @@ public sealed class ResolutionConfigurationForm : Form
         _pendingStartAction = false;
         UpdateAcceptButtonState();
         SetConfigurationControlsLocked(false);
+        UpdateScreenIndicatorsVisibility();
     }
 
     private void SetConfigurationControlsLocked(bool locked)
@@ -435,6 +467,12 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _acceptButton.Text = AcceptButtonText;
         _acceptButton.Enabled = !_serviceActionPending;
+    }
+
+    private void UpdateScreenIndicatorsVisibility()
+    {
+        _screen1Indicator.Visible = _wasStarted;
+        _screen2Indicator.Visible = _wasStarted && _enableScreen2Check.Checked;
     }
 
     private void ApplyTheme()
@@ -451,6 +489,11 @@ public sealed class ResolutionConfigurationForm : Form
         FormThemeApplicator.ApplyThemeRecursive(this, palette);
         FormThemeApplicator.StyleTitleButton(_configurationButton, palette);
         FormThemeApplicator.StyleTitleButton(_closeButton, palette);
+
+        // Aplicar tema a indicadores de pantalla
+        _screen1Indicator.ForeColor = palette.Link;
+        _screen2Indicator.ForeColor = palette.Link;
+
         _tabs.ApplyPalette(
             tabBackground:         palette.Button,
             tabSelectedBackground: palette.TitleButton,
@@ -483,6 +526,61 @@ public sealed class ResolutionConfigurationForm : Form
 
         ReleaseCapture();
         SendMessage(Handle, WmNclButtonDown, HtCaption, 0);
+    }
+
+    private Label CreateScreenIndicator(int left, string text, ScreenTabControls screenControls)
+    {
+        var indicator = new Label
+        {
+            Left = left,
+            Top = 503,
+            Width = 80,
+            Height = 30,
+            Text = text,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Cursor = Cursors.Hand,
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
+            Tag = screenControls, // Guardar referencia al control de pantalla
+        };
+
+        indicator.Click += ScreenIndicator_Click;
+        indicator.MouseEnter += (_, _) => UpdateScreenIndicatorTooltip(indicator, screenControls.GetAccessUrl());
+
+        return indicator;
+    }
+
+    private void ScreenIndicator_Click(object? sender, EventArgs e)
+    {
+        if (sender is not Label label || e is not MouseEventArgs mouseArgs || label.Tag is not ScreenTabControls screenControls)
+            return;
+
+        var url = screenControls.GetAccessUrl();
+
+        // Click en el emoji de pantalla (📺) → copiar URL
+        if (mouseArgs.X > 30)
+        {
+            Clipboard.SetText(url);
+            _screenIndicatorTooltip.Show(AppText.Get("Form_Config_ScreenIndicator_UrlCopied"), label, 1000);
+        }
+        // Click en número o flecha → abrir navegador
+        else
+        {
+            OpenUrl(url);
+        }
+    }
+
+    private void UpdateScreenIndicatorTooltip(Label indicator, string url)
+    {
+        _screenIndicatorTooltip.SetToolTip(indicator, AppText.Format("Form_Config_ScreenIndicator_Tooltip", url));
+    }
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch { }
     }
 
     [DllImport("user32.dll")]
