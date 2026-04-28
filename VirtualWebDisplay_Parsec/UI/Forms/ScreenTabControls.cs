@@ -54,6 +54,8 @@ public sealed class ScreenTabControls
 
     public event Action<bool>? TouchInputChanged;
     public event Action<int>? TouchGestureHoldDelayChanged;
+    public event Action<bool>? TouchGesturesEnabledChanged;
+    public event Action<bool>? TouchPreserveCursorChanged;
 
     public ScreenTabControls(
         string title,
@@ -370,11 +372,16 @@ public sealed class ScreenTabControls
             UpdateTouchDependentControls();
             TouchInputChanged?.Invoke(_touchInputCheckBox.Checked);
         };
-        _touchPreserveCursorCheckBox.CheckedChanged += (_, _) => UpdateState();
+        _touchPreserveCursorCheckBox.CheckedChanged += (_, _) =>
+        {
+            UpdateState();
+            TouchPreserveCursorChanged?.Invoke(_touchPreserveCursorCheckBox.Checked);
+        };
         _touchGesturesCheckBox.CheckedChanged += (_, _) =>
         {
             UpdateState();
             UpdateTouchDependentControls();
+            TouchGesturesEnabledChanged?.Invoke(_touchGesturesCheckBox.Checked);
         };
         _touchGestureInput.ValueChanged += (_, _) =>
         {
@@ -399,6 +406,7 @@ public sealed class ScreenTabControls
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
+        _touchSectionLabel.Text = AppText.Get("Tab_Section_TouchInput");
         _touchGesturesCheckBox.Text = AppText.Get("Tab_Label_TouchGestures");
         _touchPreserveCursorCheckBox.Text = AppText.Get("Tab_Label_TouchPreserveCursor");
         _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");

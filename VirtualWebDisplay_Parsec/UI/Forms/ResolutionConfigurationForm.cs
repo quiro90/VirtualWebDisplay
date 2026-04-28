@@ -52,6 +52,10 @@ public sealed class ResolutionConfigurationForm : Form
     public event Action<bool>? Screen2TouchInputChanged;
     public event Action<int>? Screen1TouchGestureHoldDelayChanged;
     public event Action<int>? Screen2TouchGestureHoldDelayChanged;
+    public event Action<bool>? Screen1TouchGesturesEnabledChanged;
+    public event Action<bool>? Screen2TouchGesturesEnabledChanged;
+    public event Action<bool>? Screen1TouchPreserveCursorChanged;
+    public event Action<bool>? Screen2TouchPreserveCursorChanged;
 
     private string AcceptButtonText => _wasStarted
         ? (_serviceActionPending ? AppText.Get("Form_Config_Accept_Stopping") : AppText.Get("Form_Config_Accept_Stop"))
@@ -224,6 +228,10 @@ public sealed class ResolutionConfigurationForm : Form
         _screen2Controls.TouchInputChanged += enabled => Screen2TouchInputChanged?.Invoke(enabled);
         _screen1Controls.TouchGestureHoldDelayChanged += value => Screen1TouchGestureHoldDelayChanged?.Invoke(value);
         _screen2Controls.TouchGestureHoldDelayChanged += value => Screen2TouchGestureHoldDelayChanged?.Invoke(value);
+        _screen1Controls.TouchGesturesEnabledChanged += enabled => Screen1TouchGesturesEnabledChanged?.Invoke(enabled);
+        _screen2Controls.TouchGesturesEnabledChanged += enabled => Screen2TouchGesturesEnabledChanged?.Invoke(enabled);
+        _screen1Controls.TouchPreserveCursorChanged += enabled => Screen1TouchPreserveCursorChanged?.Invoke(enabled);
+        _screen2Controls.TouchPreserveCursorChanged += enabled => Screen2TouchPreserveCursorChanged?.Invoke(enabled);
 
         ApplyLocalization();
         ApplyTheme();

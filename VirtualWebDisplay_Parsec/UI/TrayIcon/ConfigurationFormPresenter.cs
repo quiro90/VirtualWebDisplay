@@ -120,6 +120,10 @@ internal sealed class ConfigurationFormPresenter
         form.Screen2TouchInputChanged += enabled => ApplyTouchInputChange("screen2", enabled);
         form.Screen1TouchGestureHoldDelayChanged += value => ApplyTouchGestureHoldDelayChange("screen1", value);
         form.Screen2TouchGestureHoldDelayChanged += value => ApplyTouchGestureHoldDelayChange("screen2", value);
+        form.Screen1TouchGesturesEnabledChanged += enabled => ApplyTouchGesturesEnabledChange("screen1", enabled);
+        form.Screen2TouchGesturesEnabledChanged += enabled => ApplyTouchGesturesEnabledChange("screen2", enabled);
+        form.Screen1TouchPreserveCursorChanged += enabled => ApplyTouchPreserveCursorChange("screen1", enabled);
+        form.Screen2TouchPreserveCursorChanged += enabled => ApplyTouchPreserveCursorChange("screen2", enabled);
         return form;
     }
 
@@ -162,6 +166,30 @@ internal sealed class ConfigurationFormPresenter
             _settings.Screen1.TouchGestureHoldDelayMs = clamped;
         else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
             _settings.Screen2.TouchGestureHoldDelayMs = clamped;
+        else
+            return;
+
+        _settingsStore.Save(_settings);
+    }
+
+    private void ApplyTouchGesturesEnabledChange(string screenId, bool enabled)
+    {
+        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen1.TouchGesturesEnabled = enabled;
+        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen2.TouchGesturesEnabled = enabled;
+        else
+            return;
+
+        _settingsStore.Save(_settings);
+    }
+
+    private void ApplyTouchPreserveCursorChange(string screenId, bool enabled)
+    {
+        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen1.TouchPreserveCursor = enabled;
+        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen2.TouchPreserveCursor = enabled;
         else
             return;
 
