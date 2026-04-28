@@ -153,75 +153,29 @@ internal static class InputHandler
             {
                 case "tap":
                     EndDragIfActive();
-                    if (runtime.Config.TouchPreserveCursor)
-                        MouseInputHelper.LeftClickPreservingCursor(_virtualX, _virtualY);
-                    else
-                        MouseInputHelper.LeftClick(_virtualX, _virtualY);
+                    ExecuteClick(MouseClickType.Left, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "rightclick":
                     EndDragIfActive();
-                    if (runtime.Config.TouchPreserveCursor)
-                        MouseInputHelper.RightClickPreservingCursor(_virtualX, _virtualY);
-                    else
-                        MouseInputHelper.RightClick(_virtualX, _virtualY);
+                    ExecuteClick(MouseClickType.Right, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "middleclick":
                     EndDragIfActive();
-                    if (runtime.Config.TouchPreserveCursor)
-                        MouseInputHelper.MiddleClickPreservingCursor(_virtualX, _virtualY);
-                    else
-                        MouseInputHelper.MiddleClick(_virtualX, _virtualY);
+                    ExecuteClick(MouseClickType.Middle, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "dragstart":
-                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled está activo
-                    if (!runtime.Config.TouchGesturesEnabled)
-                        return Results.NoContent();
-
-                    // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
-                    // que no haya recibido su dragend (red inestable, reconexión de cliente).
-                    EndDragIfActive();
-                    MouseInputHelper.LeftDownAt(_virtualX, _virtualY);
-                    MarkDragStarted(nowMs);
-                    break;
-
                 case "dragmove":
-                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled está activo
-                    if (!runtime.Config.TouchGesturesEnabled)
-                        return Results.NoContent();
-
-                    MouseInputHelper.MoveMouse(_virtualX, _virtualY);
-                    MarkDragActivity(nowMs);
-                    break;
-
-                // "dragend" se maneja arriba, antes del bloque de coordenadas.
-                // Este case es inalcanzable pero se deja como documentación defensiva.
                 case "dragend":
-                    if (!runtime.Config.TouchGesturesEnabled)
-                        return Results.NoContent();
-
-                    EndDragIfActive();
-                    break;
-
                 case "scrollmove":
+                case "scrollend":
                     // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled está activo
                     if (!runtime.Config.TouchGesturesEnabled)
                         return Results.NoContent();
 
-                    // FIX: ScrollDeltaY/X son double? — cast explícito a int con fallback 0.
-                    int dy = (int)(request.ScrollDeltaY ?? 0.0);
-                    int dx = (int)(request.ScrollDeltaX ?? 0.0);
-                    MouseInputHelper.Scroll(dy, dx);
-                    break;
-
-                case "scrollend":
-                    if (!runtime.Config.TouchGesturesEnabled)
-                        return Results.NoContent();
-
-                    EndDragIfActive();
-                    break;
+                    return ExecuteGestureAction(action, nowMs, request);
 
                 default:
                     RegisterError();
@@ -540,5 +494,83 @@ internal static class InputHandler
 
         var delta = nowMs - lastInput;
         return delta < 0 ? 0 : delta;
+    }
+
+    /// <summary>
+    /// Ejecuta un click del tipo especificado, eligiendo automáticamente entre
+    /// el método normal o el que preserva el cursor según la configuración.
+    /// </summary>
+    private static void ExecuteClick(MouseClickType clickType, int x, int y, bool preserveCursor)
+    {
+        switch (clickType)
+        {
+            case MouseClickType.Left:
+                if (preserveCursor)
+                    MouseInputHelper.LeftClickPreservingCursor(x, y);
+                else
+                    MouseInputHelper.LeftClick(x, y);
+                break;
+
+            case MouseClickType.Right:
+                if (preserveCursor)
+                    MouseInputHelper.RightClickPreservingCursor(x, y);
+                else
+                    MouseInputHelper.RightClick(x, y);
+                break;
+
+            case MouseClickType.Middle:
+                if (preserveCursor)
+                    MouseInputHelper.MiddleClickPreservingCursor(x, y);
+                else
+                    MouseInputHelper.MiddleClick(x, y);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Ejecuta una acción de gesto (drag/scroll). Centraliza la lógica repetitiva.
+    /// </summary>
+    private static IResult ExecuteGestureAction(string action, long nowMs, TouchInputRequest request)
+    {
+        switch (action)
+        {
+            case "dragstart":
+                // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
+                EndDragIfActive();
+                MouseInputHelper.LeftDownAt(_virtualX, _virtualY);
+                MarkDragStarted(nowMs);
+                break;
+
+            case "dragmove":
+                MouseInputHelper.MoveMouse(_virtualX, _virtualY);
+                MarkDragActivity(nowMs);
+                break;
+
+            case "dragend":
+                EndDragIfActive();
+                break;
+
+            case "scrollmove":
+                int dy = (int)(request.ScrollDeltaY ?? 0.0);
+                int dx = (int)(request.ScrollDeltaX ?? 0.0);
+                MouseInputHelper.Scroll(dy, dx);
+                break;
+
+            case "scrollend":
+                EndDragIfActive();
+                break;
+        }
+
+        return Results.Ok();
+    }
+
+    /// <summary>
+    /// Enum para identificar el tipo de click de mouse.
+    /// </summary>
+    private enum MouseClickType
+    {
+        Left,
+        Right,
+        Middle
     }
 }
