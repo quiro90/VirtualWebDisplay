@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Drawing;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
@@ -31,11 +32,12 @@ public sealed class ScreenTabControls
     private readonly ThemedComboBox _browserImageFitCombo;
     private readonly Label _maxViewersLabel;
     private readonly ThemedNumericUpDown _maxViewersInput;
-    private readonly Label _touchInputLabel;
     private readonly CheckBox _touchInputCheckBox;
     private readonly Label _touchGestureLabel;
     private readonly ThemedNumericUpDown _touchGestureInput;
     private readonly Label _touchGestureSuffixLabel;
+    private readonly Panel _touchSectionDivider;
+    private readonly Label _touchSectionLabel;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
@@ -180,9 +182,9 @@ public sealed class ScreenTabControls
 
         _windowsDisplayButton = new Button
         {
-            Left = 216,
+            Left = 220,
             Top = currentTop + 14,
-            Width = 244,
+            Width = 260,
             Height = 28,
             Text = AppText.Get("Tab_Button_OpenWindowsDisplay"),
         };
@@ -192,67 +194,41 @@ public sealed class ScreenTabControls
             catch { }
         };
 
-        currentTop += 54;
+        currentTop += 55;
 
-        // Fila 5: Numero de receptores permitidos
-
-        // Input de espectadores pegado al label
+        // Fila 5: Numero de receptores permitidos | Seguridad
         _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
         _maxViewersInput = new ThemedNumericUpDown
         {
-            Left = _maxViewersLabel.Width + 100, // pegado al label
-            Top = currentTop,
+            Left = 140,
+            Top = currentTop+25,
             Width = 62,
             Minimum = 0,
             Maximum = 99,
         };
 
-        // Bloque táctil/gestos debajo de espectadores
-        currentTop += 28;
-        int blockLeft = 14;
-        _touchInputCheckBox = new CheckBox
-        {
-            Left = blockLeft,
-            Top = currentTop + 1,
-            Width = 70,
-            Text = "Normal",
-        };
-        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), blockLeft + 135, currentTop + 3);
-        _touchGestureInput = new ThemedNumericUpDown
-        {
-            Left = blockLeft + 185,
-            Top = currentTop,
-            Width = 44,
-            Minimum = TouchGestureOptions.MinHoldDelayMs,
-            Maximum = TouchGestureOptions.MaxHoldDelayMs,
-            DecimalPlaces = 0,
-            Increment = 10M,
-        };
-        _touchGestureSuffixLabel = CreateLabel("(ms)", blockLeft + 235, currentTop + 3);
-        currentTop += 28;
-
         _screenSecurityCheckBox = new CheckBox
         {
-            Left = 14,
+            Left = 220,
             Top = currentTop,
-            Width = 380,
+            Width = 260,
             Text = AppText.Get("Tab_Label_ScreenSecurity"),
         };
 
-        currentTop += 24;
+        currentTop += 28;
 
         _screenSecurityCodeTextBox = new TextBox
         {
-            Left = 34,
+            Left = 240,
             Top = currentTop,
-            Width = 200,
+            Width = 180,
             ReadOnly = true,
             PlaceholderText = AppText.Get("Tab_SecurityCode_Pending"),
         };
 
         _screenSecurityCodeToggleButton = new Button
         {
-            Left = 240,
+            Left = 426,
             Top = currentTop - 1,
             Width = 32,
             Height = 24,
@@ -264,18 +240,59 @@ public sealed class ScreenTabControls
             UpdateState();
         };
 
-        currentTop += 30;
+        currentTop += 32;
 
+        // URL de acceso
+        _accessUrlPrefixLabel = CreateLabel(AppText.Get("Tab_AccessUrlPrefix"), 14, currentTop + 3);
         _httpUrlLink = new LinkLabel
         {
-            Left = 86,
+            Left = 100,
             Top = currentTop + 1,
-            Width = 366,
+            Width = 380,
             AutoSize = false,
             Text = $"http://{_localIp}:{config.Port}",
         };
 
-        _accessUrlPrefixLabel = CreateLabel(AppText.Get("Tab_AccessUrlPrefix"), 14, currentTop + 3);
+        currentTop += 30;
+
+        // ── Sección operativa: Táctil/Gestos ────────────────────────────────
+        _touchSectionDivider = new Panel
+        {
+            Left = 14,
+            Top = currentTop,
+            Width = 460,
+            Height = 1,
+            BorderStyle = BorderStyle.FixedSingle,
+        };
+
+        currentTop += 10;
+
+        _touchSectionLabel = CreateLabel(AppText.Get("Tab_Section_TouchInput"), 14, currentTop);
+        _touchSectionLabel.Font = new Font(_touchSectionLabel.Font, FontStyle.Bold);
+
+        currentTop += 22;
+
+        int blockLeft = 14;
+        _touchInputCheckBox = new CheckBox
+        {
+            Left = blockLeft,
+            Top = currentTop + 1,
+            Width = 80,
+            Text = "Normal",
+        };
+
+        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), blockLeft + 100, currentTop + 3);
+        _touchGestureInput = new ThemedNumericUpDown
+        {
+            Left = blockLeft + 160,
+            Top = currentTop,
+            Width = 56,
+            Minimum = TouchGestureOptions.MinHoldDelayMs,
+            Maximum = TouchGestureOptions.MaxHoldDelayMs,
+            DecimalPlaces = 0,
+            Increment = 10M,
+        };
+        _touchGestureSuffixLabel = CreateLabel("(ms)", blockLeft + 222, currentTop + 3);
 
         _managedControls =
         [
@@ -294,15 +311,17 @@ public sealed class ScreenTabControls
             _browserImageFitCombo,
             _maxViewersLabel,
             _maxViewersInput,
-            _touchInputCheckBox,
-            _touchGestureLabel,
-            _touchGestureInput,
-            _touchGestureSuffixLabel,
             _screenSecurityCheckBox,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton,
             _accessUrlPrefixLabel,
             _windowsDisplayButton,
+            _touchSectionDivider,
+            _touchSectionLabel,
+            _touchInputCheckBox,
+            _touchGestureLabel,
+            _touchGestureInput,
+            _touchGestureSuffixLabel,
         ];
 
         TabPage.Controls.AddRange(_managedControls);
@@ -436,6 +455,7 @@ public sealed class ScreenTabControls
                     || control == _touchGestureInput
                     || control == _touchGestureLabel
                     || control == _touchGestureSuffixLabel
+                    || control == _touchSectionLabel
                     || control == _screenSecurityCodeTextBox
                     || control == _screenSecurityCodeToggleButton;
             }

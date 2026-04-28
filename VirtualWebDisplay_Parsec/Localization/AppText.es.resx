@@ -64,6 +64,7 @@
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Número máximo de espectadores:</value></data>
   <data name="Tab_Label_TouchGestures" xml:space="preserve"><value>Gestos:</value></data>
+  <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Entrada Táctil</value></data>
   <data name="Tab_Help_TouchGestures" xml:space="preserve"><value>Tiempo de mantener para activar gestos táctiles. Menor valor responde más rápido; mayor valor reduce activaciones accidentales.</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>Es la cantidad máxima de dispositivos que pueden ver la transmisión de tu pantalla. Si es 0, no hay límite.</value></data>
   <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Acceso en:</value></data>

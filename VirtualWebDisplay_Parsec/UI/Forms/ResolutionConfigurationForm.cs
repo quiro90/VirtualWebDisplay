@@ -78,7 +78,7 @@ public sealed class ResolutionConfigurationForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = isInitialStartup;
-        ClientSize = new Size(540, 550);
+        ClientSize = new Size(540, 545);
 
         var workingCopy = new VirtualWebDisplaySettings
         {
@@ -165,10 +165,10 @@ public sealed class ResolutionConfigurationForm : Form
 
         _tabs = new ModernTabControl
         {
-            Left = 18,
+            Left = 10,
             Top = 86,
-            Width = 504,
-            Height = 390,
+            Width = 520,
+            Height = 408,
         };
 
         _screen1Controls = new ScreenTabControls(
@@ -191,8 +191,8 @@ public sealed class ResolutionConfigurationForm : Form
 
         _acceptButton = new Button
         {
-            Left   = 346,
-            Top    = 498,
+            Left   = 352,
+            Top    = 503,
             Width  = 84,
             Height = 30,
             Text   = AcceptButtonText,
@@ -202,8 +202,8 @@ public sealed class ResolutionConfigurationForm : Form
 
         _cancelButton = new Button
         {
-            Left   = 438,
-            Top    = 498,
+            Left   = 444,
+            Top    = 503,
             Width  = 84,
             Height = 30,
             Text   = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
