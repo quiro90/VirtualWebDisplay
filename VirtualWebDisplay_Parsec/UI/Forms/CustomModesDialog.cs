@@ -36,6 +36,10 @@ public sealed class CustomModesDialog : Form
     private readonly Button _resetButton;
     private readonly Button _saveButton;
 
+    private readonly Panel _warningPanel;
+    private readonly Label _warningEmoji;
+    private readonly Label _warningText;
+
     private readonly string _currentWindowTheme;
 
     [DllImport("user32.dll")] private static extern bool ReleaseCapture();
@@ -148,34 +152,30 @@ public sealed class CustomModesDialog : Form
 
         // ── Advertencia driver ────────────────────────────────────────────
         var warningTop = ClientSize.Height - 78;
-        var warningPanel = new Panel
+        _warningPanel = new Panel
         {
             Left      = 16, Top = warningTop,
             Width     = ClientSize.Width - 32, Height = 28,
-            BackColor = Color.FromArgb(255, 251, 180),
             Anchor    = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-            Tag       = "preserve-color",
         };
-        var warningEmoji = new Label
+        _warningEmoji = new Label
         {
             Text      = "⚠",
             Left      = 6, Top = 0,
             Width     = 22, Height = 28,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Color.FromArgb(120, 80, 0),
             Font      = new Font(Font.FontFamily, 11, FontStyle.Regular),
         };
-        var warningText = new Label
+        _warningText = new Label
         {
             Text      = AppText.Get("CustomModes_DriverWarning"),
             Left      = 30, Top = 0,
-            Width     = warningPanel.Width - 36, Height = 28,
+            Width     = _warningPanel.Width - 36, Height = 28,
             TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = Color.FromArgb(100, 60, 0),
         };
-        warningPanel.Controls.AddRange([warningEmoji, warningText]);
+        _warningPanel.Controls.AddRange([_warningEmoji, _warningText]);
 
-        Controls.AddRange([_titleBarPanel, _infoLabel, warningPanel, _resetButton, _saveButton]);
+        Controls.AddRange([_titleBarPanel, _infoLabel, _warningPanel, _resetButton, _saveButton]);
 
         AcceptButton = _saveButton;
         CancelButton = _closeButton;
@@ -327,6 +327,11 @@ public sealed class CustomModesDialog : Form
 
         _titleBarPanel.BackColor = palette.TitleBackground;
         _titleLabel.ForeColor    = palette.TitleForeground;
+
+        // Aplicar colores de advertencia desde la paleta
+        _warningPanel.BackColor = palette.WarningBackground;
+        _warningText.ForeColor  = palette.WarningForeground;
+        _warningEmoji.ForeColor = palette.WarningIcon;
 
         FormThemeApplicator.ApplyThemeRecursive(this, palette);
         FormThemeApplicator.StyleTitleButton(_closeButton, palette);

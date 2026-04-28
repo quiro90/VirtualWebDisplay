@@ -17,7 +17,10 @@ internal sealed record ThemePalette(
     Color LinkActive,
     Color TitleBackground,
     Color TitleForeground,
-    Color TitleButton)
+    Color TitleButton,
+    Color WarningBackground,
+    Color WarningForeground,
+    Color WarningIcon)
 {
     public static ThemePalette Light() => new(
         Background:      Color.FromArgb(244, 246, 250),
@@ -31,7 +34,10 @@ internal sealed record ThemePalette(
         LinkActive:      Color.FromArgb(8,   69,  156),
         TitleBackground: Color.FromArgb(246, 249, 254),
         TitleForeground: Color.FromArgb(28,  36,  48),
-        TitleButton:     Color.FromArgb(228, 236, 247));
+        TitleButton:     Color.FromArgb(228, 236, 247),
+        WarningBackground: Color.FromArgb(255, 251, 180),
+        WarningForeground: Color.FromArgb(100, 60,  0),
+        WarningIcon:       Color.FromArgb(120, 80,  0));
 
     public static ThemePalette Dark() => new(
         Background:      Color.FromArgb(20,  24,  31),
@@ -45,5 +51,8 @@ internal sealed record ThemePalette(
         LinkActive:      Color.FromArgb(172, 208, 255),
         TitleBackground: Color.FromArgb(15,  19,  24),
         TitleForeground: Color.FromArgb(242, 245, 250),
-        TitleButton:     Color.FromArgb(34,  44,  56));
+        TitleButton:     Color.FromArgb(34,  44,  56),
+        WarningBackground: Color.FromArgb(80,  70,  40),
+        WarningForeground: Color.FromArgb(255, 251, 180),
+        WarningIcon:       Color.FromArgb(255, 220, 100));
 }
