@@ -3,6 +3,10 @@ namespace VirtualWebDisplay.Controllers;
 /// <summary>
 /// Representa un evento táctil enviado desde el cliente web (tablet).
 /// Se usa para simular entrada de mouse desde toques en pantalla táctil.
+///
+/// NOTA DE DISEÑO: X, Y, ViewportWidth y ViewportHeight son nullable para tolerar
+/// eventos "dragend" donde el dedo sale fuera del viewport y el navegador puede
+/// omitir o enviar null en esas coordenadas. El handler resuelve el fallback.
 /// </summary>
 public sealed class TouchInputRequest
 {
@@ -13,23 +17,27 @@ public sealed class TouchInputRequest
 
     /// <summary>
     /// Coordenada X en píxeles, relativa al viewport del navegador en la tablet.
+    /// Nullable: puede llegar a null en dragend cuando el dedo abandona el viewport.
     /// </summary>
-    public required double X { get; set; }
+    public double? X { get; set; }
 
     /// <summary>
     /// Coordenada Y en píxeles, relativa al viewport del navegador en la tablet.
+    /// Nullable: puede llegar a null en dragend cuando el dedo abandona el viewport.
     /// </summary>
-    public required double Y { get; set; }
+    public double? Y { get; set; }
 
     /// <summary>
     /// Ancho del viewport en píxeles (necesario para mapeo de coordenadas viewport → pantalla).
+    /// Nullable: se usa 1.0 como fallback seguro si llega ausente.
     /// </summary>
-    public double ViewportWidth { get; set; } = 1.0;
+    public double? ViewportWidth { get; set; }
 
     /// <summary>
     /// Alto del viewport en píxeles (necesario para mapeo de coordenadas).
+    /// Nullable: se usa 1.0 como fallback seguro si llega ausente.
     /// </summary>
-    public double ViewportHeight { get; set; } = 1.0;
+    public double? ViewportHeight { get; set; }
 
     /// <summary>
     /// Número de dedos tocando simultáneamente.
@@ -55,13 +63,13 @@ public sealed class TouchInputRequest
 
     /// <summary>
     /// Delta de scroll vertical en píxeles (positivo = abajo, negativo = arriba).
-    /// Solo presente en action "scrollmove".
+    /// Solo presente en action "scrollmove". Nullable para consistencia con el modelo.
     /// </summary>
-    public double ScrollDeltaY { get; set; }
+    public double? ScrollDeltaY { get; set; }
 
     /// <summary>
     /// Delta de scroll horizontal en píxeles (positivo = derecha, negativo = izquierda).
-    /// Solo presente en action "scrollmove".
+    /// Solo presente en action "scrollmove". Nullable para consistencia con el modelo.
     /// </summary>
-    public double ScrollDeltaX { get; set; }
+    public double? ScrollDeltaX { get; set; }
 }

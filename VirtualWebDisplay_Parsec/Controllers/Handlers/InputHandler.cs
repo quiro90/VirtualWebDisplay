@@ -79,16 +79,48 @@ internal static class InputHandler
             return Results.StatusCode(StatusCodes.Status429TooManyRequests);
         }
 
+        // -----------------------------------------------------------------------
+        // FAILSAFE PROACTIVO: antes de procesar cualquier evento nuevo, liberar
+        // el botón si el drag quedó colgado por inactividad (red inestable,
+        // pérdida de eventos, nueva secuencia sin haber cerrado la anterior).
+        // -----------------------------------------------------------------------
+        ReleaseDragIfStale();
+
         try
         {
+            // Determinar acción semántica temprano para aplicar lógica diferenciada.
+            var action = (request.Action ?? string.Empty).ToLowerInvariant();
+
+            // -----------------------------------------------------------------------
+            // MANEJO ESPECIAL DE DRAGEND:
+            // Si la acción es "dragend", la prioridad absoluta es soltar el botón.
+            // Las coordenadas pueden llegar nulas/incompletas cuando el dedo abandona
+            // el viewport, lo que antes causaba 400 Bad Request. Ahora se toleran.
+            // -----------------------------------------------------------------------
+            if (action == "dragend")
+            {
+                EndDragIfActive();
+                System.Diagnostics.Debug.WriteLine("[InputHandler] dragend: LeftUp ejecutado (coordenadas opcionales ignoradas).");
+                return Results.Ok();
+            }
+
+            // Para el resto de acciones, las coordenadas son necesarias.
+            // Si llegan nulas (cliente defectuoso), rechazar con 400 sólo si no es dragend.
+            if (request.X is null || request.Y is null)
+            {
+                RegisterError();
+                return Results.BadRequest(new { error = "Coordinates X and Y are required for this action." });
+            }
+
             var targetBounds = ResolveTargetMonitorBounds(runtime);
 
-            // Mapear coordenadas viewport → pantalla virtual (considerando rotación)
+            // Mapear coordenadas viewport → pantalla virtual (considerando rotación).
+            // Usamos los valores con fallback seguro para ViewportWidth/Height.
             var (screenX, screenY) = MapCoordinates(
-                request.X,
-                request.Y,
-                request.ViewportWidth,
-                request.ViewportHeight,
+                request.X.Value,
+                request.Y.Value,
+                request.ViewportWidth ?? 1.0,
+                request.ViewportHeight ?? 1.0,
                 targetBounds.Width,
                 targetBounds.Height);
 
@@ -105,7 +137,6 @@ internal static class InputHandler
                 $"Config({runtime.Config.Width}x{runtime.Config.Height}) -> desktop({desktopX},{desktopY})");
 
             // Procesar segun accion semantica (decidida por el cliente JS)
-            var action = (request.Action ?? string.Empty).ToLowerInvariant();
             if (string.IsNullOrEmpty(action))
             {
                 // Compatibilidad backward con clientes antiguos que solo enviaban Type.
@@ -124,33 +155,47 @@ internal static class InputHandler
                     EndDragIfActive();
                     MouseInputHelper.LeftClickPreservingCursor(_virtualX, _virtualY);
                     break;
+
                 case "rightclick":
                     EndDragIfActive();
                     MouseInputHelper.RightClickPreservingCursor(_virtualX, _virtualY);
                     break;
+
                 case "middleclick":
                     EndDragIfActive();
                     MouseInputHelper.MiddleClickPreservingCursor(_virtualX, _virtualY);
                     break;
+
                 case "dragstart":
-                    MouseInputHelper.LeftDownAt(_virtualX, _virtualY); // ✔ CLICK REAL DOWN
+                    // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
+                    // que no haya recibido su dragend (red inestable, reconexión de cliente).
+                    EndDragIfActive();
+                    MouseInputHelper.LeftDownAt(_virtualX, _virtualY);
                     MarkDragStarted(nowMs);
                     break;
+
                 case "dragmove":
                     MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                     MarkDragActivity(nowMs);
                     break;
+
+                // "dragend" se maneja arriba, antes del bloque de coordenadas.
+                // Este case es inalcanzable pero se deja como documentación defensiva.
                 case "dragend":
+                    EndDragIfActive();
                     break;
+
                 case "scrollmove":
-                    // Soporte horizontal y vertical, ambos opcionales
-                    int dy = request.ScrollDeltaY != null ? (int)request.ScrollDeltaY : 0;
-                    int dx = request.ScrollDeltaX != null ? (int)request.ScrollDeltaX : 0;
+                    // FIX: ScrollDeltaY/X son double? — cast explícito a int con fallback 0.
+                    int dy = (int)(request.ScrollDeltaY ?? 0.0);
+                    int dx = (int)(request.ScrollDeltaX ?? 0.0);
                     MouseInputHelper.Scroll(dy, dx);
                     break;
+
                 case "scrollend":
                     EndDragIfActive();
                     break;
+
                 default:
                     RegisterError();
                     return Results.BadRequest(new { error = $"Unknown action: {action}" });
@@ -198,6 +243,8 @@ internal static class InputHandler
 
     /// <summary>
     /// Mapea coordenadas del viewport del navegador a coordenadas locales del monitor objetivo.
+    /// Usa Math.Clamp para garantizar que los valores nunca excedan los límites del monitor,
+    /// evitando coordenadas negativas o fuera de rango que causarían comportamiento indefinido en Windows.
     /// </summary>
     private static (int screenX, int screenY) MapCoordinates(
         double viewportX,
@@ -211,17 +258,17 @@ internal static class InputHandler
         double normX = viewportWidth > 0 ? viewportX / viewportWidth : 0;
         double normY = viewportHeight > 0 ? viewportY / viewportHeight : 0;
 
-        // Clamp a [0, 1] para evitar coordenadas inválidas
-        normX = Math.Clamp(normX, 0, 1);
-        normY = Math.Clamp(normY, 0, 1);
+        // Clamp a [0, 1] para evitar coordenadas inválidas (dedo fuera de viewport)
+        normX = Math.Clamp(normX, 0.0, 1.0);
+        normY = Math.Clamp(normY, 0.0, 1.0);
 
         // Paso 2: Mapear directo a resolución local del monitor.
         int screenX = (int)Math.Round(normX * Math.Max(1, screenWidth - 1));
         int screenY = (int)Math.Round(normY * Math.Max(1, screenHeight - 1));
 
-        // Asegurar que están dentro de límites válidos
-        screenX = Math.Clamp(screenX, 0, screenWidth - 1);
-        screenY = Math.Clamp(screenY, 0, screenHeight - 1);
+        // Asegurar que están dentro de límites válidos (defensa en profundidad)
+        screenX = Math.Clamp(screenX, 0, Math.Max(0, screenWidth - 1));
+        screenY = Math.Clamp(screenY, 0, Math.Max(0, screenHeight - 1));
 
         System.Diagnostics.Debug.WriteLine(
             $"[InputHandler] MapCoordinates: viewport({viewportX:F1},{viewportY:F1}) → localScreen({screenX},{screenY})");
@@ -345,9 +392,16 @@ internal static class InputHandler
         }
 
         if (shouldRelease)
+        {
             MouseInputHelper.LeftUp();
+            System.Diagnostics.Debug.WriteLine("[InputHandler] EndDragIfActive: LeftUp ejecutado.");
+        }
     }
 
+    /// <summary>
+    /// Libera el botón izquierdo si el drag lleva más de DRAG_STALE_TIMEOUT_MS ms sin actividad.
+    /// Se llama al inicio de cada request para limpiar estado inconsistente por eventos perdidos.
+    /// </summary>
     private static void ReleaseDragIfStale()
     {
         var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -366,7 +420,7 @@ internal static class InputHandler
         if (shouldRelease)
         {
             MouseInputHelper.LeftUp();
-            System.Diagnostics.Debug.WriteLine("[InputHandler] Drag failsafe released stale LEFTDOWN");
+            System.Diagnostics.Debug.WriteLine("[InputHandler] Failsafe: drag stale liberado por timeout.");
         }
     }
 
