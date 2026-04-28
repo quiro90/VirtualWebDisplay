@@ -135,7 +135,7 @@ Enable-PnpDevice -InstanceId "<InstanceId del dispositivo>"
 tasklist | findstr VirtualWebDisplay
 
 # Terminar proceso
-taskkill /F /IM VirtualWebDisplay_Parsec.exe
+taskkill /F /IM VirtualWebDisplay.exe
 ```
 
 **Solución 2 - Reiniciar Windows**:
@@ -156,16 +156,16 @@ Si persiste después de terminar proceso, reiniciar (libera todos los mutex).
 Unhandled exception: System.IO.IOException: Address already in use: http://0.0.0.0:5000
 ```
 
-**Causa**: Puerto HTTP configurado (5000) está siendo usado por otra aplicación.
+**Causa**: Puerto HTTP configurado (por ejemplo 8000) está siendo usado por otra aplicación.
 
 **Solución 1 - Identificar Proceso**:
 
 ```powershell
-# Ver qué proceso usa puerto 5000
-netstat -ano | findstr :5000
+# Ver qué proceso usa puerto 8000
+netstat -ano | findstr :8000
 
 # Ejemplo output:
-# TCP    0.0.0.0:5000    0.0.0.0:0    LISTENING    1234
+# TCP    0.0.0.0:8000    0.0.0.0:0    LISTENING    1234
 #                                                   ^^^^
 #                                                    PID
 
@@ -182,7 +182,7 @@ Editar configuración:
 ```json
 {
   "Screen1": {
-    "HttpPort": 7000  // Cambiar a puerto disponible
+      "Port": 7000  // Cambiar a puerto disponible
   }
 }
 ```
@@ -191,6 +191,7 @@ Editar configuración:
 - 80, 443 (HTTP/HTTPS)
 - 3000 (Node.js apps)
 - 5000, 5001 (ASP.NET Core default)
+- 8000, 8001 (valores comunes en esta app)
 - 8080 (Tomcat, proxies)
 
 **Puertos Alternativos Recomendados**:
@@ -210,7 +211,7 @@ Editar configuración:
 Ejecutar desde PowerShell para ver output:
 ```powershell
 cd "C:\Path\To\VirtualWebDisplay"
-.\VirtualWebDisplay_Parsec.exe
+.\VirtualWebDisplay.exe
 ```
 
 Observar mensajes de error en consola.
@@ -221,7 +222,7 @@ Observar mensajes de error en consola.
 
 1. Eliminar configuración:
    ```powershell
-   del C:\Users\<Usuario>\.virtualwebdisplay\settings.json
+   del C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json
    ```
 
 2. Reiniciar aplicación (creará configuración default).
@@ -352,7 +353,7 @@ netstat -ano | findstr :5001
 
 Si no aparece:
 - Aplicación no inició correctamente
-- Puerto configurado es diferente (verificar `settings.json`)
+- Puerto configurado es diferente (verificar `virtualscreen.user.json`)
 
 **Diagnóstico 2 - Verificar Firewall**:
 
@@ -374,7 +375,7 @@ New-NetFirewallRule -DisplayName "VirtualWebDisplay HTTPS" `
 # Crear regla para puerto HTTP (5000)
 New-NetFirewallRule -DisplayName "VirtualWebDisplay HTTP" `
                     -Direction Inbound `
-                    -LocalPort 5000 `
+                    -LocalPort 8000 `
                     -Protocol TCP `
                     -Action Allow
 ```
@@ -593,7 +594,7 @@ Factores que aumentan uso de CPU:
 
 ```json
 {
-  "CaptureIntervalMs": 100  // 10 FPS en lugar de 50ms (20 FPS)
+   "CaptureIntervalSeconds": 0.10  // 10 FPS aprox
 }
 ```
 
@@ -647,7 +648,7 @@ Latencia >100ms es anómala para WebRTC.
 **Solución**:
 ```json
 {
-  "CaptureIntervalMs": 33  // 30 FPS en lugar de 100ms (10 FPS)
+   "CaptureIntervalSeconds": 0.033  // 30 FPS aprox
 }
 ```
 
@@ -704,37 +705,37 @@ ping -t <IP_destino>
 
 **Síntoma**: Modificar configuración en UI, click "Apply", pero al reiniciar aplicación, configuración vuelve a valores anteriores.
 
-**Causa**: Archivo `settings.json` no tiene permisos de escritura o está corrupto.
+**Causa**: Archivo `virtualscreen.user.json` no tiene permisos de escritura o está corrupto.
 
 **Diagnóstico**:
 
 ```powershell
 # Verificar que archivo existe y es escribible
-Test-Path C:\Users\<Usuario>\.virtualwebdisplay\settings.json
+Test-Path C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json
 
 # Ver contenido
-Get-Content C:\Users\<Usuario>\.virtualwebdisplay\settings.json
+Get-Content C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json
 ```
 
 **Solución 1 - Verificar Permisos**:
 
 ```powershell
 # Dar permisos completos al usuario actual
-icacls "C:\Users\<Usuario>\.virtualwebdisplay\settings.json" /grant ${env:USERNAME}:F
+icacls "C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json" /grant ${env:USERNAME}:F
 ```
 
 **Solución 2 - Eliminar y Recrear**:
 
 ```powershell
-del C:\Users\<Usuario>\.virtualwebdisplay\settings.json
-# Reiniciar aplicación (creará nuevo settings.json)
+del C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json
+# Reiniciar aplicación (creará nuevo virtualscreen.user.json)
 ```
 
 ---
 
 ### Error: "Invalid JSON" al Editar Manualmente
 
-**Síntoma**: Después de editar `settings.json`, aplicación muestra error o usa configuración default.
+**Síntoma**: Después de editar `virtualscreen.user.json`, aplicación muestra error o usa configuración default.
 
 **Causa**: Sintaxis JSON inválida.
 

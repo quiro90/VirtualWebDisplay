@@ -125,6 +125,8 @@ graph TB
   - `GET /cap`: Imagen JPEG actual (captura de pantalla)
   - `POST /auth/login`: Autenticación con código de 6 dígitos
   - `POST /webrtc/offer`: Negociación WebRTC (recibe offer, devuelve answer)
+    - `POST /input/touch`: Entrada táctil remota
+    - `GET /input/stats`: Métricas de touch/rate-limit
   - `GET /mjpeg`: Stream MJPEG continuo (solo modo JPEG)
   - `GET /cert`: Descarga certificado SSL autofirmado
   - `GET /config`: Descarga configuración JSON actual
@@ -134,7 +136,7 @@ graph TB
 - **Propósito**: Gestión de configuración persistente y modelos de datos
 - **Componentes**:
   - `VirtualWebDisplaySettings`: Configuración raíz (Screen1, Screen2)
-  - `VirtualScreenSettingsStore`: Persistencia en JSON (~/.virtualwebdisplay/settings.json)
+    - `VirtualScreenSettingsStore`: Persistencia en JSON (~/.virtualwebdisplay/virtualscreen.user.json)
   - `VirtualScreenConfig`: Configuración individual de pantalla (resolución, posición, modo, etc.)
   - `TransmissionModeOptions`: Enum para modo de transmisión (WebImage, RTC)
   - `VirtualDisplayPlacementOptions`: Enum para posición de pantalla (Right, Left, Above, Below)
@@ -516,7 +518,7 @@ MemoryStream → byte[]
 ```
 CaptureService (byte[] JPEG) → Almacena en campo compartido →
 Browser (GET /cap) → Kestrel → CaptureService.GetLatestFrame() →
-Response (image/jpeg) → Browser (actualiza <img>)
+Response (image/jpeg) → Browser (actualiza capa visual de pantalla)
 ```
 
 ### 3. Transmisión WebRTC
@@ -525,15 +527,15 @@ Response (image/jpeg) → Browser (actualiza <img>)
 CaptureService (byte[] JPEG) → WebRtcStreamService (chunking a 64KB) →
 Agrega frameId little-endian → Itera peers conectados →
 DataChannel.send(chunk) → SIPSorcery → Browser (RTCDataChannel.onmessage) →
-Reensamblado de chunks → Blob → createObjectURL → <img src="blob:...">
+Reensamblado de chunks → Blob → render de frame en cliente
 ```
 
 ### 4. Configuración de Usuario
 
 ```
 User (modifica ResolutionConfigurationForm) → Evento ApplySelection →
-VirtualScreenSettingsStore.SaveSettings() → JSON file (~/.virtualwebdisplay/settings.json) →
-Program.cs (dispose runtimes antiguos + crea nuevos) →
+VirtualScreenSettingsStore.SaveSettings() → JSON file (~/.virtualwebdisplay/virtualscreen.user.json) →
+ApplicationLifecycleManager (dispose runtimes antiguos + crea nuevos) →
 VirtualDisplayManager.TryCreate() → Parsec VDD (crea pantalla virtual) →
 CaptureService + WebRtcStreamService (inician con nueva config)
 ```
@@ -665,7 +667,7 @@ var html = template.Generate(config, addresses, port);
 
 ### 7. **Carpeta Oculta `.virtualwebdisplay` en Perfil de Usuario**
 
-**Decisión**: Almacenar `settings.json` en `~/.virtualwebdisplay/`.
+**Decisión**: Almacenar `virtualscreen.user.json` en `~/.virtualwebdisplay/`.
 
 **Rationale**:
 - **Convención de Usuario**: Similar a `.ssh`, `.docker`, `.config`
@@ -676,7 +678,7 @@ var html = template.Generate(config, addresses, port);
 **Ubicación**:
 ```
 C:\Users\<Usuario>\.virtualwebdisplay\
-    settings.json
+    virtualscreen.user.json
 ```
 
 ---
@@ -734,7 +736,7 @@ C:\Users\<Usuario>\.virtualwebdisplay\
 ### 3. **Facade Pattern**
 - **Clase**: `ScreenRuntimeContext`
 - **Propósito**: Simplifica interacción con `VirtualDisplayManager + CaptureService + WebRtcStreamService`
-- **Beneficio**: Cliente (Program.cs) no necesita gestionar componentes individuales
+- **Beneficio**: Cliente (`ApplicationLifecycleManager`) no necesita gestionar componentes individuales
 
 ### 4. **Singleton Pattern**
 - **Clase**: `SingleInstanceManager`
@@ -749,7 +751,7 @@ C:\Users\<Usuario>\.virtualwebdisplay\
 ### 6. **Observer Pattern**
 - **Uso**: Eventos de WinForms (`ApplySelection`, click de menú)
 - **Propósito**: Desacoplar UI de lógica de negocio
-- **Beneficio**: `ResolutionConfigurationForm` no conoce detalles de `Program.cs`
+- **Beneficio**: `ResolutionConfigurationForm` no conoce detalles de bootstrap/ciclo HTTP
 
 ### 7. **Dependency Injection**
 - **Uso**: Servicios hosteados en `Program.cs`
@@ -799,11 +801,11 @@ C:\Users\<Usuario>\.virtualwebdisplay\
    }
    ```
 
-4. **Integrar en Program.cs**:
+4. **Integrar en templates/handler**:
    ```csharp
-   var template = config.TransmissionMode switch
+   var template = config.TransmissionMethod switch
    {
-       RTC => new RtcPageTemplate(),
+       Rtc => new RtcPageTemplate(),
        H264 => new H264PageTemplate(),
        _ => new WebImagePageTemplate()
    };
@@ -828,11 +830,10 @@ C:\Users\<Usuario>\.virtualwebdisplay\
 
 3. **Actualizar Lógica de Creación**:
    ```csharp
-   // Program.cs
+   // RuntimeFactory.cs
    if (settings.Screen3.Enabled)
    {
-       var runtime3 = await ScreenRuntimeContext.CreateRuntimeAsync(settings.Screen3);
-       await runtime3.StartAsync();
+       var runtime3 = CreateRuntime(settings.Screen3);
        runtimes.Add(runtime3);
    }
    ```

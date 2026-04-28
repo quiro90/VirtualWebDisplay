@@ -33,8 +33,8 @@ Screen2: VirtualScreenConfig
 | `TransmissionMethod` | "Rtc" | `WebImage` o `Rtc` |
 | `CaptureIntervalSeconds` | 0.25 | Ritmo de generación/emisión (compartido por ambos modos) |
 | `JpegQuality` | 40 | Calidad de compresión 10-100 (compartido por ambos modos) |
-| `StreamRotationDegrees` | 0 | Rotación del frame capturado: 0, 90, 180 o 270 grados |
-| `RotateForPortrait` | false | **Legacy** — migrado a `StreamRotationDegrees`. Se mantiene solo para leer configs antiguas |
+| `MaxViewers` | 1 | Máximo de viewers simultáneos (`0` = sin límite) |
+| `TouchInputEnabled` | false | Habilita touch remoto para esa pantalla |
 | `MonitorIndex` | -1 | -1=auto (VDD creado), 0=primario, 1+=otros |
 | `VirtualDisplayPlacement` | "right" | right / left / top / bottom / **duplicate** |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |
@@ -72,10 +72,13 @@ Definidos en `VirtualDisplayProfiles.All`. Todos en portrait; se rotan si `Lands
 ## Modos de transmisión
 
 ### `WebImage`
-- HTML con `<img>` + polling a `/cap`
+- HTML con `div#screen` + polling a `/cap`
 - simple y compatible con cualquier navegador
 - intervalo configurable (`CaptureIntervalSeconds`)
 - recomendado para Kindle / e-ink
+
+Nota iPad/Safari:
+- Se usa `div` con `background-image` para evitar drag-and-drop/long-press nativo sobre imágenes.
 
 ### `Rtc`
 - HTML con JS WebRTC + `RTCDataChannel`
@@ -130,6 +133,18 @@ Reglas:
 - clave incorrecta: `401`.
 - límite: 5 intentos por cliente/IP, ventana de 45 segundos.
 - al superar límite: `429` con tiempo de espera.
+
+### `POST /input/touch`
+Recibe eventos touch del cliente para emular clicks de mouse en la pantalla remota.
+
+Reglas:
+- 1 dedo: click izquierdo
+- 2 dedos: click derecho
+- 3+ dedos: click central
+- Si `TouchInputEnabled=false`, el backend ignora los eventos (`204`).
+
+### `GET /input/stats`
+Devuelve métricas agregadas de touch (`eventsPerSecond`, `avgLatencyMs`, errores, rate limit, etc.).
 
 ## Límite de receptores por pantalla
 - `VirtualScreenConfig.MaxViewers` define el máximo simultáneo por pantalla.
@@ -187,10 +202,11 @@ Cuando `VirtualDisplayPlacement = "duplicate"`, **no se crea ningún monitor vir
 
 ### Si el cambio afecta...
 - **creación del monitor virtual** -> `VirtualDisplayManager.cs`
-- **captura, cursor o rotación** -> `CaptureService.cs`
-- **negociación WebRTC** -> `WebRtcStreamService.cs` y `BuildRtcPage(...)` en `Program.cs`
-- **HTML servido al navegador / ajuste visual** -> `BuildWebImagePage` / `BuildRtcPage` en `Program.cs`
-- **seguridad por clave o cupo de viewers** -> `Program.cs`, `ScreenSecurityGate.cs`, `ViewerLimiter.cs`
+- **captura o cursor** -> `CaptureService.cs`
+- **negociación WebRTC** -> `WebRtcStreamService.cs` y `UI/HtmlTemplates/RtcPageTemplate.cs`
+- **HTML servido al navegador / ajuste visual** -> `UI/HtmlTemplates/WebImagePageTemplate.cs` y `UI/HtmlTemplates/RtcPageTemplate.cs`
+- **touch remoto y gestos** -> `Controllers/Handlers/InputHandler.cs` y `UI/HtmlTemplates/TouchInputScriptHelper.cs`
+- **seguridad por clave o cupo de viewers** -> `Controllers/Handlers/*`, `ScreenSecurityGate.cs`, `ViewerLimiter.cs`
 - **UI/configuración del tray** -> `VirtualDisplayTrayController.cs`
 - **defaults, JSON o migración** -> `VirtualScreenSettingsStore.cs` y `VirtualWebDisplaySettings.cs`
 - **perfiles de dispositivos o resoluciones** -> `VirtualDisplayProfiles.cs`

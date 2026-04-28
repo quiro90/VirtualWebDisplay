@@ -9,6 +9,7 @@
 5. [Acceso Remoto](#acceso-remoto)
 6. [Optimizaciones de Rendimiento](#optimizaciones-de-rendimiento)
 7. [Seguridad](#seguridad)
+8. [Entrada Táctil](#entrada-táctil)
 
 ---
 
@@ -83,19 +84,11 @@ Ejemplo:
 }
 ```
 
-#### 3. **Rotación de Imagen**
+#### 3. **Rotación de Stream (removida)**
 
-Soporta rotación del contenido capturado:
+La rotación de stream fue eliminada del flujo activo para simplificar el mapeo de coordenadas y evitar desalineaciones entre visualización y entrada táctil.
 
-- **0°**: Sin rotación (default)
-- **90°**: Rotación horaria (landscape → portrait)
-- **180°**: Rotación 180° (invertido)
-- **270°**: Rotación antihoraria (landscape → portrait invertido)
-
-**Casos de Uso**:
-- Tablets en orientación vertical
-- Monitors montados verticalmente
-- Corrección de displays rotados físicamente
+La orientación actual depende del monitor/resolución configurada y del ajuste visual del navegador (`BrowserImageFit`).
 
 #### 4. **Múltiples Pantallas**
 
@@ -122,6 +115,7 @@ Cada pantalla tiene:
 - ✅ Configuración de calidad/intervalo independiente
 - ✅ Modo de transmisión independiente
 - ✅ Posicionamiento independiente
+- ✅ Control táctil independiente (`TouchInputEnabled`)
 
 ---
 
@@ -613,11 +607,12 @@ if (!createdNew)
 
 - [ ] **H.264 Hardware Encoding**: Menor latencia, menor CPU (usando GPU)
 - [ ] **Audio Streaming**: Captura y transmisión de audio de pantalla virtual
-- [ ] **Control Remoto**: Mouse/teclado desde navegador (input remoto)
+- [ ] **Input remoto avanzado**: Arrastre, teclado y gestos extendidos
 - [ ] **3+ Pantallas**: Soporte para más de 2 pantallas simultáneas
 - [ ] **Modo Espejo**: Duplicar monitor real (no solo virtuales)
 - [ ] **Grabación de Sesión**: Guardar stream a archivo MP4
 - [x] **Autenticación por clave local**: Protección por pantalla con clave dinámica y rate limiting
+- [x] **Entrada táctil remota**: Clicks táctiles con control por pantalla
 
 ---
 
@@ -625,9 +620,32 @@ if (!createdNew)
 
 1. **Solo Windows**: Requiere Windows 10/11 para Parsec VDD driver
 2. **Máximo 2 Pantallas**: Limitación actual de implementación (no del driver)
-3. **No Input Remoto**: Actualmente solo visualización (sin control)
-4. **Sin Codec de Video**: Usa JPEG por frame (futuro: H.264)
+3. **Input remoto limitado**: Hoy soporta clicks táctiles (1/2/3+ dedos), no teclado ni drag completo
+4. **Sin codec de video dedicado**: Usa JPEG por frame (futuro: H.264)
 5. **WebRTC Requiere HTTPS**: Requisito de seguridad de navegadores
+
+---
+
+## Entrada Táctil
+
+### Gestos actuales
+
+- 1 dedo: click izquierdo
+- 2 dedos: click derecho
+- 3+ dedos: click central
+
+Todos los clicks preservan la posición original del cursor local del host.
+
+### Configuración por pantalla
+
+- Campo: `TouchInputEnabled`
+- Se puede activar/desactivar en caliente desde la app, sin reiniciar servicio.
+- El backend aplica el gate por request en `/input/touch`.
+
+### Compatibilidad iPad/Safari (WebImage)
+
+- WebImage usa `div#screen` con `background-image` para evitar drag-and-drop nativo.
+- Se bloquean eventos nativos de `dragstart`, `contextmenu`, `gesture*` y touch relevantes.
 
 ---
 

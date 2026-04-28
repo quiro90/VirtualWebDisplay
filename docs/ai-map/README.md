@@ -18,15 +18,17 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 
 ## Idea mental rápida
 - La app es una mezcla de `ASP.NET Core Minimal API` + `Windows Forms` + interop Win32.
-- `Program.cs` arma todo.
+- `Program.cs` bootstrappea y delega el ciclo en `ApplicationLifecycleManager`.
 - Cada pantalla virtual activa se representa con un `ScreenRuntimeContext`.
 - Cada runtime tiene:
   - `VirtualDisplayManager` para crear/reconfigurar el monitor virtual,
   - `CaptureService` para capturar JPEGs del monitor,
   - `WebRtcStreamService` para retransmitir frames por `WebRTC DataChannel`,
+  - `ScreenSecurityGate` para login/rate-limit por pantalla,
   - `ViewerLimiter` para limitar receptores simultáneos por pantalla.
 - `VirtualDisplayTrayController` expone configuración y control desde el tray (incluye `ResolutionConfigurationForm` embebida).
 - `VirtualScreenSettingsStore` guarda la configuración del usuario en `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`.
+- La entrada táctil usa `POST /input/touch`, con gate backend por `TouchInputEnabled` y stats en `GET /input/stats`.
 
 ## Archivos principales del dominio
 | Archivo | Rol |
@@ -36,6 +38,7 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 | `VirtualDisplayManager.cs` | Crear/destruir monitor virtual vía Win32 |
 | `CaptureService.cs` | Captura periódica + codificación JPEG |
 | `WebRtcStreamService.cs` | Negociación WebRTC + emisión de frames |
+| `InputHandler.cs` | Endpoints de touch remoto y métricas |
 | `ViewerLimiter.cs` | Control de cupo de viewers por pantalla |
 | `VirtualDisplayTrayController.cs` | Tray icon + formulario de configuración |
 | `VirtualScreenSettingsStore.cs` | Carga y persistencia de JSON de usuario |

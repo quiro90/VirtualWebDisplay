@@ -15,7 +15,7 @@
    - detecta el índice de monitor Windows (`WindowsMonitorIndex`),
    - arranca `CaptureService`,
    - arranca `WebRtcStreamService`.
-11. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/auth/login`).
+11. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/auth/login`, `/input/touch`, `/input/stats`).
 12. Actualiza tray con las URLs disponibles + balloon tip.
 13. Ejecuta el servidor hasta salida (`app.RunAsync()`).
 14. En `finally`: `DisposeRuntimesAsync(runtimes)` en orden inverso.
@@ -35,18 +35,23 @@
 2. Resuelve región con `GetCaptureRegion()` según `MonitorIndex`.
 3. Copia pantalla a `Bitmap`.
 4. Si corresponde, dibuja cursor.
-5. Si `StreamRotationDegrees` es distinto de 0, rota el bitmap según corresponda.
-6. Codifica JPEG con `JpegQuality` configurado.
-7. Guarda bytes en `_currentFrame`.
-8. Espera `CaptureIntervalSeconds` antes del próximo frame.
+5. Codifica JPEG con `JpegQuality` configurado.
+6. Guarda bytes en `_currentFrame`.
+7. Espera `CaptureIntervalSeconds` antes del próximo frame.
 
 ## 4. Modo `WebImage`
 1. El navegador abre `/`.
-2. `Program.cs` devuelve HTML generado por `BuildWebImagePage(...)`.
+2. `IndexHandler` devuelve HTML generado por `WebImagePageTemplate`.
 3. El JS hace polling periódico a `/cap?s=N` (intervalo = `CaptureIntervalSeconds * 1000 ms`).
 4. `/cap` devuelve el último JPEG disponible.
-5. El cliente reemplaza el `src` del `<img>`.
+5. El cliente actualiza `background-image` de `div#screen`.
 6. `object-fit` aplicado según `BrowserImageFit` (fill/cover/contain).
+
+### iPad/Safari
+En WebImage se bloquea drag/long-press nativo con:
+- `div` en lugar de `<img>` para la capa de video,
+- CSS `touch-action: none`, `-webkit-touch-callout: none`, `user-select: none`,
+- `preventDefault()` en eventos táctiles/nativos relevantes.
 
 ### Perfil de uso ideal
 - e-readers, dispositivos lentos,
@@ -54,7 +59,7 @@
 
 ## 5. Modo `Rtc`
 1. El navegador abre `/`.
-2. `Program.cs` devuelve HTML generado por `BuildRtcPage(...)`.
+2. `IndexHandler` devuelve HTML generado por `RtcPageTemplate`.
 3. El JS crea `RTCPeerConnection` y `DataChannel` `frames`.
 4. El cliente publica oferta SDP en `/webrtc/offer`.
 5. `WebRtcStreamService.CreateAnswerAsync(...)` devuelve la respuesta SDP.
@@ -77,6 +82,12 @@
 - Puertos (solo editables en el arranque inicial).
 - Creación/destrucción de pantallas virtuales (requiere reinicio).
 
+### Qué sí cambia en caliente
+- `TouchInputEnabled` por pantalla.
+   - Se dispara desde `ScreenTabControls`.
+   - Se propaga por `ResolutionConfigurationForm` y `ConfigurationFormPresenter`.
+   - El backend (`InputHandler`) lo respeta en cada request de `/input/touch`.
+
 ## 7. Resolución de runtime por puerto
 Todos los runtimes escuchan en el mismo proceso. Cada request HTTP:
 1. `ResolveRuntime(HttpContext)` compara `context.Connection.LocalPort` con `runtime.Config.Port`.
@@ -98,3 +109,4 @@ Todos los runtimes escuchan en el mismo proceso. Cada request HTTP:
 - Cada pantalla tiene puerto propio y runtime propio; el pattern se escala agregando más `ScreenRuntimeContext`.
 - El tray es la única interfaz de operación; el servidor web no expone panel administrativo.
 - `BrowserImageFit` se aplica en el CSS del HTML servido, no en el JPEG generado.
+- El gate de touch está del lado backend para evitar desincronización de estado con el cliente web.

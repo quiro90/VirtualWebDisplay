@@ -41,8 +41,6 @@ internal static class TouchInputScriptHelper
                 var touchErrorCount = 0;
                 var recentLocalEvents = [];
                 var recentLatencies = [];
-                var lastInputAt = 0;
-                var serverStats = null;
 
                 function avg(arr) {
                     if (!arr.length) return 0;
@@ -57,11 +55,6 @@ internal static class TouchInputScriptHelper
 
                     while (recentLatencies.length > 60)
                         recentLatencies.shift();
-                }
-
-                function renderStatsPanel() {
-                    var now = Date.now();
-                    pruneWindow(now);
                 }
 
                 function sendTouchInput(data) {
@@ -81,12 +74,9 @@ internal static class TouchInputScriptHelper
                             if (resp.status === 429)
                                 console.warn('[TouchInput] Rate limited by server');
                         }
-
-                        renderStatsPanel();
                     }).catch(function (err) {
                         touchErrorCount++;
                         console.error('[TouchInput] Error sending:', err);
-                        renderStatsPanel();
                     });
                 }
 
@@ -102,7 +92,6 @@ internal static class TouchInputScriptHelper
                     var touch = e.touches[0];
                     var rect = screenElement.getBoundingClientRect();
                     touchEventCount++;
-                    lastInputAt = now;
                     recentLocalEvents.push(now);
 
                     sendTouchInput({
@@ -127,7 +116,6 @@ internal static class TouchInputScriptHelper
                     var touch = e.touches[0];
                     var rect = screenElement.getBoundingClientRect();
                     touchEventCount++;
-                    lastInputAt = now;
                     recentLocalEvents.push(now);
 
                     sendTouchInput({
@@ -144,7 +132,6 @@ internal static class TouchInputScriptHelper
                 function handleTouchEnd(e) {
                     var now = Date.now();
                     touchEventCount++;
-                    lastInputAt = now;
                     recentLocalEvents.push(now);
                     sendTouchInput({
                         type: 'touchend',
@@ -158,17 +145,15 @@ internal static class TouchInputScriptHelper
                 document.addEventListener('touchmove', handleTouchMove, { passive: false });
                 document.addEventListener('touchend', handleTouchEnd, { passive: false });
 
-                renderStatsPanel();
-
                 // Exponer métodos para debugging (opcional)
                 window.VirtualWebDisplayTouchInput = {
                     getStats: function() {
+                        pruneWindow(Date.now());
                         return {
                             eventCount: touchEventCount,
                             errorCount: touchErrorCount,
                             localEventsPerSecond: recentLocalEvents.length,
-                            avgLocalLatencyMs: avg(recentLatencies),
-                            serverStats: serverStats
+                            avgLocalLatencyMs: avg(recentLatencies)
                         };
                     }
                 };
