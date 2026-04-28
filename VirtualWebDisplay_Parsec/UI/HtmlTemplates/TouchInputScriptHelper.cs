@@ -55,8 +55,9 @@ internal static class TouchInputScriptHelper
         return $$"""
             // ────────────────────────────────────────────────────────────────
             // TOUCH INPUT HANDLING (Virtual Mouse from Tablet)
-            // 1 dedo: tap = click; hold >= {{holdDelayMs}}ms = drag-and-drop
-            // 2 dedos: hold >= {{holdDelayMs}}ms = scroll vertical
+            // 1 dedo: tap = click; hold = drag-and-drop
+            // 2 dedos: hold = scroll
+            // + modo absoluto: el cursor se posiciona al tocar
             // ────────────────────────────────────────────────────────────────
             (function() {
                 var screenElement = document.getElementById('{{screenElementId}}');
@@ -74,6 +75,7 @@ internal static class TouchInputScriptHelper
                 var HOLD_DELAY_MS = {{holdDelayMs}};
                 var TAP_MAX_MOVE_PX = 14;
                 var interactionActive = false;
+
                 var state = {
                     mode: 'idle',
                     startX: 0,
@@ -116,9 +118,8 @@ internal static class TouchInputScriptHelper
                             if (resp.status === 429)
                                 console.warn('[TouchInput] Rate limited by server');
                         }
-                    }).catch(function (err) {
+                    }).catch(function () {
                         touchErrorCount++;
-                        console.error('[TouchInput] Error sending:', err);
                     });
                 }
 
@@ -175,13 +176,25 @@ internal static class TouchInputScriptHelper
                     state.lastX = state.startX;
                     state.lastY = state.startY;
 
+                    // 👉 mover cursor inmediatamente (modo absoluto)
+                    sendTouchInput({
+                        type: 'touchmove',
+                        action: 'dragmove',
+                        x: state.startX,
+                        y: state.startY,
+                        viewportWidth: rect.width,
+                        viewportHeight: rect.height,
+                        fingers: 1,
+                        timestamp: now
+                    });
+
                     clearHoldTimer();
                     state.holdTimer = setTimeout(function () {
                         if (state.mode !== 'pendingTap')
                             return;
 
                         state.mode = 'drag';
-                        var dragNow = Date.now();
+
                         sendTouchInput({
                             type: 'touchstart',
                             action: 'dragstart',
@@ -190,7 +203,7 @@ internal static class TouchInputScriptHelper
                             viewportWidth: rect.width,
                             viewportHeight: rect.height,
                             fingers: 1,
-                            timestamp: dragNow
+                            timestamp: Date.now()
                         });
                     }, HOLD_DELAY_MS);
 
@@ -203,6 +216,18 @@ internal static class TouchInputScriptHelper
                     var center = getCenter(touches, rect);
                     state.centerY = center.y;
                     state.centerX = center.x;
+
+                    // FIX: posicionar cursor antes del scroll
+                    sendTouchInput({
+                        type: 'touchmove',
+                        action: 'dragmove',
+                        x: center.x,
+                        y: center.y,
+                        viewportWidth: rect.width,
+                        viewportHeight: rect.height,
+                        fingers: 2,
+                        timestamp: now
+                    });
 
                     clearHoldTimer();
                     state.holdTimer = setTimeout(function () {
@@ -247,10 +272,26 @@ internal static class TouchInputScriptHelper
                     var rect = screenElement.getBoundingClientRect();
                     var fingerCount = e.touches.length;
 
+                    // 👉 movimiento absoluto mientras no es drag
                     if (state.mode === 'pendingTap' && fingerCount === 1) {
-                        var pendingTouch = e.touches[0];
-                        state.lastX = pendingTouch.clientX - rect.left;
-                        state.lastY = pendingTouch.clientY - rect.top;
+                        var t = e.touches[0];
+                        state.lastX = t.clientX - rect.left;
+                        state.lastY = t.clientY - rect.top;
+
+                        if (now - lastTouchTime < touchThrottle) return;
+                        lastTouchTime = now;
+
+                        sendTouchInput({
+                            type: 'touchmove',
+                            action: 'dragmove',
+                            x: state.lastX,
+                            y: state.lastY,
+                            viewportWidth: rect.width,
+                            viewportHeight: rect.height,
+                            fingers: 1,
+                            timestamp: now
+                        });
+
                         return;
                     }
 
@@ -261,6 +302,7 @@ internal static class TouchInputScriptHelper
                         var dragTouch = e.touches[0];
                         state.lastX = dragTouch.clientX - rect.left;
                         state.lastY = dragTouch.clientY - rect.top;
+
                         touchEventCount++;
                         recentLocalEvents.push(now);
 
@@ -284,7 +326,6 @@ internal static class TouchInputScriptHelper
                         state.centerY = center.y;
                         state.centerX = center.x;
 
-                        // Invertir ambos sentidos para sensación natural
                         var invDeltaY = -deltaY;
                         var invDeltaX = -deltaX;
 
@@ -310,62 +351,76 @@ internal static class TouchInputScriptHelper
                 }
 
                 function handleTouchEnd(e) {
-                    if (!interactionActive)
-                        return;
+                if (!interactionActive)
+                    return;
 
-                    var now = Date.now();
-                    touchEventCount++;
-                    recentLocalEvents.push(now);
+                var now = Date.now();
+                touchEventCount++;
+                recentLocalEvents.push(now);
 
-                    if (state.mode === 'drag') {
-                        sendEndAction('dragend', now);
-                        resetState();
-                        return;
-                    }
-
-                    if (state.mode === 'scroll') {
-                        if (e.touches.length < 2) {
-                            sendEndAction('scrollend', now);
-                            resetState();
-                        }
-                        return;
-                    }
-
-                    if (state.mode === 'pendingTap') {
-                        clearHoldTimer();
-                        var moved = distanceFromStart(state.lastX, state.lastY);
-                        if (moved <= TAP_MAX_MOVE_PX) {
-                            sendTouchInput({
-                                type: 'touchend',
-                                action: 'tap',
-                                x: state.lastX,
-                                y: state.lastY,
-                                viewportWidth: screenElement.getBoundingClientRect().width,
-                                viewportHeight: screenElement.getBoundingClientRect().height,
-                                fingers: 1,
-                                timestamp: now
-                            });
-                        }
-
-                        resetState();
-                        return;
-                    }
-
-                    if (state.mode === 'pendingScroll') {
-                        clearHoldTimer();
-                        resetState();
-                    }
-
-                    if (e.touches.length === 0)
-                        resetState();
+                if (state.mode === 'drag') {
+                    sendEndAction('dragend', now);
+                    resetState();
+                    return;
                 }
+
+                if (state.mode === 'scroll') {
+                    if (e.touches.length < 2) {
+                        sendEndAction('scrollend', now);
+                        resetState();
+                    }
+                    return;
+                }
+
+                if (state.mode === 'pendingTap') {
+                    clearHoldTimer();
+
+                    var rect = screenElement.getBoundingClientRect();
+
+                    // 👉 FIX CLAVE: mover SIEMPRE antes del tap
+                    sendTouchInput({
+                        type: 'touchmove',
+                        action: 'dragmove',
+                        x: state.lastX,
+                        y: state.lastY,
+                        viewportWidth: rect.width,
+                        viewportHeight: rect.height,
+                        fingers: 1,
+                        timestamp: now
+                    });
+
+                    var moved = distanceFromStart(state.lastX, state.lastY);
+                    if (moved <= TAP_MAX_MOVE_PX) {
+                        sendTouchInput({
+                            type: 'touchend',
+                            action: 'tap',
+                            x: state.lastX,
+                            y: state.lastY,
+                            viewportWidth: rect.width,
+                            viewportHeight: rect.height,
+                            fingers: 1,
+                            timestamp: now
+                        });
+                    }
+
+                    resetState();
+                    return;
+                }
+
+                if (state.mode === 'pendingScroll') {
+                    clearHoldTimer();
+                    resetState();
+                }
+
+                if (e.touches.length === 0)
+                    resetState();
+            }
 
                 function handleTouchCancel() {
                     if (!interactionActive)
                         return;
 
                     sendEndForCurrentMode(Date.now());
-
                     resetState();
                 }
 
@@ -374,22 +429,21 @@ internal static class TouchInputScriptHelper
                         return;
 
                     sendEndForCurrentMode(Date.now());
-
                     resetState();
                 }
 
-                // Registrar listeners
                 screenElement.addEventListener('touchstart', handleTouchStart, { passive: false });
                 document.addEventListener('touchmove', handleTouchMove, { passive: false });
                 document.addEventListener('touchend', handleTouchEnd, { passive: false });
                 document.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+
                 document.addEventListener('visibilitychange', function () {
                     if (document.visibilityState === 'hidden')
                         finalizeOnPageStateLoss();
                 });
+
                 window.addEventListener('pagehide', finalizeOnPageStateLoss);
 
-                // Exponer métodos para debugging (opcional)
                 window.VirtualWebDisplayTouchInput = {
                     getStats: function() {
                         pruneWindow(Date.now());
@@ -402,7 +456,7 @@ internal static class TouchInputScriptHelper
                     }
                 };
 
-                console.log('[TouchInput] Initialized - Element: {{screenElementId}}, Throttle: {{throttleMs}}ms');
+                console.log('[TouchInput] Initialized (absolute pointer enabled)');
             })();
             """;
     }
