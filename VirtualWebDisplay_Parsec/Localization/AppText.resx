@@ -57,7 +57,7 @@
   <data name="Tab_Placement_Left" xml:space="preserve"><value>Left</value></data>
   <data name="Tab_Placement_Top" xml:space="preserve"><value>Top</value></data>
   <data name="Tab_Placement_Bottom" xml:space="preserve"><value>Bottom</value></data>
-  <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Main Screen</value></data>
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
   <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Time between image updates. For smoother motion use less than 10 ms; for e-ink displays we recommend more than 100 ms.</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>

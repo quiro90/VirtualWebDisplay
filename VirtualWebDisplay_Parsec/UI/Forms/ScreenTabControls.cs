@@ -136,7 +136,6 @@ public sealed class ScreenTabControls
             Maximum = 300M,
             DecimalPlaces = 0,
             Increment = 1M,
-            AllowedValues = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,50,75,100,125,150,175,200,250,300],
         };
 
         _qualityLabel = CreateLabel(AppText.Get("Tab_Label_JpegQuality"), 140, currentTop);
