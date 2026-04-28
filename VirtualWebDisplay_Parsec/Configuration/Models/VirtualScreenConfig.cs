@@ -66,6 +66,19 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public int TouchGestureHoldDelayMs { get; set; } = 300;
 
+    /// <summary>
+    /// Whether touch gestures (drag and scroll) are enabled.
+    /// If false, only taps will work, no gestures.
+    /// </summary>
+    public bool TouchGesturesEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Whether to preserve cursor position after tap actions.
+    /// If true, taps execute at the touch coordinate but restore the cursor position.
+    /// If false, the cursor moves to the touch coordinate (current behavior).
+    /// </summary>
+    public bool TouchPreserveCursor { get; set; } = false;
+
     public int Port { get; set; } = 8000;
 
     /// <summary>
@@ -109,6 +122,8 @@ public sealed class VirtualScreenConfig
         MaxViewers = MaxViewers,
         TouchInputEnabled = TouchInputEnabled,
         TouchGestureHoldDelayMs = TouchGestureHoldDelayMs,
+        TouchGesturesEnabled = TouchGesturesEnabled,
+        TouchPreserveCursor = TouchPreserveCursor,
         Port = Port,
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
@@ -131,6 +146,8 @@ public sealed class VirtualScreenConfig
         target.MaxViewers = MaxViewers;
         target.TouchInputEnabled = TouchInputEnabled;
         target.TouchGestureHoldDelayMs = TouchGestureHoldDelayMs;
+        target.TouchGesturesEnabled = TouchGesturesEnabled;
+        target.TouchPreserveCursor = TouchPreserveCursor;
         target.Port = Port;
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;

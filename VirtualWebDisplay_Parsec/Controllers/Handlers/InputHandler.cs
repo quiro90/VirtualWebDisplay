@@ -153,20 +153,33 @@ internal static class InputHandler
             {
                 case "tap":
                     EndDragIfActive();
-                    MouseInputHelper.LeftClickPreservingCursor(_virtualX, _virtualY);
+                    if (runtime.Config.TouchPreserveCursor)
+                        MouseInputHelper.LeftClickPreservingCursor(_virtualX, _virtualY);
+                    else
+                        MouseInputHelper.LeftClick(_virtualX, _virtualY);
                     break;
 
                 case "rightclick":
                     EndDragIfActive();
-                    MouseInputHelper.RightClickPreservingCursor(_virtualX, _virtualY);
+                    if (runtime.Config.TouchPreserveCursor)
+                        MouseInputHelper.RightClickPreservingCursor(_virtualX, _virtualY);
+                    else
+                        MouseInputHelper.RightClick(_virtualX, _virtualY);
                     break;
 
                 case "middleclick":
                     EndDragIfActive();
-                    MouseInputHelper.MiddleClickPreservingCursor(_virtualX, _virtualY);
+                    if (runtime.Config.TouchPreserveCursor)
+                        MouseInputHelper.MiddleClickPreservingCursor(_virtualX, _virtualY);
+                    else
+                        MouseInputHelper.MiddleClick(_virtualX, _virtualY);
                     break;
 
                 case "dragstart":
+                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled está activo
+                    if (!runtime.Config.TouchGesturesEnabled)
+                        return Results.NoContent();
+
                     // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
                     // que no haya recibido su dragend (red inestable, reconexión de cliente).
                     EndDragIfActive();
@@ -175,6 +188,10 @@ internal static class InputHandler
                     break;
 
                 case "dragmove":
+                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled está activo
+                    if (!runtime.Config.TouchGesturesEnabled)
+                        return Results.NoContent();
+
                     MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                     MarkDragActivity(nowMs);
                     break;
@@ -182,10 +199,17 @@ internal static class InputHandler
                 // "dragend" se maneja arriba, antes del bloque de coordenadas.
                 // Este case es inalcanzable pero se deja como documentación defensiva.
                 case "dragend":
+                    if (!runtime.Config.TouchGesturesEnabled)
+                        return Results.NoContent();
+
                     EndDragIfActive();
                     break;
 
                 case "scrollmove":
+                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled está activo
+                    if (!runtime.Config.TouchGesturesEnabled)
+                        return Results.NoContent();
+
                     // FIX: ScrollDeltaY/X son double? — cast explícito a int con fallback 0.
                     int dy = (int)(request.ScrollDeltaY ?? 0.0);
                     int dx = (int)(request.ScrollDeltaX ?? 0.0);
@@ -193,6 +217,9 @@ internal static class InputHandler
                     break;
 
                 case "scrollend":
+                    if (!runtime.Config.TouchGesturesEnabled)
+                        return Results.NoContent();
+
                     EndDragIfActive();
                     break;
 

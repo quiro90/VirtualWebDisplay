@@ -73,9 +73,11 @@
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contain (bars)</value></data>
   <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configure displays (Windows) ↗</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Maximum viewers (0 = unlimited):</value></data>
-  <data name="Tab_Label_TouchGestures" xml:space="preserve"><value>Gestures:</value></data>
+  <data name="Tab_Label_TouchGestures" xml:space="preserve"><value>Touch Gesture (Affects Cursor)</value></data>
+  <data name="Tab_Label_TouchPreserveCursor" xml:space="preserve"><value>Execute tap without moving main cursor</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Touch Input</value></data>
   <data name="Tab_Help_TouchGestures" xml:space="preserve"><value>Hold time for touch gestures. Lower values react faster; higher values reduce accidental drags/scroll.</value></data>
+  <data name="Tab_Help_TouchPreserveCursor" xml:space="preserve"><value>When enabled, taps execute at the touch coordinate but restore the cursor position immediately. This only applies to simple taps (1, 2 or 3 fingers).</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>This is the maximum number of devices allowed to watch your screen stream. If it is 0, the limit is disabled.</value></data>
   <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Access at:</value></data>
   <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>This is your local network address. From a device connected to the same Wi-Fi network, you should be able to view your virtual desktop.</value></data>
