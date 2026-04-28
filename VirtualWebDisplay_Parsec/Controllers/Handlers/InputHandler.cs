@@ -18,6 +18,11 @@ internal static class InputHandler
     // Configuración de rate limiting
     private const int DEFAULT_MAX_EVENTS_PER_SECOND = 100;
 
+    // mouse virtual
+    private static int _virtualX;
+    private static int _virtualY;
+    private static bool _virtualInitialized;
+
     // Estadísticas básicas de entrada táctil (Sprint 2)
     private static long _totalEvents;
     private static long _totalErrors;
@@ -92,6 +97,10 @@ internal static class InputHandler
             var desktopX = targetBounds.Left + screenX;
             var desktopY = targetBounds.Top + screenY;
 
+            _virtualX = desktopX;
+            _virtualY = desktopY;
+            _virtualInitialized = true;
+
             System.Diagnostics.Debug.WriteLine(
                 $"[InputHandler] Bounds({targetBounds.Left},{targetBounds.Top},{targetBounds.Width}x{targetBounds.Height}) " +
                 $"Config({runtime.Config.Width}x{runtime.Config.Height}) -> desktop({desktopX},{desktopY})");
@@ -114,29 +123,27 @@ internal static class InputHandler
             {
                 case "tap":
                     EndDragIfActive();
-                    MouseInputHelper.LeftClickPreservingCursor(desktopX, desktopY);
+                    MouseInputHelper.LeftClickPreservingCursor(_virtualX, _virtualY);
                     break;
                 case "rightclick":
                     EndDragIfActive();
-                    MouseInputHelper.RightClickPreservingCursor(desktopX, desktopY);
+                    MouseInputHelper.RightClickPreservingCursor(_virtualX, _virtualY);
                     break;
                 case "middleclick":
                     EndDragIfActive();
-                    MouseInputHelper.MiddleClickPreservingCursor(desktopX, desktopY);
+                    MouseInputHelper.MiddleClickPreservingCursor(_virtualX, _virtualY);
                     break;
                 case "dragstart":
-                    MouseInputHelper.LeftDownAt(desktopX, desktopY);
+                    MouseInputHelper.LeftDownAt(_virtualX, _virtualY); // ✔ CLICK REAL DOWN
                     MarkDragStarted(nowMs);
                     break;
                 case "dragmove":
-                    MouseInputHelper.MoveMouse(desktopX, desktopY);
+                    MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                     MarkDragActivity(nowMs);
                     break;
                 case "dragend":
-                    EndDragIfActive();
                     break;
                 case "scrollmove":
-                    EndDragIfActive();
                     // Soporte horizontal y vertical, ambos opcionales
                     int dy = request.ScrollDeltaY != null ? (int)request.ScrollDeltaY : 0;
                     int dx = request.ScrollDeltaX != null ? (int)request.ScrollDeltaX : 0;
