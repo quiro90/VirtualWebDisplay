@@ -60,6 +60,12 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public bool TouchInputEnabled { get; set; }
 
+    /// <summary>
+    /// Hold time in milliseconds required to activate gesture modes
+    /// (1 finger drag and 2-finger scroll).
+    /// </summary>
+    public int TouchGestureHoldDelayMs { get; set; } = 300;
+
     public int Port { get; set; } = 8000;
 
     /// <summary>
@@ -102,6 +108,7 @@ public sealed class VirtualScreenConfig
         ScreenSecurityEnabled = ScreenSecurityEnabled,
         MaxViewers = MaxViewers,
         TouchInputEnabled = TouchInputEnabled,
+        TouchGestureHoldDelayMs = TouchGestureHoldDelayMs,
         Port = Port,
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
@@ -123,6 +130,7 @@ public sealed class VirtualScreenConfig
         target.ScreenSecurityEnabled = ScreenSecurityEnabled;
         target.MaxViewers = MaxViewers;
         target.TouchInputEnabled = TouchInputEnabled;
+        target.TouchGestureHoldDelayMs = TouchGestureHoldDelayMs;
         target.Port = Port;
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;

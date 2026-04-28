@@ -1,4 +1,6 @@
-﻿namespace VirtualWebDisplay.UI.HtmlTemplates;
+﻿using VirtualWebDisplay.Configuration;
+
+namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
 /// Helper para generar script de Touch Input compartido entre templates.
@@ -37,8 +39,9 @@ internal static class TouchInputScriptHelper
     /// Parameters esperados:
     /// - screenElementId: ID del elemento HTML que recibe toques ("screen" para WebImage, "screen" para WebRTC)
     /// - throttleMs: Mínimo de ms entre eventos (default: 50ms)
+    /// - holdDelayMs: ms necesarios para activar drag/scroll por hold
     /// </summary>
-    public static string GenerateTouchInputScript(string screenElementId, int throttleMs = 50)
+    public static string GenerateTouchInputScript(string screenElementId, int throttleMs = 50, int holdDelayMs = TouchGestureOptions.DefaultHoldDelayMs)
     {
         // Validar parámetros
         if (string.IsNullOrWhiteSpace(screenElementId))
@@ -47,11 +50,13 @@ internal static class TouchInputScriptHelper
         if (throttleMs < 10)
             throttleMs = 10;
 
+        holdDelayMs = TouchGestureOptions.ClampHoldDelay(holdDelayMs);
+
         return $$"""
             // ────────────────────────────────────────────────────────────────
             // TOUCH INPUT HANDLING (Virtual Mouse from Tablet)
-            // 1 dedo: tap = click; hold >= 300ms = drag-and-drop
-            // 2 dedos: hold >= 300ms = scroll vertical
+            // 1 dedo: tap = click; hold >= {{holdDelayMs}}ms = drag-and-drop
+            // 2 dedos: hold >= {{holdDelayMs}}ms = scroll vertical
             // ────────────────────────────────────────────────────────────────
             (function() {
                 var screenElement = document.getElementById('{{screenElementId}}');
@@ -66,7 +71,7 @@ internal static class TouchInputScriptHelper
                 var touchErrorCount = 0;
                 var recentLocalEvents = [];
                 var recentLatencies = [];
-                var HOLD_DELAY_MS = 300;
+                var HOLD_DELAY_MS = {{holdDelayMs}};
                 var TAP_MAX_MOVE_PX = 14;
                 var interactionActive = false;
                 var state = {

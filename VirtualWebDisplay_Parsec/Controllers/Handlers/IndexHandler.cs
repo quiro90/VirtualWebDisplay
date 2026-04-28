@@ -45,6 +45,7 @@ internal static class IndexHandler
                 ["title"]           = runtime.DisplayName,
                 ["browserImageFit"] = browserImageFit,
                 ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
+                ["gestureHoldDelayMs"] = runtime.Config.TouchGestureHoldDelayMs,
             };
             html = webImageTemplate.Generate(parameters);
         }
@@ -55,6 +56,7 @@ internal static class IndexHandler
                 ["title"]           = runtime.DisplayName,
                 ["browserImageFit"] = browserImageFit,
                 ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
+                ["gestureHoldDelayMs"] = runtime.Config.TouchGestureHoldDelayMs,
             };
             html = rtcTemplate.Generate(parameters);
         }

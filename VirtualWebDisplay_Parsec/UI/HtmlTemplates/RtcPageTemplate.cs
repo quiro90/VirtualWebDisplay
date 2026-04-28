@@ -15,6 +15,8 @@ public sealed class RtcPageTemplate : IHtmlTemplate
         var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
         var htmlLang = AppText.HtmlLang;
         var statusConnecting = AppText.Get("WebRtc_Status_Connecting");
+        var gestureHoldDelayMsObj = parameters.GetValueOrDefault("gestureHoldDelayMs", 300);
+        var gestureHoldDelayMs = gestureHoldDelayMsObj is int holdInt ? holdInt : Convert.ToInt32(gestureHoldDelayMsObj);
         var statusNegotiating = AppText.Get("WebRtc_Status_Negotiating");
         var statusConnected = AppText.Get("WebRtc_Status_Connected");
         var statusDisconnectedRetrying = AppText.Get("WebRtc_Status_DisconnectedRetrying");
@@ -252,7 +254,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
 
                     {{TouchInputScriptHelper.GenerateKeepAliveScript()}}
 
-                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)))}}
+                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)), gestureHoldDelayMs)}}
 
                     connect().catch(function () {
                         setStatus('{{statusStartFailed}}');

@@ -19,6 +19,8 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
         };
         var intervalMsObj = parameters.GetValueOrDefault("intervalMs", 250);
         var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
+        var gestureHoldDelayMsObj = parameters.GetValueOrDefault("gestureHoldDelayMs", 300);
+        var gestureHoldDelayMs = gestureHoldDelayMsObj is int holdInt ? holdInt : Convert.ToInt32(gestureHoldDelayMsObj);
         var htmlLang = AppText.HtmlLang;
 
         return $$"""
@@ -121,7 +123,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
 
                     {{TouchInputScriptHelper.GenerateKeepAliveScript()}}
 
-                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)))}}
+                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)), gestureHoldDelayMs)}}
                 })();
                 </script>
             </body>

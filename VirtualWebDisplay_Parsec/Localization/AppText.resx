@@ -42,6 +42,7 @@
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Screen 1</value></data>
   <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Screen 2</value></data>
+  <data name="Form_Config_GestureHoldLabel" xml:space="preserve"><value>Gestures:</value></data>
 
   <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>Screen 2 must use a different port than Screen 1.</value></data>
   <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Duplicate port</value></data>

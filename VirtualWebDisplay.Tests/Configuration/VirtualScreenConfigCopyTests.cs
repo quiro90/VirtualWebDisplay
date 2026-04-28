@@ -31,6 +31,7 @@ public sealed class VirtualScreenConfigCopyTests
         ScreenSecurityEnabled  = true,
         MaxViewers             = 5,
         TouchInputEnabled      = true,
+        TouchGestureHoldDelayMs = 420,
         Port                   = 9999,
         MonitorIndex           = 2,
         VirtualDisplayPlacement = "left",
