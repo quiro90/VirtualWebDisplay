@@ -493,6 +493,7 @@ public sealed class ScreenTabControls
     private void ApplyHelpTooltips()
     {
         SetHelpToolTip(AppText.Get("Tab_Help_Port"), _portLabel, _portInput);
+        SetHelpToolTip(AppText.Get("Tab_Help_Transmission"), _methodLabel, _transmissionMethodCombo);
         SetHelpToolTip(AppText.Get("Tab_Help_Placement"), _placementLabel, _placementCombo);
         SetHelpToolTip(AppText.Get("Tab_Help_CaptureInterval"), _captureIntervalLabel, _captureIntervalInput);
         SetHelpToolTip(AppText.Get("Tab_Help_MaxViewers"), _maxViewersLabel, _maxViewersInput);

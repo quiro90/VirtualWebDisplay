@@ -50,6 +50,7 @@
   <data name="Tab_Label_Port" xml:space="preserve"><value>Puerto:</value></data>
   <data name="Tab_Help_Port" xml:space="preserve"><value>Definí el puerto local que vas a usar para conectarte por web a tu monitor remoto.</value></data>
   <data name="Tab_Label_Transmission" xml:space="preserve"><value>Transmisión:</value></data>
+  <data name="Tab_Help_Transmission" xml:space="preserve"><value>Para PCs con GPU o de buena potencia, lo mejor es WebRTC. Para equipos menos potentes, se recomienda Imagen por web.</value></data>
   <data name="Tab_Label_Placement" xml:space="preserve"><value>Posición:</value></data>
   <data name="Tab_Help_Placement" xml:space="preserve"><value>Esta posición se aplica al iniciar los monitores. Después podés reorganizarlos desde la configuración de Windows.</value></data>
   <data name="Tab_Placement_Right" xml:space="preserve"><value>Derecha</value></data>

@@ -50,6 +50,7 @@
   <data name="Tab_Label_Port" xml:space="preserve"><value>Port:</value></data>
   <data name="Tab_Help_Port" xml:space="preserve"><value>Set the local port you will use to open your remote monitor from a web browser.</value></data>
   <data name="Tab_Label_Transmission" xml:space="preserve"><value>Transmission:</value></data>
+  <data name="Tab_Help_Transmission" xml:space="preserve"><value>For PCs with a GPU or good performance, WebRTC is the best option. For less powerful PCs, Image over web is recommended.</value></data>
   <data name="Tab_Label_Placement" xml:space="preserve"><value>Placement:</value></data>
   <data name="Tab_Help_Placement" xml:space="preserve"><value>This placement is applied when the monitors start. You can rearrange them later in Windows display settings.</value></data>
   <data name="Tab_Placement_Right" xml:space="preserve"><value>Right</value></data>
