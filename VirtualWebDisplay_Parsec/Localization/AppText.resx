@@ -60,7 +60,7 @@
   <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Main Screen</value></data>
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Refresh every (ms):</value></data>
   <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Time between image updates. For smoother motion use less than 10 ms; for e-ink displays we recommend more than 100 ms.</value></data>
-  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>JPEG quality:</value></data>
+  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Image Quality:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Fit:</value></data>
   <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Screen security (require access code)</value></data>
   <data name="Tab_Help_ScreenSecurity" xml:space="preserve"><value>This option requires entering the generated access code before the screen can be viewed.</value></data>

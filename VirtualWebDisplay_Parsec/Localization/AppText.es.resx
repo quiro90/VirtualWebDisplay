@@ -60,7 +60,7 @@
   <data name="Tab_Placement_Duplicate" xml:space="preserve"><value>Pantalla Principal</value></data>
   <data name="Tab_Label_CaptureIntervalMs" xml:space="preserve"><value>Actualizar cada (ms):</value></data>
   <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Tiempo entre actualizaciones de la imagen. Para un movimiento fluido usá menos de 10 ms; para pantallas e-ink recomendamos más de 100 ms.</value></data>
-  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad JPEG:</value></data>
+  <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Calidad Imagen:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Número máximo de espectadores:</value></data>
   <data name="Tab_Label_TouchMode" xml:space="preserve"><value>Modo táctil:</value></data>
