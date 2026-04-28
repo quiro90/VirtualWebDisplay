@@ -148,51 +148,42 @@ internal sealed class ConfigurationFormPresenter
 
     private void ApplyTouchInputChange(string screenId, bool enabled)
     {
-        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen1.TouchInputEnabled = enabled;
-        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen2.TouchInputEnabled = enabled;
-        else
-            return;
-
-        _settingsStore.Save(_settings);
+        ApplyScreenPropertyChange(screenId, screen => screen.TouchInputEnabled = enabled);
     }
 
     private void ApplyTouchGestureHoldDelayChange(string screenId, int holdDelayMs)
     {
         var clamped = TouchGestureOptions.ClampHoldDelay(holdDelayMs);
-
-        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen1.TouchGestureHoldDelayMs = clamped;
-        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen2.TouchGestureHoldDelayMs = clamped;
-        else
-            return;
-
-        _settingsStore.Save(_settings);
+        ApplyScreenPropertyChange(screenId, screen => screen.TouchGestureHoldDelayMs = clamped);
     }
 
     private void ApplyTouchGesturesEnabledChange(string screenId, bool enabled)
     {
-        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen1.TouchGesturesEnabled = enabled;
-        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen2.TouchGesturesEnabled = enabled;
-        else
-            return;
-
-        _settingsStore.Save(_settings);
+        ApplyScreenPropertyChange(screenId, screen => screen.TouchGesturesEnabled = enabled);
     }
 
     private void ApplyTouchPreserveCursorChange(string screenId, bool enabled)
     {
+        ApplyScreenPropertyChange(screenId, screen => screen.TouchPreserveCursor = enabled);
+    }
+
+    /// <summary>
+    /// Método genérico para aplicar cambios a propiedades de las pantallas virtuales.
+    /// Evita duplicación de la lógica de resolución de screenId y guardado.
+    /// </summary>
+    private void ApplyScreenPropertyChange(string screenId, Action<VirtualScreenConfig> applyChange)
+    {
+        VirtualScreenConfig? targetScreen = null;
+
         if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen1.TouchPreserveCursor = enabled;
+            targetScreen = _settings.Screen1;
         else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
-            _settings.Screen2.TouchPreserveCursor = enabled;
-        else
+            targetScreen = _settings.Screen2;
+
+        if (targetScreen is null)
             return;
 
+        applyChange(targetScreen);
         _settingsStore.Save(_settings);
     }
 }

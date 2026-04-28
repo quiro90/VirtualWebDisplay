@@ -487,21 +487,27 @@ public sealed class ScreenTabControls
     private void UpdateState()
     {
         var enabled = IsTabEnabled();
+
+        // Controles que permanecen habilitados durante el servicio (ajustes en caliente)
+        var hotReloadControls = new Control[]
+        {
+            _windowsDisplayButton,
+            _touchInputCheckBox,
+            _touchPreserveCursorCheckBox,
+            _touchGesturesCheckBox,
+            _touchGestureInput,
+            _touchGestureSuffixLabel,
+            _touchSectionLabel,
+            _screenSecurityCodeTextBox,
+            _screenSecurityCodeToggleButton
+        };
+
         foreach (var control in _managedControls)
         {
             if (_serviceRunning)
             {
                 // Mientras el servicio corre, bloquea configuración pesada pero permite ajustes en caliente
-                // de touch/gestos y ver/copiar el código activo.
-                control.Enabled = control == _windowsDisplayButton
-                    || control == _touchInputCheckBox
-                    || control == _touchPreserveCursorCheckBox
-                    || control == _touchGesturesCheckBox
-                    || control == _touchGestureInput
-                    || control == _touchGestureSuffixLabel
-                    || control == _touchSectionLabel
-                    || control == _screenSecurityCodeTextBox
-                    || control == _screenSecurityCodeToggleButton;
+                control.Enabled = hotReloadControls.Contains(control);
             }
             else
             {
