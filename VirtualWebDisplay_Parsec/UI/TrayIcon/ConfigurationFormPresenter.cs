@@ -118,6 +118,8 @@ internal sealed class ConfigurationFormPresenter
         form.StartupConfirmed   += () => StartupConfirmed?.Invoke();
         form.Screen1TouchInputChanged += enabled => ApplyTouchInputChange("screen1", enabled);
         form.Screen2TouchInputChanged += enabled => ApplyTouchInputChange("screen2", enabled);
+        form.Screen1TouchGestureHoldDelayChanged += value => ApplyTouchGestureHoldDelayChange("screen1", value);
+        form.Screen2TouchGestureHoldDelayChanged += value => ApplyTouchGestureHoldDelayChange("screen2", value);
         return form;
     }
 
@@ -146,6 +148,20 @@ internal sealed class ConfigurationFormPresenter
             _settings.Screen1.TouchInputEnabled = enabled;
         else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
             _settings.Screen2.TouchInputEnabled = enabled;
+        else
+            return;
+
+        _settingsStore.Save(_settings);
+    }
+
+    private void ApplyTouchGestureHoldDelayChange(string screenId, int holdDelayMs)
+    {
+        var clamped = TouchGestureOptions.ClampHoldDelay(holdDelayMs);
+
+        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen1.TouchGestureHoldDelayMs = clamped;
+        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
+            _settings.Screen2.TouchGestureHoldDelayMs = clamped;
         else
             return;
 

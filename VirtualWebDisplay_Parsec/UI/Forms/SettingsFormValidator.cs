@@ -1,5 +1,4 @@
 using System.Windows.Forms;
-using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Localization;
 
@@ -19,18 +18,14 @@ internal static class SettingsFormValidator
     internal static bool TryBuild(
         string languageCode,
         string windowTheme,
-        int touchGestureHoldDelayMs,
         VirtualScreenConfig screen1Config,
         VirtualScreenConfig screen2Config,
         out VirtualWebDisplaySettings settings)
     {
-        var holdDelayMs = TouchGestureOptions.ClampHoldDelay(touchGestureHoldDelayMs);
-
         settings = new VirtualWebDisplaySettings
         {
             UiLanguage  = languageCode,
             WindowTheme = windowTheme,
-            TouchGestureHoldDelayMs = holdDelayMs,
             Screen1     = screen1Config,
             Screen2     = screen2Config,
         };

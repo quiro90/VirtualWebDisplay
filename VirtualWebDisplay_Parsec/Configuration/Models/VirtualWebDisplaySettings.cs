@@ -7,7 +7,6 @@ public sealed class VirtualWebDisplaySettings
 {
     public string UiLanguage { get; set; } = "en";
     public string WindowTheme { get; set; } = WindowThemeOptions.System;
-    public int TouchGestureHoldDelayMs { get; set; } = TouchGestureOptions.DefaultHoldDelayMs;
     public VirtualScreenConfig Screen1 { get; set; } = CreateScreen1Defaults();
     public VirtualScreenConfig Screen2 { get; set; } = CreateScreen2Defaults();
 
@@ -23,24 +22,8 @@ public sealed class VirtualWebDisplaySettings
 
         TransmissionModeOptions.EnsureValidSelection(Screen1);
         TransmissionModeOptions.EnsureValidSelection(Screen2);
-
-        var screen1HoldDelay = TouchGestureOptions.ClampHoldDelay(Screen1.TouchGestureHoldDelayMs);
-        var screen2HoldDelay = TouchGestureOptions.ClampHoldDelay(Screen2.TouchGestureHoldDelayMs);
-        var globalHoldDelay = TouchGestureOptions.ClampHoldDelay(TouchGestureHoldDelayMs);
-
-        // Migracion backward-compatible: si el valor global aun estaba en default pero existia
-        // un valor no-default en algun ScreenConfig, tomamos ese valor como global.
-        if (globalHoldDelay == TouchGestureOptions.DefaultHoldDelayMs)
-        {
-            if (screen1HoldDelay != TouchGestureOptions.DefaultHoldDelayMs)
-                globalHoldDelay = screen1HoldDelay;
-            else if (screen2HoldDelay != TouchGestureOptions.DefaultHoldDelayMs)
-                globalHoldDelay = screen2HoldDelay;
-        }
-
-        TouchGestureHoldDelayMs = globalHoldDelay;
-        Screen1.TouchGestureHoldDelayMs = globalHoldDelay;
-        Screen2.TouchGestureHoldDelayMs = globalHoldDelay;
+        Screen1.TouchGestureHoldDelayMs = TouchGestureOptions.ClampHoldDelay(Screen1.TouchGestureHoldDelayMs);
+        Screen2.TouchGestureHoldDelayMs = TouchGestureOptions.ClampHoldDelay(Screen2.TouchGestureHoldDelayMs);
 
         // Asignar puerto por defecto solo si no está configurado.
         // Los puertos configurados por el usuario se respetan.

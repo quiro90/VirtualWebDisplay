@@ -33,6 +33,9 @@ public sealed class ScreenTabControls
     private readonly ThemedNumericUpDown _maxViewersInput;
     private readonly Label _touchInputLabel;
     private readonly CheckBox _touchInputCheckBox;
+    private readonly Label _touchGestureLabel;
+    private readonly ThemedNumericUpDown _touchGestureInput;
+    private readonly Label _touchGestureSuffixLabel;
     private readonly CheckBox _screenSecurityCheckBox;
     private readonly TextBox _screenSecurityCodeTextBox;
     private readonly Button _screenSecurityCodeToggleButton;
@@ -47,6 +50,7 @@ public sealed class ScreenTabControls
     private bool _serviceRunning;
 
     public event Action<bool>? TouchInputChanged;
+    public event Action<int>? TouchGestureHoldDelayChanged;
 
     public ScreenTabControls(
         string title,
@@ -194,21 +198,38 @@ public sealed class ScreenTabControls
         _maxViewersLabel = CreateLabel(AppText.Get("Tab_Label_MaxViewers"), 14, currentTop + 3);
         _maxViewersInput = new ThemedNumericUpDown
         {
-            Left = 334,
+            Left = 248,
             Top = currentTop,
             Width = 62,
             Minimum = 0,
             Maximum = 99,
         };
 
-        _touchInputLabel = CreateLabel(AppText.Get("Tab_Label_TouchInput"), 404, currentTop + 3);
+        currentTop += 28;
+
+        // Fila 6: Tactil + Gestos (ms)
+        _touchInputLabel = CreateLabel(AppText.Get("Tab_Label_TouchInput"), 300, currentTop + 3);
         _touchInputCheckBox = new CheckBox
         {
-            Left = 448,
+            Left = 344,
             Top = currentTop + 1,
-            Width = 56,
+            Width = 44,
             Text = AppText.Get("Tab_Touch_No"),
         };
+
+        _touchGestureLabel = CreateLabel(AppText.Get("Tab_Label_TouchGestures"), 392, currentTop + 3);
+        _touchGestureInput = new ThemedNumericUpDown
+        {
+            Left = 446,
+            Top = currentTop,
+            Width = 44,
+            Minimum = TouchGestureOptions.MinHoldDelayMs,
+            Maximum = TouchGestureOptions.MaxHoldDelayMs,
+            DecimalPlaces = 0,
+            Increment = 10M,
+        };
+
+        _touchGestureSuffixLabel = CreateLabel("ms", 492, currentTop + 3);
 
         currentTop += 28;
 
@@ -277,6 +298,9 @@ public sealed class ScreenTabControls
             _maxViewersInput,
             _touchInputLabel,
             _touchInputCheckBox,
+            _touchGestureLabel,
+            _touchGestureInput,
+            _touchGestureSuffixLabel,
             _screenSecurityCheckBox,
             _screenSecurityCodeTextBox,
             _screenSecurityCodeToggleButton,
@@ -306,6 +330,11 @@ public sealed class ScreenTabControls
             UpdateState();
             TouchInputChanged?.Invoke(_touchInputCheckBox.Checked);
         };
+        _touchGestureInput.ValueChanged += (_, _) =>
+        {
+            UpdateState();
+            TouchGestureHoldDelayChanged?.Invoke((int)_touchGestureInput.Value);
+        };
         _screenSecurityCheckBox.CheckedChanged += (_, _) => UpdateState();
     }
 
@@ -325,6 +354,7 @@ public sealed class ScreenTabControls
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
         _touchInputLabel.Text = AppText.Get("Tab_Label_TouchInput");
+        _touchGestureLabel.Text = AppText.Get("Tab_Label_TouchGestures");
         _accessUrlPrefixLabel.Text = AppText.Get("Tab_AccessUrlPrefix");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
@@ -355,6 +385,7 @@ public sealed class ScreenTabControls
         config.JpegQuality = _jpegQualitySlider.Value;
         config.MaxViewers = (int)_maxViewersInput.Value;
         config.TouchInputEnabled = _touchInputCheckBox.Checked;
+        config.TouchGestureHoldDelayMs = (int)_touchGestureInput.Value;
         config.ScreenSecurityEnabled = _screenSecurityCheckBox.Checked;
         config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
         config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
@@ -375,6 +406,7 @@ public sealed class ScreenTabControls
         _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
         _maxViewersInput.Value = Math.Clamp(config.MaxViewers, 0, 99);
         _touchInputCheckBox.Checked = config.TouchInputEnabled;
+        _touchGestureInput.Value = Math.Clamp(config.TouchGestureHoldDelayMs, _touchGestureInput.Minimum, _touchGestureInput.Maximum);
         _screenSecurityCheckBox.Checked = config.ScreenSecurityEnabled;
 
         var normalizedPlacement = VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement);
@@ -400,9 +432,13 @@ public sealed class ScreenTabControls
         {
             if (_serviceRunning)
             {
-                // Mientras el servicio corre, bloquea configuración pero permite ver/copiar el código activo.
+                // Mientras el servicio corre, bloquea configuración pesada pero permite ajustes en caliente
+                // de touch/gestos y ver/copiar el código activo.
                 control.Enabled = control == _windowsDisplayButton
                     || control == _touchInputCheckBox
+                    || control == _touchGestureInput
+                    || control == _touchGestureLabel
+                    || control == _touchGestureSuffixLabel
                     || control == _screenSecurityCodeTextBox
                     || control == _screenSecurityCodeToggleButton;
             }
@@ -496,6 +532,7 @@ public sealed class ScreenTabControls
         SetHelpToolTip(AppText.Get("Tab_Help_Placement"), _placementLabel, _placementCombo);
         SetHelpToolTip(AppText.Get("Tab_Help_CaptureInterval"), _captureIntervalLabel, _captureIntervalInput);
         SetHelpToolTip(AppText.Get("Tab_Help_MaxViewers"), _maxViewersLabel, _maxViewersInput);
+        SetHelpToolTip(AppText.Get("Tab_Help_TouchGestures"), _touchGestureLabel, _touchGestureInput, _touchGestureSuffixLabel);
         SetHelpToolTip(AppText.Get("Tab_Help_ScreenSecurity"), _screenSecurityCheckBox, _screenSecurityCodeTextBox, _screenSecurityCodeToggleButton);
         SetHelpToolTip(AppText.Get("Tab_Help_AccessUrl"), _accessUrlPrefixLabel, _httpUrlLink);
     }

@@ -21,9 +21,6 @@ public sealed class ResolutionConfigurationForm : Form
     private readonly ScreenTabControls _screen2Controls;
     private readonly ModernTabControl _tabs;
     private readonly CheckBox _enableScreen2Check;
-    private readonly Label _gestureHoldLabel;
-    private readonly ThemedNumericUpDown _gestureHoldInput;
-    private readonly Label _gestureHoldSuffixLabel;
     private readonly Button _acceptButton;
     private readonly Button _cancelButton;
     private readonly Panel _titleBarPanel;
@@ -53,6 +50,8 @@ public sealed class ResolutionConfigurationForm : Form
     public event Action? StopRequested;
     public event Action<bool>? Screen1TouchInputChanged;
     public event Action<bool>? Screen2TouchInputChanged;
+    public event Action<int>? Screen1TouchGestureHoldDelayChanged;
+    public event Action<int>? Screen2TouchGestureHoldDelayChanged;
 
     private string AcceptButtonText => _wasStarted
         ? (_serviceActionPending ? AppText.Get("Form_Config_Accept_Stopping") : AppText.Get("Form_Config_Accept_Stop"))
@@ -164,35 +163,6 @@ public sealed class ResolutionConfigurationForm : Form
             Text = AppText.Get("Form_Config_EnableScreen2"),
         };
 
-        _gestureHoldLabel = new Label
-        {
-            AutoSize = true,
-            Left = 304,
-            Top = 61,
-            Text = AppText.Get("Form_Config_GestureHoldLabel"),
-        };
-
-        _gestureHoldInput = new ThemedNumericUpDown
-        {
-            Left = 400,
-            Top = 56,
-            Width = 58,
-            Minimum = TouchGestureOptions.MinHoldDelayMs,
-            Maximum = TouchGestureOptions.MaxHoldDelayMs,
-            DecimalPlaces = 0,
-            Increment = 10,
-        };
-
-        _gestureHoldSuffixLabel = new Label
-        {
-            AutoSize = true,
-            Left = 464,
-            Top = 61,
-            Text = "ms",
-        };
-
-        _gestureHoldInput.Value = Math.Clamp(workingCopy.TouchGestureHoldDelayMs, _gestureHoldInput.Minimum, _gestureHoldInput.Maximum);
-
         _tabs = new ModernTabControl
         {
             Left = 18,
@@ -242,7 +212,7 @@ public sealed class ResolutionConfigurationForm : Form
         _cancelButton.Click += (_, _) => Close();
 
         _titleBarPanel.Controls.AddRange([_titleLabel, _configurationButton, _closeButton]);
-        Controls.AddRange([_titleBarPanel, _enableScreen2Check, _gestureHoldLabel, _gestureHoldInput, _gestureHoldSuffixLabel, _tabs, _acceptButton, _cancelButton]);
+        Controls.AddRange([_titleBarPanel, _enableScreen2Check, _tabs, _acceptButton, _cancelButton]);
 
         AcceptButton = _acceptButton;
         CancelButton = _cancelButton;
@@ -252,6 +222,8 @@ public sealed class ResolutionConfigurationForm : Form
         _enableScreen2Check.CheckedChanged += (_, _) => _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
         _screen1Controls.TouchInputChanged += enabled => Screen1TouchInputChanged?.Invoke(enabled);
         _screen2Controls.TouchInputChanged += enabled => Screen2TouchInputChanged?.Invoke(enabled);
+        _screen1Controls.TouchGestureHoldDelayChanged += value => Screen1TouchGestureHoldDelayChanged?.Invoke(value);
+        _screen2Controls.TouchGestureHoldDelayChanged += value => Screen2TouchGestureHoldDelayChanged?.Invoke(value);
 
         ApplyLocalization();
         ApplyTheme();
@@ -310,7 +282,6 @@ public sealed class ResolutionConfigurationForm : Form
         SettingsFormValidator.TryBuild(
             _selectedLanguageCode,
             _selectedWindowTheme,
-            (int)_gestureHoldInput.Value,
             _screen1Controls.BuildConfig(alwaysEnabled: true),
             _screen2Controls.BuildConfig(alwaysEnabled: false),
             out selection);
@@ -350,7 +321,6 @@ public sealed class ResolutionConfigurationForm : Form
         Text = _isInitialStartup ? AppText.Get("Form_Config_TitleStartup") : AppText.Get("Form_Config_Title");
         _titleLabel.Text = AppText.Get("Common_AppDisplayName");
         _enableScreen2Check.Text = AppText.Get("Form_Config_EnableScreen2");
-        _gestureHoldLabel.Text = AppText.Get("Form_Config_GestureHoldLabel");
 
         _screen1Controls.TabPage.Text = AppText.Get("Form_Config_Tab_Screen1");
         _screen2Controls.TabPage.Text = AppText.Get("Form_Config_Tab_Screen2");
@@ -453,9 +423,6 @@ public sealed class ResolutionConfigurationForm : Form
     private void SetConfigurationControlsLocked(bool locked)
     {
         _enableScreen2Check.Enabled = !locked;
-        _gestureHoldLabel.Enabled = !locked;
-        _gestureHoldInput.Enabled = !locked;
-        _gestureHoldSuffixLabel.Enabled = !locked;
         _screen1Controls.SetServiceRunning(locked);
         _screen2Controls.SetServiceRunning(locked);
     }

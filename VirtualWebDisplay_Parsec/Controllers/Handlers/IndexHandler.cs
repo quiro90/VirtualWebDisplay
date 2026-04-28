@@ -36,30 +36,17 @@ internal static class IndexHandler
             return Results.Content(securityPageTemplate.Generate(runtime, ctx), "text/html");
 
         var browserImageFit = RuntimeAccessHelper.NormalizeBrowserImageFit(runtime.Config.BrowserImageFit);
+        var parameters = new Dictionary<string, object>
+        {
+            ["title"] = runtime.DisplayName,
+            ["browserImageFit"] = browserImageFit,
+            ["intervalMs"] = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
+            ["gestureHoldDelayMs"] = runtime.Config.TouchGestureHoldDelayMs,
+        };
 
-        string html;
-        if (TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod))
-        {
-            var parameters = new Dictionary<string, object>
-            {
-                ["title"]           = runtime.DisplayName,
-                ["browserImageFit"] = browserImageFit,
-                ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
-                ["gestureHoldDelayMs"] = runtime.Config.TouchGestureHoldDelayMs,
-            };
-            html = webImageTemplate.Generate(parameters);
-        }
-        else
-        {
-            var parameters = new Dictionary<string, object>
-            {
-                ["title"]           = runtime.DisplayName,
-                ["browserImageFit"] = browserImageFit,
-                ["intervalMs"]      = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
-                ["gestureHoldDelayMs"] = runtime.Config.TouchGestureHoldDelayMs,
-            };
-            html = rtcTemplate.Generate(parameters);
-        }
+        var html = TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod)
+            ? webImageTemplate.Generate(parameters)
+            : rtcTemplate.Generate(parameters);
 
         return Results.Content(html, "text/html");
     }
