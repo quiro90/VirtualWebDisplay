@@ -100,6 +100,7 @@ internal static class InputHandler
             var action = (request.Action ?? string.Empty).ToLowerInvariant();
             if (string.IsNullOrEmpty(action))
             {
+                // Compatibilidad backward con clientes antiguos que solo enviaban Type.
                 if (!ProcessLegacyEvent(request, desktopX, desktopY))
                 {
                     RegisterError();
@@ -273,7 +274,7 @@ internal static class InputHandler
     /// <summary>
     /// Procesa evento touchmove: mueve el cursor sin hacer click.
     /// </summary>
-    private static void ProcessTouchMove(int screenX, int screenY)
+    private static void ProcessTouchMove()
     {
         // Intencionalmente no movemos el cursor real del PC durante touchmove.
         // Este comportamiento prioriza no desplazar el puntero local del usuario.
@@ -296,7 +297,7 @@ internal static class InputHandler
                 ProcessTouchStart(desktopX, desktopY, request.Fingers);
                 return true;
             case "touchmove":
-                ProcessTouchMove(desktopX, desktopY);
+                ProcessTouchMove();
                 return true;
             case "touchend":
                 ProcessTouchEnd();

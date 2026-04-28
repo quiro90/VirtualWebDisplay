@@ -249,8 +249,8 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Envia un evento de rueda de scroll. deltaY positivo = abajo, negativo = arriba.
-    /// Windows WHEEL usa unidades WHEEL_DELTA (120 = un notch); escalamos desde pixeles.
+    /// Envia un evento de rueda de scroll a partir de delta tactil vertical.
+    /// Esta configurado en modo "natural invertido" segun preferencia: arrastre hacia abajo => scroll arriba.
     /// </summary>
     public static void ScrollWheel(int deltaY)
     {

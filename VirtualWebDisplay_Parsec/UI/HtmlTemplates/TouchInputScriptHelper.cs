@@ -117,6 +117,24 @@ internal static class TouchInputScriptHelper
                     });
                 }
 
+                function sendEndAction(action, now) {
+                    sendTouchInput({
+                        type: 'touchend',
+                        action: action,
+                        timestamp: now
+                    });
+                }
+
+                function sendEndForCurrentMode(now) {
+                    if (state.mode === 'drag') {
+                        sendEndAction('dragend', now);
+                        return;
+                    }
+
+                    if (state.mode === 'scroll')
+                        sendEndAction('scrollend', now);
+                }
+
                 function clearHoldTimer() {
                     if (state.holdTimer) {
                         clearTimeout(state.holdTimer);
@@ -201,13 +219,8 @@ internal static class TouchInputScriptHelper
                     interactionActive = true;
 
                     if (fingerCount >= 2) {
-                        if (state.mode === 'drag') {
-                            sendTouchInput({
-                                type: 'touchend',
-                                action: 'dragend',
-                                timestamp: now
-                            });
-                        }
+                        if (state.mode === 'drag')
+                            sendEndAction('dragend', now);
 
                         startTwoFingerPending(e.touches, rect, now);
                         return;
@@ -292,22 +305,14 @@ internal static class TouchInputScriptHelper
                     recentLocalEvents.push(now);
 
                     if (state.mode === 'drag') {
-                        sendTouchInput({
-                            type: 'touchend',
-                            action: 'dragend',
-                            timestamp: now
-                        });
+                        sendEndAction('dragend', now);
                         resetState();
                         return;
                     }
 
                     if (state.mode === 'scroll') {
                         if (e.touches.length < 2) {
-                            sendTouchInput({
-                                type: 'touchend',
-                                action: 'scrollend',
-                                timestamp: now
-                            });
+                            sendEndAction('scrollend', now);
                             resetState();
                         }
                         return;
@@ -346,21 +351,7 @@ internal static class TouchInputScriptHelper
                     if (!interactionActive)
                         return;
 
-                    if (state.mode === 'drag') {
-                        sendTouchInput({
-                            type: 'touchend',
-                            action: 'dragend',
-                            timestamp: Date.now()
-                        });
-                    }
-
-                    if (state.mode === 'scroll') {
-                        sendTouchInput({
-                            type: 'touchend',
-                            action: 'scrollend',
-                            timestamp: Date.now()
-                        });
-                    }
+                    sendEndForCurrentMode(Date.now());
 
                     resetState();
                 }
@@ -369,21 +360,7 @@ internal static class TouchInputScriptHelper
                     if (!interactionActive)
                         return;
 
-                    if (state.mode === 'drag') {
-                        sendTouchInput({
-                            type: 'touchend',
-                            action: 'dragend',
-                            timestamp: Date.now()
-                        });
-                    }
-
-                    if (state.mode === 'scroll') {
-                        sendTouchInput({
-                            type: 'touchend',
-                            action: 'scrollend',
-                            timestamp: Date.now()
-                        });
-                    }
+                    sendEndForCurrentMode(Date.now());
 
                     resetState();
                 }
