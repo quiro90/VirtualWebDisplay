@@ -76,14 +76,10 @@
   <data name="Tab_Label_TouchMode" xml:space="preserve"><value>Touch mode:</value></data>
   <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Tap only (cursor not affected)</value></data>
   <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestures (cursor affected)</value></data>
-  <data name="Tab_TouchInput_Enabled" xml:space="preserve"><value>Touch</value></data>
-  <data name="Tab_TouchInput_Disabled" xml:space="preserve"><value>Normal</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Touch Input</value></data>
   <data name="Tab_Help_TouchMode" xml:space="preserve"><value>Tap only: clicks without moving cursor, no drag/scroll. Gestures: enables drag/scroll but cursor moves to touch location.</value></data>
   <data name="Tab_Help_TouchGestures" xml:space="preserve"><value>Hold time for touch gestures. Lower values react faster; higher values reduce accidental drags/scroll.</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>This is the maximum number of devices allowed to watch your screen stream. If it is 0, the limit is disabled.</value></data>
-  <data name="Tab_AccessUrlPrefix" xml:space="preserve"><value>Access at:</value></data>
-  <data name="Tab_Help_AccessUrl" xml:space="preserve"><value>This is your local network address. From a device connected to the same Wi-Fi network, you should be able to view your virtual desktop.</value></data>
 
   <data name="About_Title" xml:space="preserve"><value>About Virtual Web Display</value></data>
   <data name="About_Subtitle" xml:space="preserve"><value>Your virtual desktop, available on any device connected to the same local network.</value></data>
