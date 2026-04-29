@@ -128,10 +128,19 @@ graph TB
   - `CustomModesDialog`: Diálogo para editar los 5 slots de resolución personalizada del driver Parsec VDD. Incluye flujo UAC automático
   - `FormThemeApplicator`: Theming centralizado. `TryCreateUiFont()` centraliza la fuente UI. Soporta `Tag="preserve-color"` en paneles para preservar colores intencionales
   - `InstallDialog`: Diálogo de instalación del driver Parsec VDD
-  - `IHtmlTemplate`: Interfaz base para generadores de HTML
-  - `WebImagePageTemplate`: Generación HTML modo JPEG polling
-  - `RtcPageTemplate`: Generación HTML modo WebRTC
-- **Patrones**: STA Threading, Observer (eventos de formularios), Template Method (HTML generators)
+  - **HTML Templates**:
+    - `IHtmlTemplate`: Interfaz base para generadores de HTML
+    - `WebImagePageTemplate`: Generación HTML modo JPEG polling (usa archivos JS externos)
+    - `RtcPageTemplate`: Generación HTML modo WebRTC (usa archivos JS externos)
+    - `TemplateVersionHelper`: Versionado dinámico sincronizado con ensamblado
+    - `TemplateParameterHelper`: Procesamiento centralizado de parámetros (DRY)
+  - **JavaScript Modules** (`wwwroot/js/`):
+    - `logger.js`: Sistema de logging configurable (5 niveles: SILENT/ERROR/WARN/INFO/DEBUG)
+    - `keepalive.js`: Señal keep-alive para mantener sesión activa
+    - `touch-input.js`: Entrada táctil con gestos (tap, hold-to-drag, scroll)
+    - `webimage-client.js`: Cliente JPEG polling con viewport tracking
+    - `webrtc-client.js`: Cliente WebRTC con reensamblado de frames chunkeados
+- **Patrones**: STA Threading, Observer (eventos de formularios), Template Method (HTML generators), Module Pattern (JavaScript)
 
 #### 2. **Web Layer & Controllers** (Entry Point)
 - **Propósito**: Servidor HTTP/HTTPS que expone la aplicación vía web, con helpers de acceso y autorización
@@ -162,7 +171,10 @@ graph TB
   - `TransmissionModeOptions`: Enum para modo de transmisión (WebImage, RTC)
   - `VirtualDisplayPlacementOptions`: Enum para posición de pantalla (Right, Left, Above, Below)
   - `VirtualDisplayProfiles`: Resoluciones predefinidas
-- **Patrones**: Repository (VirtualScreenSettingsStore), Value Objects (enums)
+  - `TouchInputConstants`: Constantes centralizadas compartidas entre C# y JavaScript (DRY)
+    - TapMaxMovePx, DragStaleTimeoutMs, MinThrottleMs, etc.
+    - Single source of truth para valores sincronizados
+- **Patrones**: Repository (VirtualScreenSettingsStore), Value Objects (enums), Constants (TouchInputConstants)
 
 #### 4. **Streaming Layer** (`Streaming/`)
 - **Propósito**: Captura de pantalla y transmisión de video
@@ -198,15 +210,18 @@ graph TB
     - **Single Source of Truth**: Única fuente de verdad para el estado del servicio
     - **Métodos**: `RequestStart()`, `RequestStop()`, `CompleteStart()`, `CompleteStop()`
   - `ApplicationLifecycleManager`: Loop principal de arranque/parada del servicio
+    - Configura middleware de archivos estáticos (`app.UseStaticFiles()`)
+    - Sirve archivos JavaScript desde `/wwwroot/`
   - `ScreenRuntimeContext`: Contenedor que agrega DisplayManager + CaptureService + WebRtcStreamService
   - `NetworkAddressHelper`: Obtiene dirección IP local
   - `LocalCertificateProvider`: Genera/obtiene certificado SSL autofirmado
   - `SingleInstanceManager`: Previene múltiples instancias de la aplicación (mutex)
   - `RuntimeStartupHelper`: Inicializa runtimes (crea displays virtuales, asigna monitor index, arranca servicios)
   - `RuntimeAccessHelper`: Helpers estáticos para resolución runtime, autorización, cookies, normalización de config
+    - **Bugfix crítico**: Resuelve runtime correctamente para HTTP y HTTPS (puerto + puerto+1)
   - `RuntimeCleanupHelper`: Helpers estáticos para disposal ordenado y waits de remoción de displays
 - **Métodos Principales** (RuntimeAccessHelper):
-  - `ResolveRuntime(HttpContext, IReadOnlyList<ScreenRuntimeContext>)`: Encuentra runtime por puerto local
+  - `ResolveRuntime(HttpContext, IReadOnlyList<ScreenRuntimeContext>)`: Encuentra runtime por puerto local (HTTP) o puerto+1 (HTTPS)
   - `IsAuthorized(HttpContext, ScreenRuntimeContext)`: Verifica autorización del cliente
   - `SecurityCookieName(ScreenRuntimeContext)`: Genera nombre de cookie autofirmado
   - `ResolveViewerKey(HttpContext, ScreenRuntimeContext)`: Obtiene clave de viewer (cookie o IP)
@@ -750,28 +765,50 @@ Browser reensambla chunks con mismo `frameId` → Blob → `createObjectURL` →
 
 ---
 
-### 6. **Templates HTML vs. Embedded Strings**
+### 6. **Templates HTML y JavaScript Modular**
 
-**Decisión**: Extraer HTML a clases template (`IHtmlTemplate`, `WebImagePageTemplate`, `RtcPageTemplate`).
+**Decisión**: Extraer HTML a clases template (`IHtmlTemplate`) y JavaScript a archivos externos modulares (`/wwwroot/js/`).
 
 **Rationale**:
-- **Separación de Concerns**: Lógica de presentación fuera de Program.cs
-- **Mantenibilidad**: Cambios de UI no requieren modificar código de servidor
-- **Testabilidad**: Templates pueden ser probados independientemente
-- **Extensibilidad**: Fácil agregar nuevos templates (ej: modo H.264 futuro)
+- **Separación de Concerns**: Lógica de presentación fuera de Program.cs, JavaScript fuera de C#
+- **Mantenibilidad**: Cambios de UI/JavaScript no requieren modificar código de servidor ni recompilar
+- **Testabilidad**: Templates y módulos JavaScript pueden ser probados independientemente
+- **Extensibilidad**: Fácil agregar nuevos templates o módulos (ej: modo H.264 futuro)
+- **Tooling**: JavaScript externo permite ESLint, syntax highlighting, auto-complete
+- **Performance**: Archivos JavaScript cacheables por navegador, versionado dinámico evita cache stale
 
-**Antes**:
+**Antes (JavaScript Embebido)**:
 ```csharp
-var html = @"<!DOCTYPE html><html>..."; // 228 líneas en Program.cs
+// TouchInputScriptHelper.cs - 600 líneas de JavaScript embebido en string C#
+public static string GenerateTouchInputScript(int screenId, ...)
+{
+    return @"
+        (function() {
+            var tapMaxMovePx = 14; // Constante hardcoded
+            var dragStaleTimeoutMs = 1200; // Constante hardcoded
+            ...
+        })();
+    ";
+}
 ```
 
-**Después**:
+**Después (JavaScript Modular)**:
 ```csharp
-var template = transmissionMode == RTC 
-    ? new RtcPageTemplate() 
-    : new WebImagePageTemplate();
-var html = template.Generate(config, addresses, port);
+// WebImagePageTemplate.cs - Referencias a archivos externos versionados
+var html = $$"""
+    <script src="/js/common/logger.js?v={{version}}"></script>
+    <script src="/js/common/keepalive.js?v={{version}}"></script>
+    <script src="/js/touch/touch-input.js?v={{version}}"></script>
+    <script src="/js/webimage/webimage-client.js?v={{version}}"></script>
+    """;
 ```
+
+**Mejoras Adicionales**:
+- **Versionado Dinámico**: `TemplateVersionHelper.AppVersion` sincronizado con ensamblado (cache busting automático)
+- **DRY en Parámetros**: `TemplateParameterHelper` consolida procesamiento (title, intervals, throttling) - reducción 47% duplicación
+- **Constantes Centralizadas**: `TouchInputConstants.cs` single source of truth para valores compartidos entre C# y JavaScript
+- **ESLint**: Análisis estático de código JavaScript (0 errores, 0 warnings)
+- **Middleware Estáticos**: `app.UseStaticFiles()` en `ApplicationLifecycleManager` sirve `/wwwroot/` automáticamente
 
 ---
 

@@ -730,7 +730,7 @@ else
 
 **Prevención de eventos nativos**:
 ```javascript
-// En TouchInputScriptHelper.cs
+// En wwwroot/js/touch/touch-input.js
 canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
 canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -748,11 +748,11 @@ canvas.addEventListener('dragstart', (e) => e.preventDefault());
 
 **Implementación**:
 ```javascript
-// Inversión en el cliente (TouchInputScriptHelper.cs)
+// Inversión en el cliente (wwwroot/js/touch/touch-input.js)
 const deltaX = -(currentX - lastX);  // Invertido
 const deltaY = -(currentY - lastY);  // Invertido
 
-// Backend traduce a scroll de Windows (InputHandler.cs)
+// Backend traduce a scroll de Windows (Controllers/Handlers/InputHandler.cs)
 MouseInputHelper.Scroll(deltaX, deltaY);
 ```
 

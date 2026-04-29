@@ -85,8 +85,21 @@ VirtualWebDisplay_Parsec/
 │       ├── IHtmlTemplate.cs
 │       ├── WebImagePageTemplate.cs
 │       ├── RtcPageTemplate.cs
-│       ├── SecurityPageTemplate.cs              ← Fase 2
-│       └── ViewerLimitPageTemplate.cs           ← Fase 2
+│       ├── TemplateVersionHelper.cs           ← Versionado dinámico
+│       ├── TemplateParameterHelper.cs         ← DRY parámetros
+│       ├── SecurityPageTemplate.cs
+│       └── ViewerLimitPageTemplate.cs
+├── wwwroot/                                    ← Archivos estáticos
+│   └── js/                                     ← JavaScript modular
+│       ├── common/
+│       │   ├── logger.js                       ← Sistema logging 5 niveles
+│       │   └── keepalive.js                    ← Señal keep-alive
+│       ├── touch/
+│       │   └── touch-input.js                  ← Entrada táctil con gestos
+│       ├── webimage/
+│       │   └── webimage-client.js              ← Cliente JPEG polling
+│       └── webrtc/
+│           └── webrtc-client.js                ← Cliente WebRTC
 ├── Configuration/
 │   ├── Models/
 │   │   ├── VirtualScreenConfig.cs
@@ -94,6 +107,7 @@ VirtualWebDisplay_Parsec/
 │   ├── VirtualScreenSettingsStore.cs
 │   ├── VirtualDisplayProfiles.cs
 │   ├── TransmissionModeOptions.cs
+│   ├── TouchInputConstants.cs                  ← Constantes centralizadas
 │   └── VirtualDisplayPlacementOptions.cs
 ├── Parsec/
 │   └── VirtualDisplayManager.cs
@@ -226,6 +240,61 @@ Archivo: `Properties\launchSettings.json`
   }
 }
 ```
+
+### Desarrollo de JavaScript
+
+El proyecto incluye **5 módulos JavaScript** servidos desde `/wwwroot/js/`:
+
+#### Estructura de Módulos
+
+```
+wwwroot/js/
+├── common/
+│   ├── logger.js          (140 líneas) - Sistema logging 5 niveles
+│   └── keepalive.js       (90 líneas)  - Señal keep-alive
+├── touch/
+│   └── touch-input.js     (580 líneas) - Entrada táctil con gestos
+├── webimage/
+│   └── webimage-client.js (160 líneas) - Cliente JPEG polling
+└── webrtc/
+    └── webrtc-client.js   (300 líneas) - Cliente WebRTC
+```
+
+#### ESLint para JavaScript
+
+**Configuración automática** mediante `package.json` y `.eslintrc.json`.
+
+**Ejecutar análisis**:
+```powershell
+# Desde raíz del proyecto (requiere Node.js instalado)
+npm install        # Primera vez (instala ESLint)
+npm run lint       # Analizar código
+npm run lint:fix   # Corregir automáticamente
+```
+
+**Reglas aplicadas**:
+- Indent: 4 espacios
+- Quotes: Single quotes
+- Semicolons: Requeridos
+- Equality: Strict (===)
+- Curly braces: Requeridas
+
+**DevTools para debugging JavaScript**:
+1. Abrir navegador en `https://localhost:5001`
+2. Presionar `F12` (Chrome DevTools)
+3. Console tab: Ver logs (Logger.js emite mensajes con niveles)
+4. Sources tab: Poner breakpoints en módulos JavaScript
+5. Network tab: Verificar carga de archivos `.js?v=X.X.X`
+
+#### Logger Configurable
+
+En `logger.js`, ajustar nivel de log editando línea:
+```javascript
+// Niveles: 0=SILENT, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG
+const DEFAULT_LEVEL = window.location.hostname === 'localhost' ? 4 : 2;
+```
+
+Producción (4=DEBUG) → Desarrollo (2=WARN).
 
 ### Breakpoints Recomendados
 
