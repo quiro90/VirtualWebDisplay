@@ -100,14 +100,42 @@ internal sealed class ConfigurationFormPresenter
 
     private void OnServiceStarted(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
-        _startupForm?.NotifyServiceStarted(screenRuntimes);
-        _configForm?.NotifyServiceStarted(screenRuntimes);
+        // Invocar en UI thread para evitar cross-thread exceptions
+        if (_startupForm is not null && !_startupForm.IsDisposed)
+        {
+            if (_startupForm.InvokeRequired)
+                _startupForm.BeginInvoke(() => _startupForm.NotifyServiceStarted(screenRuntimes));
+            else
+                _startupForm.NotifyServiceStarted(screenRuntimes);
+        }
+
+        if (_configForm is not null && !_configForm.IsDisposed)
+        {
+            if (_configForm.InvokeRequired)
+                _configForm.BeginInvoke(() => _configForm.NotifyServiceStarted(screenRuntimes));
+            else
+                _configForm.NotifyServiceStarted(screenRuntimes);
+        }
     }
 
     private void OnServiceStopped()
     {
-        _startupForm?.NotifyServiceStopped();
-        _configForm?.NotifyServiceStopped();
+        // Invocar en UI thread para evitar cross-thread exceptions
+        if (_startupForm is not null && !_startupForm.IsDisposed)
+        {
+            if (_startupForm.InvokeRequired)
+                _startupForm.BeginInvoke(() => _startupForm.NotifyServiceStopped());
+            else
+                _startupForm.NotifyServiceStopped();
+        }
+
+        if (_configForm is not null && !_configForm.IsDisposed)
+        {
+            if (_configForm.InvokeRequired)
+                _configForm.BeginInvoke(() => _configForm.NotifyServiceStopped());
+            else
+                _configForm.NotifyServiceStopped();
+        }
     }
 
     // ── Factory ───────────────────────────────────────────────────────────────

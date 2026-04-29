@@ -83,6 +83,9 @@ internal static class ApplicationLifecycleManager
 
             if (stopRequested)
             {
+                // Notificar que el servicio se detuvo
+                tray.NotifyServiceStopped();
+
                 var startAgain = await tray.WaitForServiceStartAsync();
                 if (startAgain)
                 {

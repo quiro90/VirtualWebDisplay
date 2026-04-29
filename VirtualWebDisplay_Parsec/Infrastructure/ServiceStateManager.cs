@@ -55,11 +55,12 @@ internal sealed class ServiceStateManager
 
     /// <summary>
     /// Completa la transición a 'Started' y registra los runtimes activos.
-    /// Solo válido desde Starting.
+    /// Válido desde Starting (reinicio) o Stopped (inicio inicial).
     /// </summary>
     public void CompleteStart(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
-        if (_currentState != ServiceState.Starting)
+        // Permitir transición desde Stopped (startup inicial) o Starting (restart)
+        if (_currentState is not (ServiceState.Stopped or ServiceState.Starting))
             return;
 
         _screenRuntimes = screenRuntimes ?? [];
@@ -69,11 +70,12 @@ internal sealed class ServiceStateManager
 
     /// <summary>
     /// Completa la transición a 'Stopped' y limpia los runtimes.
-    /// Solo válido desde Stopping.
+    /// Válido desde Stopping (detención solicitada) o Started (detención forzada/error).
     /// </summary>
     public void CompleteStop()
     {
-        if (_currentState != ServiceState.Stopping)
+        // Permitir transición desde Started (detención abrupta) o Stopping (detención normal)
+        if (_currentState is ServiceState.Stopped)
             return;
 
         _screenRuntimes = [];

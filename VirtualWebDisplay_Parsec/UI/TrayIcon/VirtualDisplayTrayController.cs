@@ -85,8 +85,14 @@ public sealed class VirtualDisplayTrayController : IDisposable
         _formPresenter.StopRequested    += StopService;
         _formPresenter.StartupConfirmed += OnFormStartupConfirmed;
 
-        // Transición de estado: Starting → Started
+        // Transición de estado: Stopped/Starting → Started
         _serviceState.CompleteStart(screenRuntimes);
+    }
+
+    public void NotifyServiceStopped()
+    {
+        // Transición de estado: Stopping/Started → Stopped
+        _serviceState.CompleteStop();
     }
 
     public void UpdateStatus(string status)

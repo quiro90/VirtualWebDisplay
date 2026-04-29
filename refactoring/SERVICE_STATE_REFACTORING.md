@@ -1,7 +1,7 @@
 # Refactoring del Sistema de Inicio/Detención del Servicio
 
 ## Fecha
-${new Date().toISOString().split('T')[0]}
+2024
 
 ## Motivación
 
@@ -231,6 +231,97 @@ Verificar los siguientes escenarios:
 9. ✅ Botones se habilitan/deshabilitan según estado
 10. ✅ Cambios de idioma durante transiciones
 
+## Correcciones Post-Testing
+
+### Problema Detectado en Testing Manual
+
+**Síntoma**: Después del primer refactoring, el servicio iniciaba correctamente (creaba el monitor virtual en Windows), pero la UI no se actualizaba:
+- El botón quedaba en "Iniciando..."
+- El menú del systray no cambiaba de estado
+- No se mostraban notificaciones
+- Los indicadores de pantalla (zona inferior izquierda) no aparecían
+
+**Causa Raíz**: 
+La implementación inicial de `ServiceStateManager` asumía que siempre habría una transición explícita `Stopped → Starting → Started`, pero había **dos flujos diferentes**:
+
+1. **Startup Inicial**: `Program.cs` → `ShowStartupConfiguration()` → Usuario confirma → `ApplicationLifecycleManager.RunAsync()` → `ConfigureRuntimeActions()` → `CompleteStart()`
+   - En este flujo, el estado iba directamente de `Stopped` a `CompleteStart()` sin pasar por `Starting`
+
+2. **Restart**: Usuario detiene servicio → `RequestStop()` → `Stopping` → `CompleteStop()` → `Stopped` → Usuario inicia → `RequestStart()` → `Starting` → `CompleteStart()` → `Started`
+   - Este flujo sí pasaba por `Starting`
+
+**Solución Implementada**:
+
+1. **Flexibilizar `CompleteStart()`** para aceptar transiciones desde `Stopped` (startup inicial) o `Starting` (restart):
+   ```csharp
+   public void CompleteStart(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
+   {
+       // Antes: if (_currentState != ServiceState.Starting) return;
+       // Después: Permitir Stopped o Starting
+       if (_currentState is not (ServiceState.Stopped or ServiceState.Starting))
+           return;
+       // ...
+   }
+   ```
+
+2. **Flexibilizar `CompleteStop()`** para aceptar transiciones desde cualquier estado excepto `Stopped`:
+   ```csharp
+   public void CompleteStop()
+   {
+       // Antes: if (_currentState != ServiceState.Stopping) return;
+       // Después: Permitir detención desde cualquier estado
+       if (_currentState is ServiceState.Stopped)
+           return;
+       // ...
+   }
+   ```
+
+3. **Agregar método `NotifyServiceStopped()` en `VirtualDisplayTrayController`**:
+   - Expone la capacidad de notificar cuando el servicio se detiene
+   - Llama a `_serviceState.CompleteStop()`
+
+4. **Actualizar `ApplicationLifecycleManager`** para notificar explícitamente cuando el servicio se detiene:
+   ```csharp
+   if (stopRequested)
+   {
+       tray.NotifyServiceStopped(); // ← Agregado
+       var startAgain = await tray.WaitForServiceStartAsync();
+       // ...
+   }
+   ```
+
+5. **Fix crítico: Thread-Safety en `ConfigurationFormPresenter`** (descubierto en testing):
+   - **Problema**: Los eventos de `ServiceStateManager` se disparaban desde el thread async de `ApplicationLifecycleManager`, pero los formularios WinForms solo pueden actualizarse desde su UI thread
+   - **Error**: `InvalidOperationException: Operación no válida a través de subprocesos`
+   - **Solución**: Usar `InvokeRequired` y `BeginInvoke()` para marshaling al UI thread:
+   ```csharp
+   private void OnServiceStarted(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
+   {
+       if (_startupForm is not null && !_startupForm.IsDisposed)
+       {
+           if (_startupForm.InvokeRequired)
+               _startupForm.BeginInvoke(() => _startupForm.NotifyServiceStarted(screenRuntimes));
+           else
+               _startupForm.NotifyServiceStarted(screenRuntimes);
+       }
+       // ... mismo patrón para _configForm
+   }
+   ```
+
+**Resultado**: Ahora ambos flujos (startup inicial y restart) funcionan correctamente, y la UI se actualiza en tiempo real reflejando el estado del servicio **sin errores de threading**.
+
+### Lecciones Aprendidas
+
+1. **Testing temprano es crucial**: El problema solo se detectó al hacer testing manual
+2. **Máquinas de estado necesitan flexibilidad**: Estados estrictos pueden romper flujos existentes
+3. **Documentar flujos múltiples**: El código tenía dos caminos diferentes que no estaban documentados
+4. **Pattern matching ayuda**: `_currentState is not (ServiceState.Stopped or ServiceState.Starting)` es más claro que múltiples ifs
+5. **Thread-safety en eventos**: Cuando eventos cruzan threads (async → UI), siempre usar `InvokeRequired` + `BeginInvoke()` en WinForms
+
 ## Conclusión
 
-El refactoring eliminó código duplicado, centralizó la gestión de estado del servicio en una clase dedicada, y aplicó principios SOLID para mejorar la mantenibilidad, testabilidad y extensibilidad del código. El sistema ahora tiene una arquitectura más limpia y profesional.
+El refactoring eliminó código duplicado, centralizó la gestión de estado del servicio en una clase dedicada, y aplicó principios SOLID para mejorar la mantenibilidad, testabilidad y extensibilidad del código. 
+
+Después de las correcciones post-testing, el sistema ahora maneja correctamente **ambos flujos** (startup inicial y restart), y la UI se mantiene sincronizada con el estado real del servicio en todo momento.
+
+El sistema ahora tiene una arquitectura más limpia, profesional y **funcionalmente correcta**.
