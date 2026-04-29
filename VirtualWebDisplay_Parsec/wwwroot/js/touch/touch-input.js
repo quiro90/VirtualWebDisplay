@@ -164,7 +164,9 @@
          * @private
          */
         _handleTouchMove(e) {
-            if (!this._interactionActive) return;
+            if (!this._interactionActive) {
+                return;
+            }
 
             const now = Date.now();
             e.preventDefault();
@@ -178,7 +180,9 @@
                 this._state.lastX = t.clientX - rect.left;
                 this._state.lastY = t.clientY - rect.top;
 
-                if (now - this._lastTouchTime < this._touchThrottle) return;
+                if (now - this._lastTouchTime < this._touchThrottle) {
+                    return;
+                }
                 this._lastTouchTime = now;
 
                 this._sendTouchInput({
@@ -195,7 +199,9 @@
                 return;
             }
 
-            if (now - this._lastTouchTime < this._touchThrottle) return;
+            if (now - this._lastTouchTime < this._touchThrottle) {
+                return;
+            }
             this._lastTouchTime = now;
 
             if (this._state.mode === 'drag' && fingerCount >= 1) {
@@ -229,7 +235,9 @@
                 const invDeltaY = -deltaY;
                 const invDeltaX = -deltaX;
 
-                if (Math.abs(invDeltaY) < 1 && Math.abs(invDeltaX) < 1) return;
+                if (Math.abs(invDeltaY) < 1 && Math.abs(invDeltaX) < 1) {
+                    return;
+                }
 
                 this._touchEventCount++;
                 this._recentLocalEvents.push(now);
@@ -254,7 +262,9 @@
          * @private
          */
         _handleTouchEnd(e) {
-            if (!this._interactionActive) return;
+            if (!this._interactionActive) {
+                return;
+            }
 
             const now = Date.now();
             this._touchEventCount++;
@@ -324,7 +334,9 @@
          * @private
          */
         _handleTouchCancel() {
-            if (!this._interactionActive) return;
+            if (!this._interactionActive) {
+                return;
+            }
             this._sendEndForCurrentMode(Date.now());
             this._resetState();
         },
@@ -334,7 +346,9 @@
          * @private
          */
         _finalizeOnPageStateLoss() {
-            if (!this._interactionActive) return;
+            if (!this._interactionActive) {
+                return;
+            }
             this._sendEndForCurrentMode(Date.now());
             this._resetState();
         },
@@ -364,7 +378,9 @@
 
             this._clearHoldTimer();
             this._state.holdTimer = setTimeout(() => {
-                if (this._state.mode !== 'pendingTap') return;
+                if (this._state.mode !== 'pendingTap') {
+                    return;
+                }
 
                 this._state.mode = 'drag';
 
@@ -408,7 +424,9 @@
 
             this._clearHoldTimer();
             this._state.holdTimer = setTimeout(() => {
-                if (this._state.mode !== 'pendingScroll') return;
+                if (this._state.mode !== 'pendingScroll') {
+                    return;
+                }
                 this._state.mode = 'scroll';
             }, this._HOLD_DELAY_MS);
 
@@ -519,7 +537,9 @@
          * @private
          */
         _avg(arr) {
-            if (!arr.length) return 0;
+            if (!arr.length) {
+                return 0;
+            }
             let sum = 0;
             for (let i = 0; i < arr.length; i++) {
                 sum += arr[i];

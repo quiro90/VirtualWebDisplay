@@ -83,6 +83,45 @@ app.UseStaticFiles();
 
 Esto sirve automáticamente archivos desde `/wwwroot/` en la ruta raíz (`/`).
 
+## 🛠️ Herramientas de Desarrollo
+
+### ESLint - Análisis de Calidad de Código
+
+El proyecto usa **ESLint** para mantener calidad y consistencia en el código JavaScript.
+
+**Comandos disponibles**:
+```bash
+# Analizar código (sin modificar)
+npm run lint
+
+# Auto-corregir problemas de estilo
+npm run lint:fix
+```
+
+**Reglas configuradas**:
+- Indentación de 4 espacios
+- Comillas simples obligatorias
+- Punto y coma obligatorio
+- Comparación estricta (`===` en vez de `==`)
+- Llaves obligatorias en if/for/while
+
+Ver documentación completa en `/docs/ESLINT_Y_VERSIONADO.md`
+
+### Versionado Dinámico
+
+Los archivos JavaScript usan versionado automático sincronizado con la versión del ensamblado:
+
+```html
+<!-- La versión se toma de VirtualWebDisplay.csproj -->
+<script src="/js/touch/touch-input.js?v=1.0.0"></script>
+```
+
+**Para actualizar la versión**:
+1. Editar `VirtualWebDisplay.csproj`
+2. Cambiar `<Version>1.0.1</Version>`
+3. Compilar
+4. ✅ Todos los archivos JS usan la nueva versión automáticamente
+
 ## 📚 Módulos Disponibles
 
 ### 1. Keepalive (`/js/common/keepalive.js`)

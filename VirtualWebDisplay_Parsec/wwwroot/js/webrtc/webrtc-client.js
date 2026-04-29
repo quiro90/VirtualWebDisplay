@@ -288,20 +288,28 @@
             }
 
             // Chunks binarios
-            if (!this._frameInfo) return;
+            if (!this._frameInfo) {
+                return;
+            }
 
             const data = new Uint8Array(event.data);
-            if (data.length < 4) return;
+            if (data.length < 4) {
+                return;
+            }
 
             // Leer frameId (little-endian)
             const chunkFrameId = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-            if (chunkFrameId !== this._currentFrameId) return;
+            if (chunkFrameId !== this._currentFrameId) {
+                return;
+            }
 
             const chunk = data.subarray(4);
             this._frameBuffers.push(chunk);
             this._receivedBytes += chunk.byteLength;
 
-            if (this._receivedBytes < this._frameInfo.size) return;
+            if (this._receivedBytes < this._frameInfo.size) {
+                return;
+            }
 
             // Frame completo, reensamblar
             const completedFrame = new Uint8Array(this._frameInfo.size);

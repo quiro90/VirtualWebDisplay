@@ -9,7 +9,8 @@ namespace VirtualWebDisplay.UI.HtmlTemplates;
 /// </summary>
 public sealed class RtcPageTemplate : IHtmlTemplate
 {
-    private const string AppVersion = "1.0.0"; // Cache busting version
+    // Versión dinámica sincronizada con el ensamblado (cache busting automático)
+    private static string AppVersion => TemplateVersionHelper.AppVersion;
 
     public string Generate(Dictionary<string, object> parameters)
     {

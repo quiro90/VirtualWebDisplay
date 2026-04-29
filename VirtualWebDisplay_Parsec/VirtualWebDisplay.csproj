@@ -10,6 +10,11 @@
     <OutputType>WinExe</OutputType>
     <AssemblyName>VirtualWebDisplay</AssemblyName>
     <RootNamespace>VirtualWebDisplay</RootNamespace>
+
+    <!-- Versión de la aplicación (usado para cache busting de archivos estáticos) -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

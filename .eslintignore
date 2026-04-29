@@ -1,0 +1,18 @@
+# Dependencias
+node_modules/
+
+# Build outputs
+bin/
+obj/
+dist/
+*.min.js
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+
+# Otros
+*.log
+package-lock.json

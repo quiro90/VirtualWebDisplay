@@ -1,0 +1,50 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "rules": {
+    "indent": ["error", 4],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "no-console": "off",
+    "no-unused-vars": "warn",
+    "no-undef": "error",
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    "brace-style": ["error", "1tbs"],
+    "comma-dangle": ["error", "never"],
+    "prefer-const": "warn",
+    "no-var": "off"
+  },
+  "globals": {
+    "window": "readonly",
+    "document": "readonly",
+    "console": "readonly",
+    "fetch": "readonly",
+    "Image": "readonly",
+    "setTimeout": "readonly",
+    "setInterval": "readonly",
+    "clearTimeout": "readonly",
+    "clearInterval": "readonly",
+    "createImageBitmap": "readonly",
+    "Blob": "readonly",
+    "RTCPeerConnection": "readonly",
+    "Promise": "readonly",
+    "Uint8Array": "readonly",
+    "Date": "readonly",
+    "Math": "readonly",
+    "Logger": "writable",
+    "LogLevel": "writable",
+    "Keepalive": "writable",
+    "TouchInput": "writable",
+    "VirtualWebDisplayTouchInput": "writable",
+    "WebImageClient": "writable",
+    "WebRtcClient": "writable"
+  }
+}

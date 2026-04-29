@@ -137,12 +137,14 @@
          * @private
          */
         _next() {
-            if (!this._isRunning) return;
+            if (!this._isRunning) {
+                return;
+            }
 
             const pre = new Image();
 
             pre.onload = () => {
-                this._screenElement.style.backgroundImage = "url('" + pre.src + "')";
+                this._screenElement.style.backgroundImage = 'url(\'' + pre.src + '\')';
                 setTimeout(() => this._next(), this._intervalMs);
             };
 

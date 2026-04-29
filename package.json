@@ -1,0 +1,19 @@
+{
+  "name": "virtualwebdisplay-js",
+  "version": "1.0.0",
+  "description": "JavaScript modules for VirtualWebDisplay",
+  "scripts": {
+    "lint": "eslint VirtualWebDisplay_Parsec/wwwroot/js/**/*.js",
+    "lint:fix": "eslint VirtualWebDisplay_Parsec/wwwroot/js/**/*.js --fix"
+  },
+  "keywords": [
+    "webrtc",
+    "screen-sharing",
+    "remote-desktop"
+  ],
+  "author": "VirtualWebDisplay",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}
