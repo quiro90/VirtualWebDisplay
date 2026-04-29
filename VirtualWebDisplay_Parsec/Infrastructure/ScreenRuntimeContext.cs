@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Infrastructure.Drivers;
 using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.Streaming;
 
@@ -8,12 +9,19 @@ namespace VirtualWebDisplay.Infrastructure;
 
 public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 {
-    public ScreenRuntimeContext(string id, string displayName, VirtualScreenConfig config, string hostName, string localIp, ILoggerFactory? loggerFactory = null)
+    public ScreenRuntimeContext(
+        string id, 
+        string displayName, 
+        VirtualScreenConfig config, 
+        string hostName, 
+        string localIp, 
+        IDriverVerifier driverVerifier,
+        ILoggerFactory? loggerFactory = null)
     {
         Id = id;
         DisplayName = displayName;
         Config = config;
-        DisplayManager = new VirtualDisplayManager();
+        DisplayManager = new VirtualDisplayManager(driverVerifier);
         CaptureService = new CaptureService(config, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<CaptureService>());
         WebRtcStreamService = new WebRtcStreamService(CaptureService, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<WebRtcStreamService>());
         SecurityGate = new ScreenSecurityGate(config.ScreenSecurityEnabled);

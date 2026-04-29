@@ -1,7 +1,8 @@
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
+using VirtualWebDisplay.Infrastructure.Drivers;
+using VirtualWebDisplay.Infrastructure.Messaging;
 using VirtualWebDisplay.Localization;
-using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.UI.Forms;
 
 namespace VirtualWebDisplay.Infrastructure;
@@ -13,7 +14,7 @@ namespace VirtualWebDisplay.Infrastructure;
 /// </summary>
 internal static class RuntimeStartupHelper
 {
-    public static async Task<bool> StartRuntimesAsync(IReadOnlyList<ScreenRuntimeContext> runtimes)
+    public static async Task<bool> StartRuntimesAsync(IReadOnlyList<ScreenRuntimeContext> runtimes, IDriverVerifier driverVerifier)
     {
         foreach (var runtime in runtimes)
         {
@@ -31,9 +32,9 @@ internal static class RuntimeStartupHelper
             {
                 await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
                 InstallDialog.Show(
-                    AppText.Format("Program_DisplayError_Title", runtime.DisplayName),
-                    vddStatus + "\n\n" + AppText.Get("Program_DriverMissing_MessageSuffix"),
-                    VirtualDisplayManager.InstallUrl);
+                    StartupErrorMessages.TitleForDisplayError(runtime.DisplayName),
+                    StartupErrorMessages.ForDisplayCreationFailure(vddStatus),
+                    driverVerifier.InstallUrl);
                 return false;
             }
 
@@ -46,7 +47,7 @@ internal static class RuntimeStartupHelper
             {
                 await RuntimeCleanupHelper.DisposeRuntimesAsync(runtimes);
                 MessageBox.Show(
-                    vddStatus + "\n\n" + AppText.Format("Program_MonitorNotDetected_Message", runtime.DisplayName),
+                    StartupErrorMessages.ForMonitorNotDetected(vddStatus, runtime.DisplayName),
                     AppText.Get("Program_MonitorNotDetected_Title"),
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);

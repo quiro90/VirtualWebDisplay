@@ -1,4 +1,5 @@
 using System.Windows.Forms;
+using VirtualWebDisplay.Infrastructure.Polling;
 
 namespace VirtualWebDisplay.Infrastructure;
 
@@ -15,18 +16,16 @@ public static class RuntimeCleanupHelper
         if (deviceNames.Count == 0)
             return;
 
-        var deadline = DateTime.UtcNow + timeout;
-        while (DateTime.UtcNow < deadline)
-        {
-            var remaining = Screen.AllScreens
-                .Select(screen => screen.DeviceName)
-                .Where(name => deviceNames.Contains(name, StringComparer.OrdinalIgnoreCase))
-                .ToArray();
-
-            if (remaining.Length == 0)
-                return;
-
-            await Task.Delay(120);
-        }
+        await PollingHelper.WaitUntilAsync(
+            condition: () =>
+            {
+                var remaining = Screen.AllScreens
+                    .Select(screen => screen.DeviceName)
+                    .Where(name => deviceNames.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    .ToArray();
+                return remaining.Length == 0;
+            },
+            timeout: timeout,
+            pollInterval: TimeSpan.FromMilliseconds(120));
     }
 }

@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Controllers;
+using VirtualWebDisplay.Infrastructure.Drivers;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.TrayIcon;
 
@@ -15,7 +16,7 @@ namespace VirtualWebDisplay.Infrastructure;
 /// </summary>
 internal static class ApplicationLifecycleManager
 {
-    internal static async Task RunAsync(
+    internal static async Task RunServiceLoopAsync(
         VirtualDisplayTrayController tray,
         VirtualWebDisplaySettings settings,
         AppearanceSettingsStore appearanceStore,
@@ -25,26 +26,20 @@ internal static class ApplicationLifecycleManager
         X509Certificate2 tlsCert,
         byte[] tlsCertDerBytes,
         string hostName,
-        string localIp)
+        string localIp,
+        IReadOnlyList<int> enabledPorts,
+        IDriverVerifier driverVerifier)
     {
         var keepRunning = true;
         while (keepRunning)
         {
-            // Resolve ports from settings before building the app, so Kestrel can be
-            // configured without creating the full runtimes twice.
-            var enabledPorts = RuntimeFactory.GetEnabledPorts(settings);
-            if (enabledPorts is null)
-                return;
-
             var builder = WebApplication.CreateBuilder(args);
             KestrelConfigurator.Configure(builder, enabledPorts, tlsCert);
 
             var app = builder.Build();
             var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
-            var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, loggerFactory);
-            if (runtimes is null)
-                return;
+            var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, driverVerifier, loggerFactory);
 
             singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
             var stopRequested = false;
@@ -52,7 +47,7 @@ internal static class ApplicationLifecycleManager
 
             try
             {
-                if (!await RuntimeStartupHelper.StartRuntimesAsync(runtimes))
+                if (!await RuntimeStartupHelper.StartRuntimesAsync(runtimes, driverVerifier))
                     return;
 
                 tray.ConfigureRuntimeActions(

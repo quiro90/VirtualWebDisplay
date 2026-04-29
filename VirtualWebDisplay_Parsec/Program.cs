@@ -76,7 +76,7 @@ var certStoreDir = Path.Combine(
 
 var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
 
-await ApplicationLifecycleManager.RunAsync(
+await ApplicationBootstrapper.RunAsync(
     tray, settings, appearanceStore, resolutionStore, singleInstance,
     args, tlsCert, tlsCertDerBytes, hostName, localIp);
 
