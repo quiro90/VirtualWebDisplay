@@ -352,13 +352,11 @@ public sealed class ScreenTabControls
         _touchInputCheckBox.CheckedChanged += (_, _) =>
         {
             UpdateState();
-            UpdateTouchDependentControls();
             TouchInputChanged?.Invoke(_touchInputCheckBox.Checked);
         };
         _touchModeCombo.SelectedIndexChanged += (_, _) =>
         {
             UpdateState();
-            UpdateTouchDependentControls();
 
             var selectedMode = (TouchModeItem?)_touchModeCombo.SelectedItem;
             if (selectedMode is not null)
@@ -471,7 +469,6 @@ public sealed class ScreenTabControls
             .First(item => item.Method == TransmissionModeOptions.NormalizeMethod(config.TransmissionMethod));
 
         UpdateState();
-        UpdateTouchDependentControls();
     }
 
     private void UpdateState()
@@ -507,6 +504,7 @@ public sealed class ScreenTabControls
         _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
 
         UpdateSecurityCodePreview(enabled);
+        UpdateTouchDependentControls();
     }
 
     public void SetEnabledState(bool enabled)
@@ -597,14 +595,18 @@ public sealed class ScreenTabControls
     private void UpdateTouchDependentControls()
     {
         var touchEnabled = _touchInputCheckBox.Checked;
+        var tabEnabled = IsTabEnabled();
 
         // Si el touch está deshabilitado, deshabilitar todos los sub-controles
-        _touchModeLabel.Enabled = touchEnabled;
-        _touchModeCombo.Enabled = touchEnabled;
+        // Pero solo si el servicio está corriendo o la tab está habilitada
+        var baseTouchState = _serviceRunning ? touchEnabled : (tabEnabled && touchEnabled);
+
+        _touchModeLabel.Enabled = baseTouchState;
+        _touchModeCombo.Enabled = baseTouchState;
 
         // El input de ms solo está habilitado si touch está habilitado Y el modo es "Gestos"
         var selectedMode = (TouchModeItem?)_touchModeCombo.SelectedItem;
-        var gesturesEnabled = touchEnabled && (selectedMode?.GesturesEnabled ?? false);
+        var gesturesEnabled = baseTouchState && (selectedMode?.GesturesEnabled ?? false);
         _touchGestureInput.Enabled = gesturesEnabled;
         _touchGestureSuffixLabel.Enabled = gesturesEnabled;
     }
