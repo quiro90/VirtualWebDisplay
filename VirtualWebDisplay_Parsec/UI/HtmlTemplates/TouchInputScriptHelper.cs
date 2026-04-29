@@ -3,9 +3,20 @@
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
-/// Helper para generar script de Touch Input compartido entre templates.
-/// DRY: Evita repetición de código JavaScript entre WebImagePageTemplate y RtcPageTemplate.
+/// [DEPRECATED] Este helper ya no se usa.
+/// El JavaScript ha sido migrado a archivos estáticos en /wwwroot/js/ para mejor mantenibilidad.
+/// 
+/// Archivos actuales:
+/// - /wwwroot/js/common/keepalive.js (reemplazo de GenerateKeepAliveScript)
+/// - /wwwroot/js/touch/touch-input.js (reemplazo de GenerateTouchInputScript)
+/// 
+/// Los templates ahora referencian estos archivos directamente con:
+/// &lt;script src="/js/common/keepalive.js?v=1.0.0"&gt;&lt;/script&gt;
+/// 
+/// Este archivo se mantiene temporalmente para referencia y puede ser eliminado
+/// una vez confirmado que la migración funciona correctamente en producción.
 /// </summary>
+[Obsolete("Use external JavaScript files in /wwwroot/js/ instead. See WebImagePageTemplate and RtcPageTemplate for examples.")]
 internal static class TouchInputScriptHelper
 {
     public static string GenerateKeepAliveScript(int intervalMs = 10000)

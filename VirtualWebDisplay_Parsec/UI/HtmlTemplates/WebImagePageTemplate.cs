@@ -1,12 +1,16 @@
+using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.UI.HtmlTemplates;
 
 /// <summary>
 /// HTML template for the WebImage page (periodically refreshed JPEG image).
+/// Refactored to use external JavaScript files for better maintainability.
 /// </summary>
 public sealed class WebImagePageTemplate : IHtmlTemplate
 {
+    private const string AppVersion = "1.0.0"; // Cache busting version
+
     public string Generate(Dictionary<string, object> parameters)
     {
         var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
@@ -21,6 +25,9 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
         var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
         var gestureHoldDelayMsObj = parameters.GetValueOrDefault("gestureHoldDelayMs", 300);
         var gestureHoldDelayMs = gestureHoldDelayMsObj is int holdInt ? holdInt : Convert.ToInt32(gestureHoldDelayMsObj);
+
+        // Usar constantes centralizadas
+        var throttleMs = (int)Math.Round(Math.Max(TouchInputConstants.MinThrottleMs, intervalMs / 5.0));
         var htmlLang = AppText.HtmlLang;
 
         return $$"""
@@ -72,58 +79,39 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
             <body>
                 <div id="screen" aria-label="screen" role="img"></div>
 
+                <!-- External JavaScript modules -->
+                <script src="/js/common/logger.js?v={{AppVersion}}"></script>
+                <script src="/js/common/keepalive.js?v={{AppVersion}}"></script>
+                <script src="/js/webimage/webimage-client.js?v={{AppVersion}}"></script>
+                <script src="/js/touch/touch-input.js?v={{AppVersion}}"></script>
+
+                <!-- Initialization -->
                 <script>
-                (function () {
-                    var INTERVAL = {{intervalMs}};
-                    var screenLayer = document.getElementById('screen');
-                    var seq = 0;
-                    var viewport = window.visualViewport;
+                (function() {
+                    'use strict';
 
-                    function syncViewport() {
-                        var width = viewport ? viewport.width : window.innerWidth;
-                        var height = viewport ? viewport.height : window.innerHeight;
-                        document.documentElement.style.setProperty('--vw', Math.round(width) + 'px');
-                        document.documentElement.style.setProperty('--vh', Math.round(height) + 'px');
+                    // Initialize keep-alive
+                    if (typeof Keepalive !== 'undefined') {
+                        Keepalive.start(10000);
                     }
 
-                    window.addEventListener('resize', syncViewport);
-                    window.addEventListener('orientationchange', syncViewport);
-                    if (viewport) {
-                        viewport.addEventListener('resize', syncViewport);
-                        viewport.addEventListener('scroll', syncViewport);
+                    // Initialize WebImage client
+                    if (typeof WebImageClient !== 'undefined') {
+                        WebImageClient.init({
+                            elementId: 'screen',
+                            intervalMs: {{intervalMs}},
+                            imageFit: '{{browserImageFit}}'
+                        });
                     }
 
-                    function next() {
-                        var pre = new Image();
-                        pre.onload = function () {
-                            screenLayer.style.backgroundImage = "url('" + this.src + "')";
-                            setTimeout(next, INTERVAL);
-                        };
-                        pre.onerror = function () {
-                            setTimeout(next, INTERVAL * 4);
-                        };
-                        pre.src = '/cap?s=' + (++seq);
+                    // Initialize touch input
+                    if (typeof TouchInput !== 'undefined') {
+                        TouchInput.init({
+                            elementId: 'screen',
+                            throttleMs: {{throttleMs}},
+                            holdDelayMs: {{gestureHoldDelayMs}}
+                        });
                     }
-
-                    syncViewport();
-                    next();
-
-                    function preventNative(e) {
-                        e.preventDefault();
-                    }
-
-                    // iOS Safari: evita drag-and-drop/long-press sobre la capa de stream.
-                    screenLayer.addEventListener('dragstart', preventNative, { passive: false });
-                    screenLayer.addEventListener('contextmenu', preventNative, { passive: false });
-                    screenLayer.addEventListener('touchstart', preventNative, { passive: false });
-                    screenLayer.addEventListener('touchmove', preventNative, { passive: false });
-                    screenLayer.addEventListener('touchend', preventNative, { passive: false });
-                    document.addEventListener('gesturestart', preventNative, { passive: false });
-                    document.addEventListener('gesturechange', preventNative, { passive: false });
-
-                    {{TouchInputScriptHelper.GenerateKeepAliveScript()}}
-
-                    {{TouchInputScriptHelper.GenerateTouchInputScript("screen", (int)Math.Round(Math.Max(10.0, intervalMs / 5.0)), gestureHoldDelayMs)}}
                 })();
                 </script>
             </body>

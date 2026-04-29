@@ -55,6 +55,9 @@ internal static class ApplicationLifecycleManager
                     stopRequested: () => { stopRequested = true; app.Lifetime.StopApplication(); },
                     screenRuntimes: runtimes);
 
+                // Habilitar archivos estáticos (JavaScript, CSS, etc.)
+                app.UseStaticFiles();
+
                 WebApiEndpoints.Map(app, runtimes, tlsCertDerBytes);
 
                 using var resolutionWatcher = new VirtualResolutionWatcher(runtimes, resolutionStore);

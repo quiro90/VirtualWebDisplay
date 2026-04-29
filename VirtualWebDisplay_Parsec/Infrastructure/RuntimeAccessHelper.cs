@@ -15,8 +15,23 @@ public static class RuntimeAccessHelper
 
     public static string SecurityCookieName(ScreenRuntimeContext runtime) => $"vwd_auth_{runtime.Id}";
 
-    public static ScreenRuntimeContext ResolveRuntime(HttpContext context, IReadOnlyList<ScreenRuntimeContext> runtimes) =>
-        runtimes.FirstOrDefault(runtime => runtime.Config.Port == context.Connection.LocalPort) ?? runtimes[0];
+    public static ScreenRuntimeContext ResolveRuntime(HttpContext context, IReadOnlyList<ScreenRuntimeContext> runtimes)
+    {
+        var localPort = context.Connection.LocalPort;
+
+        // Intentar match directo con puerto HTTP
+        var runtime = runtimes.FirstOrDefault(r => r.Config.Port == localPort);
+        if (runtime != null)
+            return runtime;
+
+        // Intentar match con puerto HTTPS (Config.Port + 1)
+        runtime = runtimes.FirstOrDefault(r => r.Config.Port + 1 == localPort);
+        if (runtime != null)
+            return runtime;
+
+        // Fallback a primera pantalla
+        return runtimes[0];
+    }
 
     public static bool IsAuthorized(HttpContext context, ScreenRuntimeContext runtime) =>
         !runtime.SecurityGate.Enabled || runtime.SecurityGate.IsAuthorized(context, SecurityCookieName(runtime));
