@@ -34,9 +34,16 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 ## Archivos principales del dominio
 | Archivo | Rol |
 |---|---|
-| `Program.cs` | Bootstrapper, compositor, endpoints HTTP, páginas HTML |
-| `ScreenRuntimeContext.cs` | Unidad operativa por pantalla |
-| `VirtualDisplayManager.cs` | Crear/destruir monitor virtual vía Win32 |
+| `Program.cs` | Bootstrapper, inicia `ApplicationBootstrapper` |
+| `ApplicationBootstrapper.cs` | Orquestador de inicio, crea `IDriverVerifier` |
+| `ApplicationLifecycleManager.cs` | Bucle de servicio (start/stop/restart) |
+| `ScreenRuntimeContext.cs` | Unidad operativa por pantalla (recibe `IDriverVerifier`) |
+| `VirtualDisplayManager.cs` | Crear/destruir monitor virtual (usa `IDriverVerifier` por DI) |
+| `ParsecVddDriverApi.cs` | P/Invoke compartida de bajo nivel (unsafe) |
+| `IDriverVerifier.cs` | Interfaz de verificación de drivers |
+| `ParsecVddDriverVerifier.cs` | Implementación para Parsec VDD |
+| `PollingHelper.cs` | Helper genérico de timeouts/polling |
+| `StartupErrorMessages.cs` | Centralización de mensajes de error |
 | `CaptureService.cs` | Captura periódica + codificación JPEG |
 | `WebRtcStreamService.cs` | Negociación WebRTC + emisión de frames |
 | `InputHandler.cs` | Endpoints de touch remoto y métricas |

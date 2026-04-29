@@ -70,13 +70,24 @@ graph TB
     end
 
     Program --> Tray
+    Program --> Bootstrapper
+    Program --> Tray
     Program --> Lifecycle
     Program --> Kestrel
     Program --> Store
     Program --> Context
     Program --> Singleton
 
+    Bootstrapper --> DriverVerifier
+    Bootstrapper --> Lifecycle
+    DriverVerifier --> ParsecVerifier
+    ParsecVerifier --> DriverApi
+
     Lifecycle --> StateManager
+    Lifecycle --> RuntimeFactory
+    RuntimeFactory --> DriverVerifier
+    RuntimeFactory --> Context
+
     Tray --> StateManager
     Tray --> Forms
     StateManager --> Context
@@ -88,6 +99,10 @@ graph TB
     Context --> VDD
     Context --> Capture
     Context --> WebRTC
+
+    VDD --> DriverVerifier
+    VDD --> DriverApi
+    VDD --> PollingHelper
 
     Capture --> Settings
     WebRTC --> Settings
