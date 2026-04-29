@@ -63,9 +63,15 @@ Rol: abrir formularios y aplicar cambios sobre settings/runtimes.
 ### `UI/Forms/ResolutionConfigurationForm.cs`
 Rol: formulario principal de configuración.
 
+**Gestión de estado del servicio**:
+- Usa `ServiceState` enum en lugar de múltiples booleanos (`_wasStarted`, `_serviceActionPending`, `_pendingStartAction`)
+- Pattern matching para texto del botón: `_serviceState switch { Started => "Stop", Starting => "Starting...", ... }`
+- `NotifyServiceStarted()` / `NotifyServiceStopped()`: actualizan UI según estado
+- Thread-safe: llamados vía `InvokeOnFormSafely()` desde otros threads
+
 **Indicadores de pantalla (nuevo)**:
 - Muestra indicadores `1↗: 📺` y `2↗: 📺` en la parte inferior izquierda
-- **Solo visibles cuando el servicio está iniciado** (control mediante `_wasStarted`)
+- **Solo visibles cuando el servicio está iniciado** (control mediante `_serviceState == ServiceState.Started`)
 - Click en número/flecha → abre navegador con la URL
 - Click en 📺 → copia URL al portapapeles
 - Tooltip dinámico muestra "Ingrese a: http://IP:PORT" (localizado EN/ES)

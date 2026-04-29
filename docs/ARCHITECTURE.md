@@ -61,6 +61,8 @@ graph TB
     end
 
     subgraph "Infrastructure Layer"
+        StateManager[ServiceStateManager - Estado Centralizado]
+        Lifecycle[ApplicationLifecycleManager]
         Context[ScreenRuntimeContext]
         Network[NetworkAddressHelper]
         Cert[LocalCertificateProvider]
@@ -68,12 +70,16 @@ graph TB
     end
 
     Program --> Tray
+    Program --> Lifecycle
     Program --> Kestrel
     Program --> Store
     Program --> Context
     Program --> Singleton
 
+    Lifecycle --> StateManager
+    Tray --> StateManager
     Tray --> Forms
+    StateManager --> Context
     Kestrel --> Endpoints
     Endpoints --> Templates
     Endpoints --> Capture
@@ -170,6 +176,13 @@ graph TB
 #### 6. **Infrastructure Layer** (`Infrastructure/`)
 - **Propósito**: Servicios transversales, utilidades y helpers de acceso
 - **Componentes**:
+  - ⭐ **`ServiceStateManager`**: Gestor centralizado del estado del servicio
+    - **Estados**: `Stopped`, `Starting`, `Started`, `Stopping`
+    - **Thread-safe**: Lock pattern para proteger acceso concurrente
+    - **Eventos reactivos**: `StateChanged`, `ServiceStarted`, `ServiceStopped`
+    - **Single Source of Truth**: Única fuente de verdad para el estado del servicio
+    - **Métodos**: `RequestStart()`, `RequestStop()`, `CompleteStart()`, `CompleteStop()`
+  - `ApplicationLifecycleManager`: Loop principal de arranque/parada del servicio
   - `ScreenRuntimeContext`: Contenedor que agrega DisplayManager + CaptureService + WebRtcStreamService
   - `NetworkAddressHelper`: Obtiene dirección IP local
   - `LocalCertificateProvider`: Genera/obtiene certificado SSL autofirmado
@@ -183,7 +196,7 @@ graph TB
   - `SecurityCookieName(ScreenRuntimeContext)`: Genera nombre de cookie autofirmado
   - `ResolveViewerKey(HttpContext, ScreenRuntimeContext)`: Obtiene clave de viewer (cookie o IP)
   - `NormalizeBrowserImageFit(string?)`: Normaliza "fill"/"cover"/"contain"
-- **Patrones**: Facade (ScreenRuntimeContext), Singleton (SingleInstanceManager), Static Helpers (RuntimeAccessHelper, RuntimeCleanupHelper)
+- **Patrones**: State Machine (ServiceStateManager), Facade (ScreenRuntimeContext), Singleton (SingleInstanceManager), Static Helpers (RuntimeAccessHelper, RuntimeCleanupHelper)
 
 ---
 
@@ -375,13 +388,95 @@ sequenceDiagram
 
 **Características Clave**:
 - Thread STA dedicado para WinForms
-- Menú contextual dinámico (Configuración, Salir)
+- Menú contextual dinámico (Configuración, Start/Stop, Salir)
 - Gestión del ciclo de vida de `ResolutionConfigurationForm`
 - Método `PostToUi` para operaciones thread-safe
+- **Delegación de estado**: Usa `ServiceStateManager` para gestionar estado del servicio
+- **Eventos reactivos**: Suscrito a `StateChanged`, `ServiceStarted`, `ServiceStopped`
 
 **Dependencias**:
-- `ResolutionConfigurationForm` (UI/Forms)
-- `VirtualWebDisplaySettings` (Configuration/Models)
+- `ServiceStateManager` (Infrastructure) - Estado del servicio
+- `ConfigurationFormPresenter` (UI/TrayIcon) - Gestión de formularios
+- `ResolutionConfigurationForm` (UI/Forms) - Formulario de configuración
+- `VirtualWebDisplaySettings` (Configuration/Models) - Configuración
+
+**Arquitectura refactorizada (2024)**:
+- ✅ Eliminó 3 variables de estado duplicadas
+- ✅ Delegó gestión de estado a `ServiceStateManager`
+- ✅ Se enfoca solo en UI y coordinación
+
+---
+
+### ServiceStateManager ⭐
+
+**Namespace**: `VirtualWebDisplay.Infrastructure`
+
+**Responsabilidad**: Gestionar el estado del servicio de manera centralizada y thread-safe.
+
+**Características Clave**:
+- **Máquina de estados**: `Stopped`, `Starting`, `Started`, `Stopping`
+- **Thread-safe**: Lock pattern (`_stateLock`) para proteger acceso concurrente
+- **Eventos reactivos**: `StateChanged`, `ServiceStarted`, `ServiceStopped`
+- **Single Source of Truth**: Única fuente de verdad para el estado del servicio
+- **Transiciones validadas**: Solo permite transiciones válidas entre estados
+
+**Métodos Públicos**:
+```csharp
+void RequestStart()                                    // Stopped → Starting
+void RequestStop()                                     // Started → Stopping
+void CompleteStart(IReadOnlyList<ScreenRuntimeContext>) // Stopped/Starting → Started
+void CompleteStop()                                    // Cualquier estado → Stopped
+Task<bool> WaitForStartRequestAsync()                  // Espera señal de reinicio
+void SignalStartRequest()                              // Señala reinicio deseado
+void SignalNoRestart()                                 // Señala salida
+```
+
+**Propiedades**:
+```csharp
+ServiceState CurrentState { get; }                     // Estado actual (thread-safe)
+IReadOnlyList<ScreenRuntimeContext> ScreenRuntimes { get; } // Runtimes activos
+bool IsStarted { get; }                                // CurrentState == Started
+bool IsStopped { get; }                                // CurrentState == Stopped
+bool IsTransitioning { get; }                          // Starting o Stopping
+```
+
+**Flujo de estados**:
+```
+Stopped → Starting → Started → Stopping → Stopped
+    ↑                                         ↓
+    └─────────────────────────────────────────┘
+```
+
+**Patrones aplicados**:
+- State Machine Pattern
+- Observer Pattern (eventos)
+- Thread-safe Singleton (lock pattern)
+
+---
+
+### ConfigurationFormPresenter
+
+**Namespace**: `VirtualWebDisplay.UI.TrayIcon`
+
+**Responsabilidad**: Coordinar formularios de configuración y aplicar cambios thread-safe.
+
+**Características Clave**:
+- **Thread-safety**: `InvokeOnFormSafely()` para marshaling al UI thread
+- **Suscripción reactiva**: Escucha eventos de `ServiceStateManager`
+- **DRY**: Helper method elimina duplicación de código
+- **Hot-reload**: Cambios táctiles sin reiniciar servicio
+
+**Métodos Principales**:
+```csharp
+void OpenStartupForm(Action onConfirmed, Action onCancelled)
+void ShowConfigurationDialog(IReadOnlyList<ScreenRuntimeContext>)
+void InvokeOnFormSafely(Form?, Action<Form>)  // Thread-safe helper
+```
+
+**Arquitectura refactorizada (2024)**:
+- ✅ Eliminó 32 líneas de código duplicado
+- ✅ Thread-safety completo
+- ✅ Métodos de notificación privados (mejor encapsulación)
 
 ---
 

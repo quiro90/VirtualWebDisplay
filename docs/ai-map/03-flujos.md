@@ -5,8 +5,12 @@
 2. Si ya existe otra instancia, intenta cerrarla y espera hasta 10 segundos.
 3. Carga settings con `VirtualScreenSettingsStore.Load()`.
 4. Crea `VirtualDisplayTrayController` (inicia hilo STA en background).
+   - Internamente crea `ServiceStateManager` en estado `Stopped`
+   - Se suscribe a eventos del `ServiceStateManager`
 5. `RuntimeFactory.GetEnabledPorts(settings)` verifica el driver Parsec VDD y devuelve los puertos activos.
 6. Muestra formulario inicial (`tray.ShowStartupConfiguration()`).
+   - Usuario confirma inicio → dispara evento `StartupConfirmed`
+   - Tray llama `ServiceStateManager.RequestStart()` (Stopped → Starting)
 7. `WebApplication.CreateBuilder` + `Build()` — el DI container queda disponible (`ILoggerFactory`).
 8. `RuntimeFactory.TryCreate(settings, hostName, localIp, loggerFactory)` construye uno o dos `ScreenRuntimeContext` con loggers reales.
 9. `KestrelConfigurator.Configure(builder, ports, tlsCert)` asigna los puertos HTTP/HTTPS a Kestrel.
@@ -15,10 +19,14 @@
    - detecta el índice de monitor Windows (`WindowsMonitorIndex`),
    - arranca `CaptureService`,
    - arranca `WebRtcStreamService`.
-11. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/auth/login`, `/input/touch`, `/input/stats`).
-12. Actualiza tray con las URLs disponibles + balloon tip.
-13. Ejecuta el servidor hasta salida (`app.RunAsync()`).
-14. En `finally`: `DisposeRuntimesAsync(runtimes)` en orden inverso.
+11. `tray.ConfigureRuntimeActions(exitRequested, stopRequested, runtimes)`:
+   - Llama `ServiceStateManager.CompleteStart(runtimes)` (Starting → Started)
+   - Dispara evento `ServiceStarted` → actualiza UI/tray
+12. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/auth/login`, `/input/touch`, `/input/stats`).
+13. Actualiza tray con las URLs disponibles + balloon tip.
+14. Ejecuta el servidor hasta salida (`app.RunAsync()`).
+15. En `finally`: `DisposeRuntimesAsync(runtimes)` en orden inverso.
+16. Si es detención (no salida): `tray.NotifyServiceStopped()` → `CompleteStop()` → evento `ServiceStopped` → actualiza UI
 
 ## 2. Creación de una pantalla virtual
 1. `ScreenRuntimeContext` ya contiene un `VirtualScreenConfig`.

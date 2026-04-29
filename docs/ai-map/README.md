@@ -19,6 +19,7 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 ## Idea mental rápida
 - La app es una mezcla de `ASP.NET Core Minimal API` + `Windows Forms` + interop Win32.
 - `Program.cs` bootstrappea y delega el ciclo en `ApplicationLifecycleManager`.
+- **`ServiceStateManager`** gestiona el estado del servicio (Stopped/Starting/Started/Stopping) de forma centralizada y thread-safe.
 - Cada pantalla virtual activa se representa con un `ScreenRuntimeContext`.
 - Cada runtime tiene:
   - `VirtualDisplayManager` para crear/reconfigurar el monitor virtual,
