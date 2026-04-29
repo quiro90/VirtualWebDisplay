@@ -33,7 +33,14 @@
             lastY: 0,
             centerY: 0,
             centerX: 0,
-            holdTimer: null
+            holdTimer: null,
+            // Propiedades de zoom (Pinch-to-zoom temporal)
+            pinchBaseDist: 0,
+            pinchBaseAngle: 0,
+            isZooming: false,
+            initialTransform: '',
+            initialViewportCenterX: 0,
+            initialViewportCenterY: 0
         },
 
         // Rate limiting y throttling
@@ -150,6 +157,20 @@
                 if (this._state.mode === 'drag') {
                     this._sendEndAction('dragend', now);
                 }
+                
+                try {
+                    this._state.pinchBaseDist = this._getPinchDistance(e.touches);
+                    this._state.pinchBaseAngle = this._getPinchAngle(e.touches);
+                    this._state.isZooming = false;
+                    this._state.initialTransform = this._screenElement.style.transform || '';
+                    
+                    const absCenter = this._getAbsoluteCenter(e.touches);
+                    this._state.initialViewportCenterX = absCenter.x;
+                    this._state.initialViewportCenterY = absCenter.y;
+                } catch (err) {
+                    log.error('Error in pinch start', err);
+                }
+                
                 this._startTwoFingerPending(e.touches, rect, now);
                 return;
             }
@@ -173,6 +194,34 @@
 
             const rect = this._screenElement.getBoundingClientRect();
             const fingerCount = e.touches.length;
+
+            if (fingerCount >= 2) {
+                try {
+                    const currentDist = this._getPinchDistance(e.touches);
+                    
+                    if (!this._state.isZooming && Math.abs(currentDist - this._state.pinchBaseDist) > 15) {
+                        this._state.isZooming = true;
+                        const center = this._getCenter(e.touches, rect);
+                        this._screenElement.style.transformOrigin = `${center.x}px ${center.y}px`;
+                        this._screenElement.style.transition = 'none';
+                    }
+
+                    if (this._state.isZooming) {
+                        const scale = Math.max(0.5, currentDist / this._state.pinchBaseDist);
+                        const currentAngle = this._getPinchAngle(e.touches);
+                        const angleDiff = currentAngle - this._state.pinchBaseAngle;
+                        
+                        const absCenter = this._getAbsoluteCenter(e.touches);
+                        const panX = absCenter.x - this._state.initialViewportCenterX;
+                        const panY = absCenter.y - this._state.initialViewportCenterY;
+                        
+                        this._screenElement.style.transform = `translate(${panX}px, ${panY}px) scale(${scale}) rotate(${angleDiff}deg)`;
+                        return; // No procesar scroll de servidor mientras se hace zoom
+                    }
+                } catch (err) {
+                    // Fallback silencioso si no soporta
+                }
+            }
 
             // Movimiento absoluto mientras no es drag
             if (this._state.mode === 'pendingTap' && fingerCount === 1) {
@@ -232,10 +281,7 @@
                 this._state.centerY = center.y;
                 this._state.centerX = center.x;
 
-                const invDeltaY = -deltaY;
-                const invDeltaX = -deltaX;
-
-                if (Math.abs(invDeltaY) < 1 && Math.abs(invDeltaX) < 1) {
+                if (Math.abs(deltaY) < 1 && Math.abs(deltaX) < 1) {
                     return;
                 }
 
@@ -250,8 +296,9 @@
                     viewportWidth: rect.width,
                     viewportHeight: rect.height,
                     fingers: 2,
-                    scrollDeltaY: invDeltaY,
-                    scrollDeltaX: invDeltaX,
+                    // Scroll natural: la dirección del scroll es idéntica al movimiento.
+                    scrollDeltaY: deltaY,
+                    scrollDeltaX: deltaX,
                     timestamp: now
                 });
             }
@@ -507,18 +554,74 @@
             this._clearHoldTimer();
             this._state.mode = 'idle';
             this._interactionActive = false;
+            this._resetZoomPeek();
         },
 
         /**
-         * Obtiene el centro entre dos toques.
+         * Restaura la vista después de un zoom temporal (Peek).
+         * @private
+         */
+        _resetZoomPeek() {
+            if (!this._state.isZooming || !this._screenElement) return;
+            
+            try {
+                this._screenElement.style.transition = 'transform 0.2s ease-out';
+                this._screenElement.style.transform = this._state.initialTransform || '';
+                setTimeout(() => {
+                    if (this._screenElement && !this._state.isZooming) {
+                        this._screenElement.style.transition = '';
+                        this._screenElement.style.transformOrigin = '';
+                    }
+                }, 200);
+            } catch (err) {
+                // Silencioso
+            }
+            this._state.isZooming = false;
+        },
+
+        /**
+         * Calcula la distancia entre dos toques (para zoom).
+         * @private
+         */
+        _getPinchDistance(touches) {
+            if (touches.length < 2) return 0;
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        },
+
+        /**
+         * Calcula el ángulo entre dos toques (para rotación).
+         * @private
+         */
+        _getPinchAngle(touches) {
+            if (touches.length < 2) return 0;
+            const dx = touches[1].clientX - touches[0].clientX;
+            const dy = touches[1].clientY - touches[0].clientY;
+            return Math.atan2(dy, dx) * (180 / Math.PI);
+        },
+
+        /**
+         * Obtiene el centro absoluto en el viewport entre dos toques.
+         * @private
+         */
+        _getAbsoluteCenter(touches) {
+            if (touches.length < 2) return { x: 0, y: 0 };
+            return {
+                x: (touches[0].clientX + touches[1].clientX) / 2,
+                y: (touches[0].clientY + touches[1].clientY) / 2
+            };
+        },
+
+        /**
+         * Obtiene el centro entre dos toques, relativo al elemento.
          * @private
          */
         _getCenter(touches, rect) {
-            const t1 = touches[0];
-            const t2 = touches[1];
+            const abs = this._getAbsoluteCenter(touches);
             return {
-                x: ((t1.clientX + t2.clientX) / 2) - rect.left,
-                y: ((t1.clientY + t2.clientY) / 2) - rect.top
+                x: abs.x - rect.left,
+                y: abs.y - rect.top
             };
         },
 
