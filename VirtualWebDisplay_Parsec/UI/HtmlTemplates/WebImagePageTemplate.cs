@@ -14,21 +14,13 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
 
     public string Generate(Dictionary<string, object> parameters)
     {
-        var title = parameters.GetValueOrDefault("title", "VirtualWebDisplay") as string ?? "VirtualWebDisplay";
-        var browserImageFit = parameters.GetValueOrDefault("browserImageFit", "cover") as string ?? "cover";
-        var backgroundSize = browserImageFit switch
-        {
-            "contain" => "contain",
-            "cover" => "cover",
-            _ => "100% 100%",
-        };
-        var intervalMsObj = parameters.GetValueOrDefault("intervalMs", 250);
-        var intervalMs = intervalMsObj is int intVal ? intVal : Convert.ToInt32(intervalMsObj);
-        var gestureHoldDelayMsObj = parameters.GetValueOrDefault("gestureHoldDelayMs", 300);
-        var gestureHoldDelayMs = gestureHoldDelayMsObj is int holdInt ? holdInt : Convert.ToInt32(gestureHoldDelayMsObj);
-
-        // Usar constantes centralizadas
-        var throttleMs = (int)Math.Round(Math.Max(TouchInputConstants.MinThrottleMs, intervalMs / 5.0));
+        // Usar helpers para evitar duplicación
+        var title = TemplateParameterHelper.GetTitle(parameters);
+        var browserImageFit = TemplateParameterHelper.GetBrowserImageFit(parameters);
+        var backgroundSize = TemplateParameterHelper.GetBackgroundSize(browserImageFit);
+        var intervalMs = TemplateParameterHelper.GetIntervalMs(parameters);
+        var gestureHoldDelayMs = TemplateParameterHelper.GetGestureHoldDelayMs(parameters);
+        var throttleMs = TemplateParameterHelper.CalculateThrottleMs(intervalMs);
         var htmlLang = AppText.HtmlLang;
 
         return $$"""
