@@ -574,7 +574,8 @@ internal static class InputHandler
                 MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 int dy = (int)(request.ScrollDeltaY ?? 0.0);
                 int dx = (int)(request.ScrollDeltaX ?? 0.0);
-                MouseInputHelper.Scroll(dy, dx);
+                // Se invierte dy para un comportamiento natural, dx se mantiene
+                MouseInputHelper.Scroll(-dy, dx);
                 break;
 
 
