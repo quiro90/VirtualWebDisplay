@@ -76,8 +76,8 @@
   <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configure displays (Windows) ↗</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Maximum viewers (0 = unlimited):</value></data>
   <data name="Tab_Label_TouchMode" xml:space="preserve"><value>Touch mode:</value></data>
-  <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Tap only (cursor not affected)</value></data>
-  <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestures (cursor affected)</value></data>
+  <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Tap only</value></data>
+  <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestures</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Touch Input</value></data>
   <data name="Tab_Help_TouchMode" xml:space="preserve"><value>Tap only: clicks without moving cursor, no drag/scroll. Gestures: enables drag/scroll but cursor moves to touch location.</value></data>
   <data name="Tab_Help_TouchGestures" xml:space="preserve"><value>Hold time for touch gestures. Lower values react faster; higher values reduce accidental drags/scroll.</value></data>
