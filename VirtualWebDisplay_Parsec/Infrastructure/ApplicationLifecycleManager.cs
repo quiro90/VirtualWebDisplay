@@ -56,9 +56,9 @@ internal static class ApplicationLifecycleManager
                     return;
 
                 tray.ConfigureRuntimeActions(
-                    () => { exitRequested = true; app.Lifetime.StopApplication(); },
-                    () => { stopRequested = true; app.Lifetime.StopApplication(); },
-                    runtimes);
+                    exitRequested: () => { exitRequested = true; app.Lifetime.StopApplication(); },
+                    stopRequested: () => { stopRequested = true; app.Lifetime.StopApplication(); },
+                    screenRuntimes: runtimes);
 
                 WebApiEndpoints.Map(app, runtimes, tlsCertDerBytes);
 
@@ -83,7 +83,6 @@ internal static class ApplicationLifecycleManager
 
             if (stopRequested)
             {
-                tray.NotifyServiceStopped();
                 var startAgain = await tray.WaitForServiceStartAsync();
                 if (startAgain)
                 {

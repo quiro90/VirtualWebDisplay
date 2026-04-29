@@ -42,12 +42,10 @@ public sealed class ResolutionConfigurationForm : Form
 
     private string _selectedLanguageCode;
     private string _selectedWindowTheme;
-    private bool _wasStarted;
-    private bool _serviceActionPending;
-    private bool _pendingStartAction;
+    private ServiceState _serviceState;
 
     public VirtualWebDisplaySettings Selection { get; private set; } = new();
-    public bool WasStarted => _wasStarted;
+    public bool WasStarted => _serviceState == ServiceState.Started;
 
     public event Action<VirtualWebDisplaySettings>? ConfigurationSaved;
     public event Action? StartupConfirmed;
@@ -59,9 +57,13 @@ public sealed class ResolutionConfigurationForm : Form
     public event Action<bool, bool>? Screen1TouchModeChanged; // (preserveCursor, gesturesEnabled)
     public event Action<bool, bool>? Screen2TouchModeChanged; // (preserveCursor, gesturesEnabled)
 
-    private string AcceptButtonText => _wasStarted
-        ? (_serviceActionPending ? AppText.Get("Form_Config_Accept_Stopping") : AppText.Get("Form_Config_Accept_Stop"))
-        : (_serviceActionPending && _pendingStartAction ? AppText.Get("Form_Config_Accept_Starting") : AppText.Get("Form_Config_Accept_Start"));
+    private string AcceptButtonText => _serviceState switch
+    {
+        ServiceState.Started => AppText.Get("Form_Config_Accept_Stop"),
+        ServiceState.Stopping => AppText.Get("Form_Config_Accept_Stopping"),
+        ServiceState.Starting => AppText.Get("Form_Config_Accept_Starting"),
+        _ => AppText.Get("Form_Config_Accept_Start")
+    };
 
     public ResolutionConfigurationForm(
         VirtualWebDisplaySettings settings,
@@ -72,7 +74,7 @@ public sealed class ResolutionConfigurationForm : Form
         AppearanceSettingsStore? appearanceStore = null)
     {
         _isInitialStartup = isInitialStartup;
-        _wasStarted = hasStarted;
+        _serviceState = hasStarted ? ServiceState.Started : ServiceState.Stopped;
         _appearanceStore = appearanceStore;
 
         var uiFont = FormThemeApplicator.TryCreateUiFont();
@@ -257,15 +259,13 @@ public sealed class ResolutionConfigurationForm : Form
         ApplyLocalization();
         ApplyTheme();
         ApplyRuntimeSecurityCodes(screenRuntimes);
-        if (_wasStarted)
+        if (_serviceState == ServiceState.Started)
             SetConfigurationControlsLocked(true);
     }
 
     public void NotifyServiceStarted(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
     {
-        _wasStarted = true;
-        _serviceActionPending = false;
-        _pendingStartAction = false;
+        _serviceState = ServiceState.Started;
         UpdateAcceptButtonState();
         ApplyRuntimeSecurityCodes(screenRuntimes);
         SetConfigurationControlsLocked(true);
@@ -274,25 +274,23 @@ public sealed class ResolutionConfigurationForm : Form
 
     private void AcceptButton_Click(object? sender, EventArgs e)
     {
-        if (_serviceActionPending)
+        if (_serviceState is ServiceState.Starting or ServiceState.Stopping)
             return;
 
         if (!TrySaveSelection())
             return;
 
-        if (_wasStarted)
+        if (_serviceState == ServiceState.Started)
         {
             // Service is running → stop it; form stays open and NotifyServiceStopped() will flip the button.
-            _serviceActionPending = true;
-            _pendingStartAction = false;
+            _serviceState = ServiceState.Stopping;
             UpdateAcceptButtonState();
             StopRequested?.Invoke();
         }
         else
         {
             // Service is stopped → start it; form stays open and NotifyServiceStarted() will flip the button.
-            _serviceActionPending = true;
-            _pendingStartAction = true;
+            _serviceState = ServiceState.Starting;
             UpdateAcceptButtonState();
             StartupConfirmed?.Invoke();
         }
@@ -324,7 +322,7 @@ public sealed class ResolutionConfigurationForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (_isInitialStartup && !_wasStarted && DialogResult != DialogResult.OK)
+        if (_isInitialStartup && _serviceState == ServiceState.Stopped && DialogResult != DialogResult.OK)
         {
             TrySaveSelection();
         }
@@ -448,9 +446,7 @@ public sealed class ResolutionConfigurationForm : Form
 
     public void NotifyServiceStopped()
     {
-        _wasStarted = false;
-        _serviceActionPending = false;
-        _pendingStartAction = false;
+        _serviceState = ServiceState.Stopped;
         UpdateAcceptButtonState();
         SetConfigurationControlsLocked(false);
         UpdateScreenIndicatorsVisibility();
@@ -466,13 +462,13 @@ public sealed class ResolutionConfigurationForm : Form
     private void UpdateAcceptButtonState()
     {
         _acceptButton.Text = AcceptButtonText;
-        _acceptButton.Enabled = !_serviceActionPending;
+        _acceptButton.Enabled = _serviceState is ServiceState.Started or ServiceState.Stopped;
     }
 
     private void UpdateScreenIndicatorsVisibility()
     {
-        _screen1Indicator.Visible = _wasStarted;
-        _screen2Indicator.Visible = _wasStarted && _enableScreen2Check.Checked;
+        _screen1Indicator.Visible = _serviceState == ServiceState.Started;
+        _screen2Indicator.Visible = _serviceState == ServiceState.Started && _enableScreen2Check.Checked;
     }
 
     private void ApplyTheme()

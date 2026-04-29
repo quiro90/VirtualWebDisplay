@@ -13,8 +13,8 @@ internal static class TrayMenuBuilder
 {
     internal static ContextMenuStrip Build(
         IReadOnlyList<ScreenRuntimeContext> screenRuntimes,
-        bool serviceActionPending,
-        TaskCompletionSource<bool>? serviceStartSignal,
+        bool isTransitioning,
+        Task<bool> serviceStartTask,
         Action onShowConfiguration,
         Action onStopService,
         Action onStartService,
@@ -31,9 +31,9 @@ internal static class TrayMenuBuilder
             menu.Items.Add(new ToolStripSeparator());
         }
 
-        if (screenRuntimes.Count > 0 && !serviceActionPending)
+        if (screenRuntimes.Count > 0 && !isTransitioning)
             menu.Items.Add(AppText.Get("Tray_Menu_Stop"), null, (_, _) => onStopService());
-        else if (screenRuntimes.Count == 0 && serviceStartSignal is not null && !serviceActionPending)
+        else if (screenRuntimes.Count == 0 && !isTransitioning)
             menu.Items.Add(AppText.Get("Tray_Menu_Start"), null, (_, _) => onStartService());
 
         menu.Items.Add(AppText.Get("Tray_Menu_Exit"), null, (_, _) => onExit());

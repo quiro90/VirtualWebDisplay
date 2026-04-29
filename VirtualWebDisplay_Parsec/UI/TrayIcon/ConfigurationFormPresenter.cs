@@ -16,6 +16,7 @@ internal sealed class ConfigurationFormPresenter
     private readonly VirtualWebDisplaySettings    _settings;
     private readonly VirtualScreenSettingsStore   _settingsStore;
     private readonly AppearanceSettingsStore      _appearanceStore;
+    private readonly ServiceStateManager          _serviceState;
     private readonly string                       _localIp;
 
     private ResolutionConfigurationForm? _startupForm;
@@ -25,12 +26,18 @@ internal sealed class ConfigurationFormPresenter
         VirtualWebDisplaySettings settings,
         VirtualScreenSettingsStore settingsStore,
         AppearanceSettingsStore appearanceStore,
-        string localIp)
+        string localIp,
+        ServiceStateManager serviceState)
     {
-        _settings      = settings;
-        _settingsStore = settingsStore;
+        _settings        = settings;
+        _settingsStore   = settingsStore;
         _appearanceStore = appearanceStore;
-        _localIp       = localIp;
+        _localIp         = localIp;
+        _serviceState    = serviceState;
+
+        // Suscribirse a cambios de estado del servicio
+        _serviceState.ServiceStarted += OnServiceStarted;
+        _serviceState.ServiceStopped += OnServiceStopped;
     }
 
     // ── Startup form ────────────────────────────────────────────────────────
@@ -76,7 +83,7 @@ internal sealed class ConfigurationFormPresenter
             return;
         }
 
-        var hasStarted = screenRuntimes.Count > 0;
+        var hasStarted = _serviceState.IsStarted;
         _configForm = CreateForm(isInitialStartup: false, hasStarted, hasStarted ? screenRuntimes : null);
         try
         {
@@ -89,15 +96,15 @@ internal sealed class ConfigurationFormPresenter
         }
     }
 
-    // ── Service state notifications ──────────────────────────────────────────
+    // ── Service state notifications (privados, manejados por eventos) ────────
 
-    internal void NotifyServiceStarted(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
+    private void OnServiceStarted(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
         _startupForm?.NotifyServiceStarted(screenRuntimes);
         _configForm?.NotifyServiceStarted(screenRuntimes);
     }
 
-    internal void NotifyServiceStopped()
+    private void OnServiceStopped()
     {
         _startupForm?.NotifyServiceStopped();
         _configForm?.NotifyServiceStopped();
