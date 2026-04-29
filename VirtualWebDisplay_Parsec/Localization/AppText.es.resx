@@ -46,6 +46,8 @@
   <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>La pantalla 2 debe usar un puerto distinto al de la pantalla 1.</value></data>
   <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Puerto duplicado</value></data>
 
+  <data name="Tab_TouchPreserveCursor_Checkbox" xml:space="preserve"><value>Recordar posición del puntero</value></data>
+  <data name="Tab_TouchPreserveCursor_Help" xml:space="preserve"><value>Si está activado, el puntero volverá a su posición original después de un toque o al finalizar un gesto. Si está desactivado, el puntero quedará donde tocaste.</value></data>
   <data name="Tab_EnableExperimental" xml:space="preserve"><value>Habilitar (experimental)</value></data>
   <data name="Tab_Label_Port" xml:space="preserve"><value>Puerto:</value></data>
   <data name="Tab_Help_Port" xml:space="preserve"><value>Definí el puerto local que vas a usar para conectarte por web a tu monitor remoto.</value></data>

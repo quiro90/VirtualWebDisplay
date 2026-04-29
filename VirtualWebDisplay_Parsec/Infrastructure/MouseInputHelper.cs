@@ -9,6 +9,30 @@ namespace VirtualWebDisplay.Infrastructure;
 /// </summary>
 internal static class MouseInputHelper
 {
+    // Última posición conocida del cursor para restaurar tras gestos/tap
+    private static POINT? _lastCursorPosition = null;
+
+    /// <summary>
+    /// Guarda la posición actual del cursor para restaurar luego.
+    /// </summary>
+    public static void SaveCurrentCursorPosition()
+    {
+        if (GetCursorPos(out var pt))
+            _lastCursorPosition = pt;
+    }
+
+    /// <summary>
+    /// Restaura la última posición guardada del cursor, si existe.
+    /// </summary>
+    public static void RestoreLastCursorPosition()
+    {
+        if (_lastCursorPosition.HasValue)
+        {
+            MoveMouse(_lastCursorPosition.Value.X, _lastCursorPosition.Value.Y);
+            _lastCursorPosition = null;
+        }
+    }
+
     // P/Invoke: SendInput desde user32.dll
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
@@ -109,11 +133,9 @@ internal static class MouseInputHelper
     /// </summary>
     public static void LeftClickPreservingCursor(int screenX, int screenY)
     {
-        var hasOriginal = GetCursorPos(out var original);
+        SaveCurrentCursorPosition();
         LeftClick(screenX, screenY);
-
-        if (hasOriginal)
-            MoveMouse(original.X, original.Y);
+        RestoreLastCursorPosition();
     }
 
     /// <summary>
@@ -137,10 +159,8 @@ internal static class MouseInputHelper
     /// </summary>
     public static void LeftDownPreservingCursor(int screenX, int screenY)
     {
-        var hasOriginal = GetCursorPos(out var original);
+        SaveCurrentCursorPosition();
         LeftDownAt(screenX, screenY);
-        if (hasOriginal)
-            MoveMouse(original.X, original.Y);
     }
 
     /// <summary>
@@ -204,11 +224,9 @@ internal static class MouseInputHelper
     /// </summary>
     public static void RightClickPreservingCursor(int screenX, int screenY)
     {
-        var hasOriginal = GetCursorPos(out var original);
+        SaveCurrentCursorPosition();
         RightClick(screenX, screenY);
-
-        if (hasOriginal)
-            MoveMouse(original.X, original.Y);
+        RestoreLastCursorPosition();
     }
 
     /// <summary>
@@ -241,11 +259,9 @@ internal static class MouseInputHelper
     /// </summary>
     public static void MiddleClickPreservingCursor(int screenX, int screenY)
     {
-        var hasOriginal = GetCursorPos(out var original);
+        SaveCurrentCursorPosition();
         MiddleClick(screenX, screenY);
-
-        if (hasOriginal)
-            MoveMouse(original.X, original.Y);
+        RestoreLastCursorPosition();
     }
 
     /// <summary>

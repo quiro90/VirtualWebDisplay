@@ -153,6 +153,8 @@ internal static class InputHandler
             {
                 case "tap":
                     EndDragIfActive();
+                    if (runtime.Config.TouchPreserveCursor)
+                        MouseInputHelper.SaveCurrentCursorPosition();
                     ExecuteClick(MouseClickType.Left, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
                     break;
 
@@ -175,7 +177,7 @@ internal static class InputHandler
                     if (!runtime.Config.TouchGesturesEnabled)
                         return Results.NoContent();
 
-                    return ExecuteGestureAction(action, nowMs, request);
+                    return ExecuteGestureAction(action, nowMs, request, runtime);
 
                 default:
                     RegisterError();
@@ -530,13 +532,15 @@ internal static class InputHandler
     /// <summary>
     /// Ejecuta una acción de gesto (drag/scroll). Centraliza la lógica repetitiva.
     /// </summary>
-    private static IResult ExecuteGestureAction(string action, long nowMs, TouchInputRequest request)
+    private static IResult ExecuteGestureAction(string action, long nowMs, TouchInputRequest request, ScreenRuntimeContext runtime)
     {
         switch (action)
         {
             case "dragstart":
                 // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
                 EndDragIfActive();
+                if (runtime.Config.TouchPreserveCursor)
+                    MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.LeftDownAt(_virtualX, _virtualY);
                 MarkDragStarted(nowMs);
                 break;
@@ -546,8 +550,14 @@ internal static class InputHandler
                 MarkDragActivity(nowMs);
                 break;
 
+
             case "dragend":
                 EndDragIfActive();
+                // Restaurar puntero solo si TouchPreserveCursor está activo
+                if (runtime.Config.TouchPreserveCursor)
+                {
+                    MouseInputHelper.RestoreLastCursorPosition();
+                }
                 break;
 
             case "scrollmove":
@@ -556,8 +566,13 @@ internal static class InputHandler
                 MouseInputHelper.Scroll(dy, dx);
                 break;
 
+
             case "scrollend":
                 EndDragIfActive();
+                if (runtime.Config.TouchPreserveCursor)
+                {
+                    MouseInputHelper.RestoreLastCursorPosition();
+                }
                 break;
         }
 
