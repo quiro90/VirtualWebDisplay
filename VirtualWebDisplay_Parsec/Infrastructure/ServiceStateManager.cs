@@ -1,23 +1,42 @@
-using VirtualWebDisplay.Infrastructure;
-
 namespace VirtualWebDisplay.Infrastructure;
 
 /// <summary>
 /// Gestiona el estado del servicio de manera centralizada.
 /// Implementa una máquina de estados con transiciones válidas y notificaciones.
 /// Single Responsibility: Solo gestiona el estado del servicio.
+/// Thread-safe: Usa lock para proteger transiciones de estado.
 /// </summary>
 internal sealed class ServiceStateManager
 {
+    private readonly object _stateLock = new();
     private ServiceState _currentState;
     private IReadOnlyList<ScreenRuntimeContext> _screenRuntimes;
     private TaskCompletionSource<bool>? _serviceStartSignal;
 
-    public ServiceState CurrentState => _currentState;
-    public IReadOnlyList<ScreenRuntimeContext> ScreenRuntimes => _screenRuntimes;
-    public bool IsStarted => _currentState == ServiceState.Started;
-    public bool IsStopped => _currentState == ServiceState.Stopped;
-    public bool IsTransitioning => _currentState is ServiceState.Starting or ServiceState.Stopping;
+    public ServiceState CurrentState
+    {
+        get { lock (_stateLock) return _currentState; }
+    }
+
+    public IReadOnlyList<ScreenRuntimeContext> ScreenRuntimes
+    {
+        get { lock (_stateLock) return _screenRuntimes; }
+    }
+
+    public bool IsStarted
+    {
+        get { lock (_stateLock) return _currentState == ServiceState.Started; }
+    }
+
+    public bool IsStopped
+    {
+        get { lock (_stateLock) return _currentState == ServiceState.Stopped; }
+    }
+
+    public bool IsTransitioning
+    {
+        get { lock (_stateLock) return _currentState is ServiceState.Starting or ServiceState.Stopping; }
+    }
 
     public event Action<ServiceState>? StateChanged;
     public event Action<IReadOnlyList<ScreenRuntimeContext>>? ServiceStarted;
@@ -35,10 +54,13 @@ internal sealed class ServiceStateManager
     /// </summary>
     public void RequestStart()
     {
-        if (_currentState != ServiceState.Stopped)
-            return;
+        lock (_stateLock)
+        {
+            if (_currentState != ServiceState.Stopped)
+                return;
 
-        TransitionTo(ServiceState.Starting);
+            TransitionTo(ServiceState.Starting);
+        }
     }
 
     /// <summary>
@@ -47,10 +69,13 @@ internal sealed class ServiceStateManager
     /// </summary>
     public void RequestStop()
     {
-        if (_currentState != ServiceState.Started)
-            return;
+        lock (_stateLock)
+        {
+            if (_currentState != ServiceState.Started)
+                return;
 
-        TransitionTo(ServiceState.Stopping);
+            TransitionTo(ServiceState.Stopping);
+        }
     }
 
     /// <summary>
@@ -59,13 +84,21 @@ internal sealed class ServiceStateManager
     /// </summary>
     public void CompleteStart(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
-        // Permitir transición desde Stopped (startup inicial) o Starting (restart)
-        if (_currentState is not (ServiceState.Stopped or ServiceState.Starting))
-            return;
+        IReadOnlyList<ScreenRuntimeContext> runtimes;
 
-        _screenRuntimes = screenRuntimes ?? [];
-        TransitionTo(ServiceState.Started);
-        ServiceStarted?.Invoke(_screenRuntimes);
+        lock (_stateLock)
+        {
+            // Permitir transición desde Stopped (startup inicial) o Starting (restart)
+            if (_currentState is not (ServiceState.Stopped or ServiceState.Starting))
+                return;
+
+            _screenRuntimes = screenRuntimes ?? [];
+            runtimes = _screenRuntimes;
+            TransitionTo(ServiceState.Started);
+        }
+
+        // Disparar eventos fuera del lock para evitar deadlocks
+        ServiceStarted?.Invoke(runtimes);
     }
 
     /// <summary>
@@ -74,13 +107,18 @@ internal sealed class ServiceStateManager
     /// </summary>
     public void CompleteStop()
     {
-        // Permitir transición desde Started (detención abrupta) o Stopping (detención normal)
-        if (_currentState is ServiceState.Stopped)
-            return;
+        lock (_stateLock)
+        {
+            // Permitir transición desde Started (detención abrupta) o Stopping (detención normal)
+            if (_currentState is ServiceState.Stopped)
+                return;
 
-        _screenRuntimes = [];
-        _serviceStartSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        TransitionTo(ServiceState.Stopped);
+            _screenRuntimes = [];
+            _serviceStartSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            TransitionTo(ServiceState.Stopped);
+        }
+
+        // Disparar evento fuera del lock para evitar deadlocks
         ServiceStopped?.Invoke();
     }
 
@@ -90,8 +128,11 @@ internal sealed class ServiceStateManager
     /// </summary>
     public Task<bool> WaitForStartRequestAsync()
     {
-        _serviceStartSignal ??= new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        return _serviceStartSignal.Task;
+        lock (_stateLock)
+        {
+            _serviceStartSignal ??= new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            return _serviceStartSignal.Task;
+        }
     }
 
     /// <summary>
@@ -99,7 +140,12 @@ internal sealed class ServiceStateManager
     /// </summary>
     public void SignalStartRequest()
     {
-        _serviceStartSignal?.TrySetResult(true);
+        TaskCompletionSource<bool>? signal;
+        lock (_stateLock)
+        {
+            signal = _serviceStartSignal;
+        }
+        signal?.TrySetResult(true);
     }
 
     /// <summary>
@@ -107,15 +153,26 @@ internal sealed class ServiceStateManager
     /// </summary>
     public void SignalNoRestart()
     {
-        _serviceStartSignal?.TrySetResult(false);
+        TaskCompletionSource<bool>? signal;
+        lock (_stateLock)
+        {
+            signal = _serviceStartSignal;
+        }
+        signal?.TrySetResult(false);
     }
 
+    /// <summary>
+    /// Transición interna de estado. DEBE ser llamado dentro de un lock.
+    /// </summary>
     private void TransitionTo(ServiceState newState)
     {
         if (_currentState == newState)
             return;
 
         _currentState = newState;
+
+        // Disparar StateChanged puede causar deadlock si los handlers también lockean,
+        // pero dado que es para UI updates (que usan BeginInvoke), es seguro.
         StateChanged?.Invoke(newState);
     }
 }

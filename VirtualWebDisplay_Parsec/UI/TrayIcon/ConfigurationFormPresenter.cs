@@ -100,42 +100,29 @@ internal sealed class ConfigurationFormPresenter
 
     private void OnServiceStarted(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
-        // Invocar en UI thread para evitar cross-thread exceptions
-        if (_startupForm is not null && !_startupForm.IsDisposed)
-        {
-            if (_startupForm.InvokeRequired)
-                _startupForm.BeginInvoke(() => _startupForm.NotifyServiceStarted(screenRuntimes));
-            else
-                _startupForm.NotifyServiceStarted(screenRuntimes);
-        }
-
-        if (_configForm is not null && !_configForm.IsDisposed)
-        {
-            if (_configForm.InvokeRequired)
-                _configForm.BeginInvoke(() => _configForm.NotifyServiceStarted(screenRuntimes));
-            else
-                _configForm.NotifyServiceStarted(screenRuntimes);
-        }
+        InvokeOnFormSafely(_startupForm, f => f.NotifyServiceStarted(screenRuntimes));
+        InvokeOnFormSafely(_configForm, f => f.NotifyServiceStarted(screenRuntimes));
     }
 
     private void OnServiceStopped()
     {
-        // Invocar en UI thread para evitar cross-thread exceptions
-        if (_startupForm is not null && !_startupForm.IsDisposed)
-        {
-            if (_startupForm.InvokeRequired)
-                _startupForm.BeginInvoke(() => _startupForm.NotifyServiceStopped());
-            else
-                _startupForm.NotifyServiceStopped();
-        }
+        InvokeOnFormSafely(_startupForm, f => f.NotifyServiceStopped());
+        InvokeOnFormSafely(_configForm, f => f.NotifyServiceStopped());
+    }
 
-        if (_configForm is not null && !_configForm.IsDisposed)
-        {
-            if (_configForm.InvokeRequired)
-                _configForm.BeginInvoke(() => _configForm.NotifyServiceStopped());
-            else
-                _configForm.NotifyServiceStopped();
-        }
+    /// <summary>
+    /// Helper para invocar acciones en formularios de manera thread-safe.
+    /// Aplica el patrón InvokeRequired/BeginInvoke para marshaling al UI thread.
+    /// </summary>
+    private static void InvokeOnFormSafely(ResolutionConfigurationForm? form, Action<ResolutionConfigurationForm> action)
+    {
+        if (form is null || form.IsDisposed)
+            return;
+
+        if (form.InvokeRequired)
+            form.BeginInvoke(() => action(form));
+        else
+            action(form);
     }
 
     // ── Factory ───────────────────────────────────────────────────────────────
