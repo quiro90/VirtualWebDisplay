@@ -325,6 +325,7 @@ internal static class InputHandler
     private static void ProcessTouchEnd()
     {
         EndDragIfActive();
+        MouseInputHelper.RestoreLastCursorPosition();
     }
 
     private static bool ProcessLegacyEvent(TouchInputRequest request, int desktopX, int desktopY)
@@ -403,6 +404,7 @@ internal static class InputHandler
         if (shouldRelease)
         {
             MouseInputHelper.LeftUp();
+            MouseInputHelper.RestoreLastCursorPosition();
             System.Diagnostics.Debug.WriteLine("[InputHandler] Failsafe: drag stale liberado por timeout.");
         }
     }
@@ -546,6 +548,8 @@ internal static class InputHandler
                 break;
 
             case "dragmove":
+                if (runtime.Config.TouchPreserveCursor)
+                    MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 MarkDragActivity(nowMs);
                 break;
@@ -561,6 +565,9 @@ internal static class InputHandler
                 break;
 
             case "scrollmove":
+                if (runtime.Config.TouchPreserveCursor)
+                    MouseInputHelper.SaveCurrentCursorPosition();
+                MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 int dy = (int)(request.ScrollDeltaY ?? 0.0);
                 int dx = (int)(request.ScrollDeltaX ?? 0.0);
                 MouseInputHelper.Scroll(dy, dx);

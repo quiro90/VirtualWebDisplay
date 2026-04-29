@@ -17,7 +17,7 @@ internal static class MouseInputHelper
     /// </summary>
     public static void SaveCurrentCursorPosition()
     {
-        if (GetCursorPos(out var pt))
+        if (!_lastCursorPosition.HasValue && GetCursorPos(out var pt))
             _lastCursorPosition = pt;
     }
 
