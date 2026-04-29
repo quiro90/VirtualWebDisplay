@@ -92,15 +92,19 @@ internal static class InputHandler
             var action = (request.Action ?? string.Empty).ToLowerInvariant();
 
             // -----------------------------------------------------------------------
-            // MANEJO ESPECIAL DE DRAGEND:
-            // Si la acción es "dragend", la prioridad absoluta es soltar el botón.
+            // MANEJO ESPECIAL DE FIN DE GESTOS (DRAGEND / SCROLLEND):
+            // La prioridad absoluta es finalizar la interacción.
             // Las coordenadas pueden llegar nulas/incompletas cuando el dedo abandona
             // el viewport, lo que antes causaba 400 Bad Request. Ahora se toleran.
             // -----------------------------------------------------------------------
-            if (action == "dragend")
+            if (action == "dragend" || action == "scrollend")
             {
                 EndDragIfActive();
-                System.Diagnostics.Debug.WriteLine("[InputHandler] dragend: LeftUp ejecutado (coordenadas opcionales ignoradas).");
+                if (runtime.Config.TouchPreserveCursor)
+                {
+                    MouseInputHelper.RestoreLastCursorPosition();
+                }
+                System.Diagnostics.Debug.WriteLine($"[InputHandler] {action}: finalizado (coordenadas opcionales ignoradas).");
                 return Results.Ok();
             }
 
