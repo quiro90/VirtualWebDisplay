@@ -160,7 +160,6 @@
                 
                 try {
                     this._state.pinchBaseDist = this._getPinchDistance(e.touches);
-                    this._state.pinchBaseAngle = this._getPinchAngle(e.touches);
                     this._state.isZooming = false;
                     this._state.initialTransform = this._screenElement.style.transform || '';
                     
@@ -562,7 +561,9 @@
          * @private
          */
         _resetZoomPeek() {
-            if (!this._state.isZooming || !this._screenElement) return;
+            if (!this._state.isZooming || !this._screenElement) {
+                return;
+            }
             
             try {
                 this._screenElement.style.transition = 'transform 0.2s ease-out';
@@ -584,7 +585,9 @@
          * @private
          */
         _getPinchDistance(touches) {
-            if (touches.length < 2) return 0;
+            if (touches.length < 2) {
+                return 0;
+            }
             const dx = touches[0].clientX - touches[1].clientX;
             const dy = touches[0].clientY - touches[1].clientY;
             return Math.sqrt(dx * dx + dy * dy);
@@ -595,7 +598,9 @@
          * @private
          */
         _getPinchAngle(touches) {
-            if (touches.length < 2) return 0;
+            if (touches.length < 2) {
+                return 0;
+            }
             const dx = touches[1].clientX - touches[0].clientX;
             const dy = touches[1].clientY - touches[0].clientY;
             return Math.atan2(dy, dx) * (180 / Math.PI);
@@ -606,7 +611,9 @@
          * @private
          */
         _getAbsoluteCenter(touches) {
-            if (touches.length < 2) return { x: 0, y: 0 };
+            if (touches.length < 2) {
+                return { x: 0, y: 0 };
+            }
             return {
                 x: (touches[0].clientX + touches[1].clientX) / 2,
                 y: (touches[0].clientY + touches[1].clientY) / 2
