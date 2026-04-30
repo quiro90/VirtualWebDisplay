@@ -16,57 +16,46 @@
   - **Web Image**: JPEG polling (compatible con cualquier navegador)
   - **WebRTC**: Streaming en tiempo real (navegadores modernos)
 - ⚙️ **Altamente Configurable**:
-  - Resolución personalizada (720p a 5K)
-  - Intervalo de captura (16ms a 500ms)
+  - Resolución personalizada (desde **420p hasta 5K**)
+  - Intervalo de captura extremo (desde **1ms hasta 300ms**)
   - Calidad JPEG ajustable (1-100)
   - Posicionamiento de pantallas (derecha, izquierda, arriba, abajo)
   - Rotación de imagen (0°, 90°, 180°, 270°)
 - 🌐 **Acceso Remoto**: Accede desde cualquier dispositivo en tu red local
-- 🔒 **HTTPS Automático**: Certificado SSL autofirmado generado automáticamente
 - 🎯 **Sin Configuración de Red**: Detección automática de IP local
 - 💾 **Persistencia de Configuración**: Settings guardados en `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`
-- 🔐 **Seguridad por Pantalla**: Clave alfanumérica dinámica de 6 caracteres (opcional por Screen1/Screen2), con límite de intentos
+
+---
+
+## 👆 NUEVO: Cliente Web Táctil Avanzado
+
+El cliente web ha sido reconstruido con un soporte táctil nativo de primer nivel, permitiendo controlar Windows desde tu tablet o teléfono como si fuera una pantalla nativa:
+
+- 🖱️ **Traducción Perfecta**: Convierte eventos táctiles en movimientos de mouse absoluto, garantizando precisión milimétrica.
+- 🖐️ **Soporte Nativo de Gestos**:
+  - **Tap simple**: Clic izquierdo rápido.
+  - **Hold-to-drag**: Mantén pulsado para seleccionar texto, arrastrar iconos o mover ventanas.
+  - **Scroll de dos dedos**: Desplazamiento natural para navegar por páginas y documentos.
+  - **Pinch-to-zoom**: Acercar y alejar la interfaz web de manera fluida.
+- ⚡ **Optimizaciones de Red**: Incluye un sistema robusto de Throttling configurable y Rate Limiting para evitar saturación de red al enviar miles de eventos táctiles.
+
+---
+
+## 🔒 Seguridad y Privacidad
+
+- 🔐 **Seguridad por Pantalla (100% Funcional / OK)**: Autenticación dinámica e independiente por pantalla. Requiere una clave alfanumérica de 6 caracteres generada por el host.
+- 🛡️ **Prevención de Fuerza Bruta**: Incluye sistema integrado de rate limiting que bloquea ataques de fuerza bruta contra el acceso web de las pantallas.
+- ⚠️ **HTTPS Automático (Experimental / Work in Progress)**: Generación de certificados SSL autofirmados. *Nota: Esta funcionalidad está en desarrollo y puede requerir configuración manual o presentar advertencias de seguridad en navegadores.*
 
 ---
 
 ## 📸 Screenshots
 
-### Interfaz de Configuración
+![Captura de Interfaz](ruta/imagen-placeholder.jpg)
+*Imágenes próximamente...*
 
-```
-┌─────────────────────────────────────────┐
-│  VirtualWebDisplay Configuration       │
-├─────────────────────────────────────────┤
-│  Screen 1  │  Screen 2                  │
-│ ─────────────────────────────────────── │
-│  ☑ Enable Screen 1                      │
-│  Resolution: 1920x1080 ▼                │
-│  Transmission Mode: WebRTC ▼            │
-│  HTTP Port: 5000                        │
-│  Capture Interval: 50 ms                │
-│  JPEG Quality: 75                       │
-│  Position: Right of primary ▼           │
-│  Rotation: 0° ▼                         │
-│                                         │
-│  [Apply]  [Cancel]                      │
-└─────────────────────────────────────────┘
-```
-
-### Cliente Web (Modo WebRTC)
-
-```
-┌────────────────────────────────────────────┐
-│  VirtualWebDisplay - Screen 1              │
-├────────────────────────────────────────────┤
-│                                            │
-│   🎥 [Pantalla virtual en tiempo real]    │
-│                                            │
-│   Status: Connected via WebRTC            │
-│   Latency: ~30ms                          │
-│   Resolution: 1920x1080                   │
-│                                            │
-└────────────────────────────────────────────┘
-```
+![Cliente Web Táctil](ruta/imagen-placeholder.jpg)
+*Imágenes próximamente...*
 
 ---
 
@@ -108,18 +97,7 @@ Si es la primera vez que ejecutas la aplicación:
 2. Extraer y ejecutar `installdriver.bat` **como Administrador**
 3. Reiniciar la aplicación
 
-O usar el diálogo de instalación integrado:
-
-```
-┌──────────────────────────────────────┐
-│  Parsec VDD Driver Not Found         │
-├──────────────────────────────────────┤
-│  This application requires the       │
-│  Parsec Virtual Display Driver.      │
-│                                      │
-│  [Download Driver]  [Cancel]         │
-└──────────────────────────────────────┘
-```
+O usar el diálogo de instalación integrado al iniciar la app.
 
 ---
 
@@ -127,13 +105,7 @@ O usar el diálogo de instalación integrado:
 
 ### 1. Iniciar la Aplicación
 
-Ejecutar `VirtualWebDisplay_Parsec.exe`. Aparecerá un icono en la bandeja del sistema:
-
-```
-🖥️ VirtualWebDisplay
-├── Configuration...
-└── Exit
-```
+Ejecutar `VirtualWebDisplay_Parsec.exe`. Aparecerá un icono en la bandeja del sistema.
 
 ### 2. Configurar Pantalla Virtual
 
@@ -143,10 +115,10 @@ Click derecho en el icono → **Configuration**
 
 | Opción | Descripción | Valores |
 |--------|-------------|---------|
-| **Resolution** | Tamaño de la pantalla virtual | 1280x720, 1920x1080, 2560x1440, 3840x2160 |
+| **Resolution** | Tamaño de la pantalla virtual | Personalizable desde 420p hasta 5K |
 | **Transmission Mode** | Método de streaming | Web Image (JPEG), RTC (WebRTC) |
 | **HTTP Port** | Puerto del servidor web | 5000 (default), cualquier puerto disponible |
-| **Capture Interval** | Milisegundos entre capturas | 16-500ms (default: 50ms = 20 FPS) |
+| **Capture Interval** | Milisegundos entre capturas | 1-300ms (Ej: 16ms = ~60 FPS) |
 | **JPEG Quality** | Calidad de compresión | 1-100 (default: 75, mayor = mejor calidad) |
 | **Position** | Posición relativa al monitor primario | Right, Left, Above, Below |
 | **Rotation** | Rotación de imagen | 0°, 90°, 180°, 270° |
@@ -158,20 +130,20 @@ Click **Apply** para crear/actualizar la pantalla virtual.
 
 **Dispositivo Local**:
 ```
-https://localhost:5001
+http://localhost:5001
 ```
 
 **Desde otro dispositivo en la red**:
 ```
-https://192.168.1.XXX:5001
+http://192.168.1.XXX:5001
 ```
 *(La IP se muestra en la app y en systray)*
 
-Si la seguridad de pantalla está activada para esa pantalla, primero aparecerá un formulario de acceso y solo mostrará contenido al ingresar la clave válida.
+Si la seguridad de pantalla está activada para esa pantalla, primero aparecerá un formulario de acceso y solo mostrará contenido al ingresar la clave de 6 dígitos válida.
 
-### 4. Instalar Certificado SSL (Primera Vez)
+### 4. Certificado SSL (Experimental)
 
-Para evitar advertencias de seguridad:
+Para usar WebRTC en red local desde dispositivos externos, es posible que el navegador requiera HTTPS. Para instalar el certificado autofirmado generado (bajo tu propio riesgo debido a que es un WIP):
 
 1. Navegar a `https://localhost:5001/cert`
 2. Guardar `localhost.cer`
@@ -184,17 +156,9 @@ Para evitar advertencias de seguridad:
 
 ## 🎮 Casos de Uso
 
-### 1. Monitor Extra para Laptop
+### 1. Monitor Extra para Laptop y Tablets
 
-Usa tu tablet/teléfono como segundo monitor inalámbrico:
-
-```
-Configuración Recomendada:
-- Resolution: 1920x1080
-- Transmission Mode: RTC
-- Capture Interval: 50ms
-- Position: Right
-```
+Usa tu iPad, tablet Android o teléfono como segundo monitor táctil de alta definición sin latencia perceptible usando WebRTC.
 
 ### 2. Streaming de Aplicación Específica
 
@@ -203,30 +167,17 @@ Arrastra una aplicación a la pantalla virtual para transmitirla:
 ```
 1. Crear pantalla virtual (Ej: 1280x720)
 2. Mover ventana de aplicación a pantalla virtual (Win+Shift+→)
-3. Acceder desde navegador
+3. Acceder desde el navegador
 ```
 
 ### 3. Dashboard/Monitoring Remoto
 
-Muestra métricas/dashboard en pantalla virtual, accede desde otro PC:
+Muestra métricas o dashboards en la pantalla virtual, accede desde cualquier dispositivo usando el modo de menor consumo:
 
 ```
 Configuración Recomendada:
-- Resolution: 1920x1080
 - Transmission Mode: Web Image
-- Capture Interval: 200ms (baja CPU, suficiente para dashboards estáticos)
-- JPEG Quality: 85
-```
-
-### 4. Presentaciones Remotas
-
-Transmite presentación a múltiples dispositivos en red local:
-
-```
-Configuración Recomendada:
-- Resolution: 1920x1080
-- Transmission Mode: RTC (baja latencia)
-- Capture Interval: 33ms (30 FPS para animaciones suaves)
+- Capture Interval: 200ms (baja CPU, ideal para dashboards estáticos)
 ```
 
 ---
@@ -236,35 +187,6 @@ Configuración Recomendada:
 ### Archivo de Configuración
 
 Ubicación: `C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.user.json`
-
-**Ejemplo**:
-
-```json
-{
-  "Screen1": {
-    "Enabled": true,
-    "Port": 8000,
-    "Width": 1080,
-    "Height": 1920,
-    "TransmissionMethod": "Rtc",
-    "CaptureIntervalSeconds": 0.25,
-    "JpegQuality": 40,
-    "ScreenSecurityEnabled": true,
-    "StreamRotationDegrees": 0,
-    "VirtualDisplayPlacement": "right",
-    "BrowserImageFit": "contain"
-  },
-  "Screen2": {
-    "Enabled": false,
-    "Port": 8002,
-    "TransmissionMethod": "WebImage",
-    "CaptureIntervalSeconds": 0.2,
-    "JpegQuality": 45,
-    "ScreenSecurityEnabled": false,
-    "VirtualDisplayPlacement": "left"
-  }
-}
-```
 
 **Edición Manual**:
 
@@ -288,31 +210,6 @@ Ver **docs/CONFIGURATION.md** para detalles de cada campo.
 | `/cert` | GET | Descargar certificado SSL autofirmado |
 | `/config` | GET | Descargar configuración JSON actual (requiere auth si seguridad activa) |
 
-### Ejemplo: Obtener Frame Actual
-
-```powershell
-# PowerShell
-Invoke-WebRequest -Uri "https://localhost:5001/cap" -OutFile "screenshot.jpg"
-```
-
-```bash
-# cURL
-curl -k https://localhost:5001/cap -o screenshot.jpg
-```
-
-### Ejemplo: Integración con Python
-
-```python
-import requests
-from PIL import Image
-from io import BytesIO
-
-# Obtener frame JPEG
-response = requests.get("https://localhost:5001/cap", verify=False)
-img = Image.open(BytesIO(response.content))
-img.show()
-```
-
 ---
 
 ## 📊 Comparación de Modos de Transmisión
@@ -320,16 +217,11 @@ img.show()
 | Característica | Web Image (JPEG) | WebRTC |
 |----------------|------------------|--------|
 | **Latencia** | ~100-200ms | ~30-50ms |
-| **Compatibilidad** | Todos los navegadores | Navegadores modernos (Chrome, Edge, Firefox) |
-| **Calidad** | JPEG comprimido | JPEG comprimido (mismo codec) |
+| **Compatibilidad** | Todos los navegadores | Navegadores modernos (Chrome, Edge, Safari) |
 | **CPU Usage** | Bajo | Medio (por gestión de peers) |
-| **Ancho de Banda** | Medio | Medio (similar, pero más eficiente en cambios rápidos) |
+| **Soporte Táctil** | ✅ Totalmente funcional | ✅ Totalmente funcional |
 | **Múltiples Clientes** | ✅ Sí (polling independiente) | ✅ Sí (peers concurrentes) |
-| **Requiere HTTPS** | ❌ No (funciona HTTP) | ✅ Sí (requisito de navegadores) |
-
-**Recomendación**:
-- **WebRTC**: Para gaming, aplicaciones interactivas, presentaciones
-- **Web Image**: Para dashboards, monitoreo, dispositivos antiguos
+| **Requiere HTTPS** | ❌ No (funciona sobre HTTP) | ⚠️ Experimental (Requisito de navegadores) |
 
 ---
 
@@ -337,8 +229,8 @@ img.show()
 
 Ver documentación detallada:
 
-- **[DEVELOPMENT.md](DEVELOPMENT.md)**: Guía de desarrollo completa
-- **[ARCHITECTURE.md](ARCHITECTURE.md)**: Arquitectura del sistema y diagramas
+- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)**: Guía de desarrollo completa
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Arquitectura del sistema y diagramas
 - **[AGENT.md](AGENT.md)**: Contexto técnico para IA/asistentes
 
 ### Stack Tecnológico
@@ -350,45 +242,11 @@ Ver documentación detallada:
 - **Parsec VDD** (driver de pantalla virtual)
 - **System.Drawing** (captura de pantalla)
 
-### Estructura del Proyecto
-
-```
-VirtualWebDisplay/
-├── UI/                     # Interfaz gráfica (tray, formularios)
-├── Web/                    # Servidor web Kestrel, API y templates HTML
-├── Configuration/          # Gestión de configuración y modelos
-├── Parsec/                 # Interfaz con driver Parsec VDD
-├── Streaming/              # Captura de pantalla y transmisión
-├── Infrastructure/         # Servicios base (hosting, runtime, input)
-├── Program.cs              # Punto de entrada
-└── docs/                   # Documentación adicional
-```
-
 ### Compilar
 
 ```powershell
 dotnet build VirtualWebDisplay_Parsec.csproj --configuration Release
 ```
-
-### Testing
-
-```powershell
-# Ejecutar tests (cuando estén disponibles)
-dotnet test
-
-# Testing manual
-.\bin\Release\net10.0-windows\VirtualWebDisplay_Parsec.exe
-```
-
-### Contribuir
-
-1. Fork del repositorio
-2. Crear branch de feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit cambios (`git commit -am 'Agregar nueva funcionalidad'`)
-4. Push al branch (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
-
-Ver **DEVELOPMENT.md** para convenciones de código y guía de contribución.
 
 ---
 
@@ -403,37 +261,14 @@ Ver **DEVELOPMENT.md** para convenciones de código y guía de contribución.
 
 ---
 
-### Problema: "Another instance is already running"
-
-**Solución**:
-```powershell
-# Terminar proceso previo
-taskkill /F /IM VirtualWebDisplay_Parsec.exe
-```
-
----
-
-### Problema: "NET::ERR_CERT_AUTHORITY_INVALID" en Chrome
-
-**Solución**:
-1. Descargar certificado: `https://localhost:5001/cert`
-2. Instalar en "Trusted Root Certification Authorities"
-3. Reiniciar Chrome
-
----
-
 ### Problema: WebRTC no conecta
 
 **Solución**:
-- Verificar que navegador accede vía HTTPS (requerido para WebRTC)
-- Instalar certificado SSL (ver arriba)
-- Verificar firewall no bloquea puerto HTTPS (5001)
+- Verificar que el navegador permite WebRTC en la IP especificada.
+- Instalar certificado SSL (ver sección de uso) si se requiere un entorno seguro.
+- Verificar que el firewall no bloquea el puerto (ej. 5001).
 
----
-
-### Más Ayuda
-
-Ver **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** para guía completa de problemas comunes.
+Ver **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** para la guía completa de problemas comunes.
 
 ---
 
@@ -462,7 +297,6 @@ Este proyecto está licenciado bajo la **MIT License** - ver archivo [LICENSE](L
 
 - [ ] Soporte para H.264 hardware encoding (menor latencia, menor CPU)
 - [ ] Streaming de audio
-- [ ] Control remoto (mouse/teclado desde navegador)
 - [ ] Soporte para 3+ pantallas virtuales
 - [ ] Cliente desktop multiplataforma (Linux, macOS)
 - [ ] Modo "espejo" (duplicar monitor real)
