@@ -1,7 +1,7 @@
-using System.Diagnostics;
 using System.Windows.Forms;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Helpers;
 
 namespace VirtualWebDisplay.UI.TrayIcon;
 
@@ -27,7 +27,7 @@ internal static class TrayMenuBuilder
         {
             menu.Items.Add(new ToolStripSeparator());
             foreach (var runtime in screenRuntimes)
-                menu.Items.Add(AppText.Format("Tray_Menu_OpenDisplay", runtime.DisplayName), null, (_, _) => OpenStreamUrl(runtime.HostUrl));
+                menu.Items.Add(AppText.Format("Tray_Menu_OpenDisplay", runtime.DisplayName), null, (_, _) => ShellHelper.OpenUrl(runtime.HostUrl));
             menu.Items.Add(new ToolStripSeparator());
         }
 
@@ -38,13 +38,5 @@ internal static class TrayMenuBuilder
 
         menu.Items.Add(AppText.Get("Tray_Menu_Exit"), null, (_, _) => onExit());
         return menu;
-    }
-
-    private static void OpenStreamUrl(string url)
-    {
-        if (string.IsNullOrWhiteSpace(url))
-            return;
-
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 }

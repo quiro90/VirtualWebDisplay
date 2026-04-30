@@ -4,6 +4,7 @@ using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Helpers;
 
 namespace VirtualWebDisplay.UI.TrayIcon;
 
@@ -61,7 +62,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     {
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        PostToUi(() =>
+        _invoker.InvokeSafely(() =>
         {
             _formPresenter.OpenStartupForm(
                 onConfirmed: () => completion.TrySetResult(true),
@@ -97,7 +98,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     public void UpdateStatus(string status)
     {
-        PostToUi(() =>
+        _invoker.InvokeSafely(() =>
         {
             if (_notifyIcon is null)
                 return;
@@ -191,7 +192,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private void OnServiceStateChanged(ServiceState newState)
     {
         // Reconstruir menú cuando cambia el estado
-        PostToUi(() =>
+        _invoker.InvokeSafely(() =>
         {
             _contextMenu?.Dispose();
             _contextMenu = BuildContextMenu();
@@ -205,7 +206,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
         var summary = string.Join(" | ", screenRuntimes.Select(r => $"{r.DisplayName}: {r.HostUrl}"));
         UpdateStatus(summary);
 
-        PostToUi(() =>
+        _invoker.InvokeSafely(() =>
         {
             if (_notifyIcon is null)
                 return;
@@ -233,21 +234,6 @@ public sealed class VirtualDisplayTrayController : IDisposable
     public Task<bool> WaitForServiceStartAsync()
         => _serviceState.WaitForStartRequestAsync();
 
-    private void PostToUi(Action action)
-    {
-        if (_invoker is null || _invoker.IsDisposed || !_invoker.IsHandleCreated)
-            return;
-
-        try
-        {
-            _invoker.BeginInvoke(action);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
-        {
-            // El control fue destruido entre el guard y el BeginInvoke (race condition al cerrar).
-        }
-    }
-
     private static string TrimTrayText(string text) =>
         text.Length <= 63 ? text : text[..63];
 
@@ -257,7 +243,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             return;
 
         _disposed = true;
-        PostToUi(() => _context?.ExitThread());
+        _invoker.InvokeSafely(() => _context?.ExitThread());
         if (!_uiThread.Join(1500))
             _uiThread.Interrupt();
         _ready.Dispose();

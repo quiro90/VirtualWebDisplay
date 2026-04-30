@@ -1,7 +1,7 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Helpers;
 
 namespace VirtualWebDisplay.UI.Forms;
 
@@ -81,7 +81,7 @@ internal static class AboutDialog
             VisitedLinkColor = accentColor,
             BackColor = Color.Transparent,
         };
-        linkedinLink.LinkClicked += (_, _) => OpenLinkedin();
+        linkedinLink.LinkClicked += (_, _) => ShellHelper.OpenUrl(LinkedinUrl);
 
         var messagePanel = new Panel
         {
@@ -139,16 +139,5 @@ internal static class AboutDialog
         dialog.CancelButton = closeButton;
 
         dialog.ShowDialog(owner);
-    }
-
-    private static void OpenLinkedin()
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(LinkedinUrl) { UseShellExecute = true });
-        }
-        catch
-        {
-        }
     }
 }

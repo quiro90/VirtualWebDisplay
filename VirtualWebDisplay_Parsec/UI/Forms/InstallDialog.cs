@@ -1,7 +1,7 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Helpers;
 
 namespace VirtualWebDisplay.UI.Forms;
 
@@ -88,7 +88,7 @@ public static class InstallDialog
                     DialogResult = DialogResult.OK,
                 };
 
-                openButton.Click += (_, _) => Process.Start(new ProcessStartInfo(installUrl) { UseShellExecute = true });
+                openButton.Click += (_, _) => ShellHelper.OpenUrl(installUrl);
                 copyButton.Click += (_, _) =>
                 {
                     Clipboard.SetText(installUrl);

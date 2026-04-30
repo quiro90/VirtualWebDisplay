@@ -1,10 +1,10 @@
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Helpers;
 using VirtualWebDisplay.UI.Theme;
 
 namespace VirtualWebDisplay.UI.Forms;
@@ -14,9 +14,6 @@ namespace VirtualWebDisplay.UI.Forms;
 /// </summary>
 public sealed class ResolutionConfigurationForm : Form
 {
-    private const int WmNclButtonDown = 0xA1;
-    private const int HtCaption = 0x2;
-
     private readonly ScreenTabControls _screen1Controls;
     private readonly ScreenTabControls _screen2Controls;
     private readonly ModernTabControl _tabs;
@@ -517,11 +514,7 @@ public sealed class ResolutionConfigurationForm : Form
 
     private void TitleBar_MouseDown(object? sender, MouseEventArgs e)
     {
-        if (e.Button != MouseButtons.Left)
-            return;
-
-        ReleaseCapture();
-        SendMessage(Handle, WmNclButtonDown, HtCaption, 0);
+        WindowDragHelper.EnableDrag(Handle, e);
     }
 
     private Label CreateScreenIndicator(int left, string text, ScreenTabControls screenControls)
@@ -561,7 +554,7 @@ public sealed class ResolutionConfigurationForm : Form
         // Click en número o flecha → abrir navegador
         else
         {
-            OpenUrl(url);
+            ShellHelper.OpenUrl(url);
         }
     }
 
@@ -569,21 +562,4 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _screenIndicatorTooltip.SetToolTip(indicator, AppText.Format("Form_Config_ScreenIndicator_Tooltip", url));
     }
-
-    private static void OpenUrl(string url)
-    {
-        try
-        {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        catch { }
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool ReleaseCapture();
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
-
-
 }

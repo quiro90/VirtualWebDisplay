@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.Parsec;
+using VirtualWebDisplay.UI.Helpers;
 using VirtualWebDisplay.UI.Theme;
 
 namespace VirtualWebDisplay.UI.Forms;
@@ -16,8 +17,6 @@ namespace VirtualWebDisplay.UI.Forms;
 /// </summary>
 public sealed class CustomModesDialog : Form
 {
-    private const int WmNclButtonDown = 0xA1;
-    private const int HtCaption       = 0x2;
     private const int Slots           = VddCustomModesStore.MaxSlots;
 
     // Límites según especificación
@@ -41,9 +40,6 @@ public sealed class CustomModesDialog : Form
     private readonly Label _warningText;
 
     private readonly string _currentWindowTheme;
-
-    [DllImport("user32.dll")] private static extern bool ReleaseCapture();
-    [DllImport("user32.dll")] private static extern int  SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
 
     public CustomModesDialog(string windowTheme)
     {
@@ -347,10 +343,6 @@ public sealed class CustomModesDialog : Form
 
     private void TitleBar_MouseDown(object? sender, MouseEventArgs e)
     {
-        if (e.Button == MouseButtons.Left)
-        {
-            ReleaseCapture();
-            SendMessage(Handle, WmNclButtonDown, HtCaption, 0);
-        }
+        WindowDragHelper.EnableDrag(Handle, e);
     }
 }

@@ -1,9 +1,9 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Localization;
+using VirtualWebDisplay.UI.Helpers;
 
 namespace VirtualWebDisplay.UI.Forms;
 
@@ -108,11 +108,6 @@ public sealed class ScreenTabControls
             Top = currentTop + 18,
             Width = 170,
         };
-        _transmissionMethodCombo.Items.AddRange(
-        [
-            new TransmissionMethodItem(TransmissionModeOptions.WebImage, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.WebImage)),
-            new TransmissionMethodItem(TransmissionModeOptions.Rtc, TransmissionModeOptions.GetDisplayName(TransmissionModeOptions.Rtc)),
-        ]);
 
         _fitLabel = CreateLabel(AppText.Get("Tab_Label_BrowserFit"), 280, currentTop);
         _browserImageFitCombo = new ThemedComboBox
@@ -121,12 +116,6 @@ public sealed class ScreenTabControls
             Top = currentTop + 18,
             Width = 180,
         };
-        _browserImageFitCombo.Items.AddRange(
-        [
-            new ImageFitItem("fill", AppText.Get("Tab_BrowserFit_Fill")),
-            new ImageFitItem("cover", AppText.Get("Tab_BrowserFit_Cover")),
-            new ImageFitItem("contain", AppText.Get("Tab_BrowserFit_Contain")),
-        ]);
 
         currentTop += 54;
 
@@ -172,14 +161,6 @@ public sealed class ScreenTabControls
             Top = currentTop + 18,
             Width = 192,
         };
-        _placementCombo.Items.AddRange(
-        [
-            new PlacementItem("right", AppText.Get("Tab_Placement_Right")),
-            new PlacementItem("left", AppText.Get("Tab_Placement_Left")),
-            new PlacementItem("top", AppText.Get("Tab_Placement_Top")),
-            new PlacementItem("bottom", AppText.Get("Tab_Placement_Bottom")),
-            new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, AppText.Get("Tab_Placement_Duplicate")),
-        ]);
 
         _windowsDisplayButton = new Button
         {
@@ -189,11 +170,7 @@ public sealed class ScreenTabControls
             Height = 28,
             Text = AppText.Get("Tab_Button_OpenWindowsDisplay"),
         };
-        _windowsDisplayButton.Click += (_, _) =>
-        {
-            try { Process.Start(new ProcessStartInfo("ms-settings:display") { UseShellExecute = true }); }
-            catch { }
-        };
+        _windowsDisplayButton.Click += (_, _) => ShellHelper.OpenUrl("ms-settings:display");
 
         currentTop += 55;
 
@@ -298,11 +275,6 @@ public sealed class ScreenTabControls
             Top = currentTop + 18,
             Width = 220,
         };
-        _touchModeCombo.Items.AddRange(
-        [
-            new TouchModeItem(PreserveCursor: false, GesturesEnabled: false, DisplayName: AppText.Get("Tab_TouchMode_TapOnly")),
-            new TouchModeItem(PreserveCursor: false, GesturesEnabled: true, DisplayName: AppText.Get("Tab_TouchMode_Gestures")),
-        ]);
 
         _touchGestureInput = new ThemedNumericUpDown
         {
@@ -468,28 +440,15 @@ public sealed class ScreenTabControls
         _jpegQualitySlider.Value = Math.Clamp(config.JpegQuality, _jpegQualitySlider.Minimum, _jpegQualitySlider.Maximum);
         _maxViewersInput.Value = Math.Clamp(config.MaxViewers, 0, 99);
         _touchInputCheckBox.Checked = config.TouchInputEnabled;
-
-        // Seleccionar el modo táctil basado en la configuración
         _touchPreserveCursorCheckBox.Checked = config.TouchPreserveCursor;
-        _touchModeCombo.SelectedItem = _touchModeCombo.Items.Cast<TouchModeItem>()
-            .FirstOrDefault(item => item.GesturesEnabled == config.TouchGesturesEnabled)
-            ?? _touchModeCombo.Items.Cast<TouchModeItem>().First();
 
         _touchGestureInput.Value = Math.Clamp(config.TouchGestureHoldDelayMs, _touchGestureInput.Minimum, _touchGestureInput.Maximum);
         _screenSecurityCheckBox.Checked = config.ScreenSecurityEnabled;
 
-        var normalizedPlacement = VirtualDisplayPlacementOptions.Normalize(config.VirtualDisplayPlacement);
-        _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
-            .FirstOrDefault(item => item.Placement == normalizedPlacement)
-            ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
-
-        var normalizedFit = config.BrowserImageFit?.Trim().ToLowerInvariant() ?? "fill";
-        _browserImageFitCombo.SelectedItem = _browserImageFitCombo.Items.Cast<ImageFitItem>()
-            .FirstOrDefault(item => item.Fit == normalizedFit)
-            ?? _browserImageFitCombo.Items.Cast<ImageFitItem>().First(item => item.Fit == "fill");
-
-        _transmissionMethodCombo.SelectedItem = _transmissionMethodCombo.Items.Cast<TransmissionMethodItem>()
-            .First(item => item.Method == TransmissionModeOptions.NormalizeMethod(config.TransmissionMethod));
+        RefreshTransmissionOptions(config.TransmissionMethod);
+        RefreshPlacementOptions(config.VirtualDisplayPlacement);
+        RefreshBrowserFitOptions(config.BrowserImageFit);
+        RefreshTouchModeOptions(config.TouchPreserveCursor, config.TouchGesturesEnabled);
 
         UpdateState();
     }
@@ -592,12 +551,6 @@ public sealed class ScreenTabControls
         _screenSecurityCodeToggleButton.Text = "👁";
     }
 
-    private static void OpenUrl(string url)
-    {
-        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
-        catch { }
-    }
-
     private void ApplyHelpTooltips()
     {
         SetHelpToolTip(AppText.Get("Tab_Help_Port"), _portLabel, _portInput);
@@ -652,9 +605,10 @@ public sealed class ScreenTabControls
         Text = text,
     };
 
-    private void RefreshTransmissionOptions()
+    private void RefreshTransmissionOptions(string? defaultMethod = null)
     {
-        var selectedMethod = (_transmissionMethodCombo.SelectedItem as TransmissionMethodItem)?.Method
+        var selectedMethod = defaultMethod
+            ?? (_transmissionMethodCombo.SelectedItem as TransmissionMethodItem)?.Method
             ?? TransmissionModeOptions.WebImage;
 
         _transmissionMethodCombo.Items.Clear();
@@ -669,9 +623,10 @@ public sealed class ScreenTabControls
             ?? _transmissionMethodCombo.Items.Cast<TransmissionMethodItem>().First();
     }
 
-    private void RefreshPlacementOptions()
+    private void RefreshPlacementOptions(string? defaultPlacement = null)
     {
-        var selectedPlacement = (_placementCombo.SelectedItem as PlacementItem)?.Placement
+        var selectedPlacement = defaultPlacement
+            ?? (_placementCombo.SelectedItem as PlacementItem)?.Placement
             ?? VirtualDisplayPlacementOptions.Right;
 
         _placementCombo.Items.Clear();
@@ -689,9 +644,9 @@ public sealed class ScreenTabControls
             ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
     }
 
-    private void RefreshBrowserFitOptions()
+    private void RefreshBrowserFitOptions(string? defaultFit = null)
     {
-        var selectedFit = (_browserImageFitCombo.SelectedItem as ImageFitItem)?.Fit ?? "fill";
+        var selectedFit = defaultFit ?? (_browserImageFitCombo.SelectedItem as ImageFitItem)?.Fit ?? "fill";
 
         _browserImageFitCombo.Items.Clear();
         _browserImageFitCombo.Items.AddRange(
@@ -706,9 +661,11 @@ public sealed class ScreenTabControls
             ?? _browserImageFitCombo.Items.Cast<ImageFitItem>().First(item => item.Fit == "fill");
     }
 
-    private void RefreshTouchModeOptions()
+    private void RefreshTouchModeOptions(bool? defaultPreserveCursor = null, bool? defaultGesturesEnabled = null)
     {
         var selectedMode = _touchModeCombo.SelectedItem as TouchModeItem;
+        var preserveCursor = defaultPreserveCursor ?? selectedMode?.PreserveCursor ?? true;
+        var gesturesEnabled = defaultGesturesEnabled ?? selectedMode?.GesturesEnabled ?? false;
 
         _touchModeCombo.Items.Clear();
         _touchModeCombo.Items.AddRange(
@@ -717,12 +674,9 @@ public sealed class ScreenTabControls
             new TouchModeItem(PreserveCursor: false, GesturesEnabled: true, DisplayName: AppText.Get("Tab_TouchMode_Gestures")),
         ]);
 
-        // Intentar seleccionar el modo previo basado en las propiedades, o el primero por defecto
-        _touchModeCombo.SelectedItem = selectedMode is not null
-            ? _touchModeCombo.Items.Cast<TouchModeItem>()
-                .FirstOrDefault(item => item.PreserveCursor == selectedMode.PreserveCursor && item.GesturesEnabled == selectedMode.GesturesEnabled)
-                ?? _touchModeCombo.Items.Cast<TouchModeItem>().First()
-            : _touchModeCombo.Items.Cast<TouchModeItem>().First();
+        _touchModeCombo.SelectedItem = _touchModeCombo.Items.Cast<TouchModeItem>()
+            .FirstOrDefault(item => item.PreserveCursor == preserveCursor && item.GesturesEnabled == gesturesEnabled)
+            ?? _touchModeCombo.Items.Cast<TouchModeItem>().First();
     }
 
     private sealed record TransmissionMethodItem(string Method, string DisplayName)

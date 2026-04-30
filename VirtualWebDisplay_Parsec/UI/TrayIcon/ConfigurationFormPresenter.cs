@@ -4,6 +4,7 @@ using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.Forms;
+using VirtualWebDisplay.UI.Helpers;
 
 namespace VirtualWebDisplay.UI.TrayIcon;
 
@@ -100,29 +101,14 @@ internal sealed class ConfigurationFormPresenter
 
     private void OnServiceStarted(IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
     {
-        InvokeOnFormSafely(_startupForm, f => f.NotifyServiceStarted(screenRuntimes));
-        InvokeOnFormSafely(_configForm, f => f.NotifyServiceStarted(screenRuntimes));
+        _startupForm.InvokeSafely(() => _startupForm?.NotifyServiceStarted(screenRuntimes));
+        _configForm.InvokeSafely(() => _configForm?.NotifyServiceStarted(screenRuntimes));
     }
 
     private void OnServiceStopped()
     {
-        InvokeOnFormSafely(_startupForm, f => f.NotifyServiceStopped());
-        InvokeOnFormSafely(_configForm, f => f.NotifyServiceStopped());
-    }
-
-    /// <summary>
-    /// Helper para invocar acciones en formularios de manera thread-safe.
-    /// Aplica el patrón InvokeRequired/BeginInvoke para marshaling al UI thread.
-    /// </summary>
-    private static void InvokeOnFormSafely(ResolutionConfigurationForm? form, Action<ResolutionConfigurationForm> action)
-    {
-        if (form is null || form.IsDisposed)
-            return;
-
-        if (form.InvokeRequired)
-            form.BeginInvoke(() => action(form));
-        else
-            action(form);
+        _startupForm.InvokeSafely(() => _startupForm?.NotifyServiceStopped());
+        _configForm.InvokeSafely(() => _configForm?.NotifyServiceStopped());
     }
 
     // ── Factory ───────────────────────────────────────────────────────────────
@@ -192,12 +178,12 @@ internal sealed class ConfigurationFormPresenter
     /// </summary>
     private void ApplyScreenPropertyChange(string screenId, Action<VirtualScreenConfig> applyChange)
     {
-        VirtualScreenConfig? targetScreen = null;
-
-        if (string.Equals(screenId, "screen1", StringComparison.OrdinalIgnoreCase))
-            targetScreen = _settings.Screen1;
-        else if (string.Equals(screenId, "screen2", StringComparison.OrdinalIgnoreCase))
-            targetScreen = _settings.Screen2;
+        VirtualScreenConfig? targetScreen = screenId.ToLowerInvariant() switch
+        {
+            "screen1" => _settings.Screen1,
+            "screen2" => _settings.Screen2,
+            _ => null
+        };
 
         if (targetScreen is null)
             return;
