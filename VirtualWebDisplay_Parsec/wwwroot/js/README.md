@@ -246,7 +246,7 @@ TouchInput.init({ elementId: 'screen', throttleMs: 50, holdDelayMs: 300 });
 
 ## 🧹 Archivos Obsoletos
 
-- **`UI/HtmlTemplates/TouchInputScriptHelper.cs`**: Marcado como `[Obsolete]`. Se mantiene temporalmente para referencia pero ya no se usa en los templates.
+- **`UI/HtmlTemplates/TouchInputScriptHelper.cs`**: Eliminado completamente de la solución tras la auditoría de arquitectura de la capa UI, delegando 100% su responsabilidad a los módulos estáticos en `.js`.
 
 ## 🚀 Beneficios Obtenidos
 

@@ -17,7 +17,7 @@
 ## Componentes clave de entrada táctil
 - `UI/Forms/ScreenTabControls.cs`: UI de configuración por pantalla, ComboBox de modos, eventos hot-reload, método `GetAccessUrl()`
 - `Controllers/Handlers/InputHandler.cs`: Procesamiento de eventos táctiles, gates por config, helpers consolidados
-- `UI/HtmlTemplates/TouchInputScriptHelper.cs`: Script cliente compartido para WebImage/WebRTC
+- `wwwroot/js/touch/touch-input.js`: Script estático cliente compartido para WebImage/WebRTC
 - `Configuration/Models/VirtualScreenConfig.cs`: Propiedades táctiles persistidas
 - `UI/TrayIcon/ConfigurationFormPresenter.cs`: Orquestador de cambios, hot-reload sin reinicio
 - `UI/Forms/ResolutionConfigurationForm.cs`: Formulario principal, gestión de indicadores de pantalla
@@ -37,4 +37,5 @@
 - **Single Responsibility**: Una responsabilidad por método
 - **Pattern Matching**: Early returns en vez de anidamiento
 - **Uso de Tag**: Para metadatos en controles (patrón existente en `FormThemeApplicator`)
+- **Helpers UI**: Usar `UI/Helpers/` (`UiDispatcherHelper`, `WindowDragHelper`, `ShellHelper`) para extraer lógica WinForms repetitiva.
 - **Localización**: Eliminar claves `.resx` obsoletas al eliminar código

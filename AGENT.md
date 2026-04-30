@@ -37,6 +37,10 @@ VirtualWebDisplay_Parsec/
 │   │   ├── ResolutionConfigurationForm.cs  ← Formulario principal de config
 │   │   ├── ScreenTabControls.cs            ← Controles de cada pestaña
 │   │   └── InstallDialog.cs                ← Diálogo instalación Parsec VDD
+│   ├── Helpers/                     ← 🛠️ Utilidades de Vista
+│   │   ├── ShellHelper.cs                 ← Apertura segura URLs/Procesos
+│   │   ├── UiDispatcherHelper.cs          ← Marshaling seguro UI thread
+│   │   └── WindowDragHelper.cs            ← P/Invoke arrastre de ventanas
 │   ├── TrayIcon/
 │   │   └── VirtualDisplayTrayController.cs ← System tray icon y menú
 │   └── HtmlTemplates/
@@ -567,8 +571,8 @@ Cliente (Navegador)
 - Gate por `TouchGesturesEnabled`: retorna `NoContent` cuando gestos deshabilitados
 - Soporta scroll horizontal y vertical simultáneo (inversión natural)
 
-**3. UI/HtmlTemplates/TouchInputScriptHelper.cs**:
-- Script compartido para WebImage y WebRTC
+**3. wwwroot/js/touch/touch-input.js**:
+- Script estático compartido para WebImage y WebRTC
 - Emite eventos por `POST /input/touch`
 - Scroll invertido naturalmente (drag hacia abajo = scroll hacia abajo)
 - Previene comportamiento nativo de Safari (drag-and-drop, long-press)
@@ -783,6 +787,16 @@ MouseInputHelper.Scroll(deltaX, deltaY);
 - ✅ Arquitectura limpia y desacoplada
 
 **Tracking completo**: Ver `/VirtualWebDisplay_Parsec/refactoring_PLAN.md`
+
+### Refactoring de la Capa UI (Enero 2025) 🆕
+
+**Objetivo**: Aplicar SOLID y DRY en la capa de presentación (WinForms), eliminando código duplicado y mejorando la seguridad entre hilos.
+
+**Cambios implementados**:
+1. ✅ **`UiDispatcherHelper`**: Centraliza `InvokeSafely` mitigando excepciones por race conditions en WinForms.
+2. ✅ **`WindowDragHelper`**: Abstrae llamadas nativas P/Invoke (`user32.dll`) aislando la manipulación del SO.
+3. ✅ **`ShellHelper`**: Centraliza la apertura segura de URLs y procesos, ignorando bloqueos si el SO no detecta navegadores.
+4. ✅ **Limpieza Integral**: Unificación de constructores (ej: `ScreenTabControls`) y eliminación del archivo muerto `TouchInputScriptHelper.cs`.
 
 ---
 - `DriverApi` (clase anidada con `unsafe`)
