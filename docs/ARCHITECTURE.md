@@ -147,7 +147,7 @@ graph TB
 - **Componentes**:
   - `Program.cs`: Punto de entrada, configuración de Kestrel, orquestación del ciclo de vida (~120 líneas)
   - `Controllers/WebApiEndpoints.cs`: Registro de todos los endpoints HTTP (`Map()` recibe el `WebApplication`)
-  - `Controllers/SecurityLoginRequest.cs`: Modelo para deserialización POST /auth/login
+  - `Web/Api/SecurityLoginRequest.cs`: Modelo para deserialización POST /auth/login
   - `UI/HtmlTemplates/SecurityPageTemplate.cs`: Genera página HTML de login
   - `UI/HtmlTemplates/ViewerLimitPageTemplate.cs`: Genera página HTML cuando límite de viewers alcanzado
 - **Endpoints**:
@@ -918,7 +918,7 @@ C:\Users\<Usuario>\.virtualwebdisplay\
 
 1. **Crear Template HTML**:
    ```csharp
-   // UI/HtmlTemplates/H264PageTemplate.cs
+   // Web/HtmlTemplates/H264PageTemplate.cs
    public class H264PageTemplate : IHtmlTemplate
    {
        public string Generate(VirtualScreenConfig config, string[] addresses, int port)
@@ -998,3 +998,4 @@ Esta arquitectura prioriza:
 - ✅ **Performance** (optimizaciones en captura/streaming)
 
 Para modificaciones, consultar **AGENT.md** para reglas detalladas y áreas sensibles.
+bles.

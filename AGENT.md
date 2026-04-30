@@ -93,14 +93,21 @@ VirtualWebDisplay_Parsec/
 | Carpeta | Namespace |
 |---------|-----------|
 | `UI/Forms/` | `VirtualWebDisplay.UI.Forms` |
+| `UI/Helpers/` | `VirtualWebDisplay.UI.Helpers` |
+| `UI/Messaging/` | `VirtualWebDisplay.UI.Messaging` |
+| `UI/Theme/` | `VirtualWebDisplay.UI.Theme` |
 | `UI/TrayIcon/` | `VirtualWebDisplay.UI.TrayIcon` |
-| `UI/HtmlTemplates/` | `VirtualWebDisplay.UI.HtmlTemplates` |
+| `Web/Api/` | `VirtualWebDisplay.Web.Api` |
+| `Web/Handlers/` | `VirtualWebDisplay.Web.Handlers` |
+| `Web/Hosting/` | `VirtualWebDisplay.Web.Hosting` |
+| `Web/HtmlTemplates/` | `VirtualWebDisplay.Web.HtmlTemplates` |
+| `Web/Security/` | `VirtualWebDisplay.Web.Security` |
 | `Configuration/Models/` | `VirtualWebDisplay.Configuration.Models` |
 | `Configuration/` | `VirtualWebDisplay.Configuration` |
 | `Parsec/` | `VirtualWebDisplay.Parsec` |
 | `Streaming/` | `VirtualWebDisplay.Streaming` |
 | `Streaming/Models/` | `VirtualWebDisplay.Streaming.Models` |
-| `Infrastructure/` | `VirtualWebDisplay.Infrastructure` |
+| `Infrastructure/*/` | `VirtualWebDisplay.Infrastructure.*` |
 
 ---
 

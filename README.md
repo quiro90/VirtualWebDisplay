@@ -354,11 +354,12 @@ Ver documentación detallada:
 
 ```
 VirtualWebDisplay/
-├── UI/                     # Interfaz gráfica (tray, formularios, templates HTML)
+├── UI/                     # Interfaz gráfica (tray, formularios)
+├── Web/                    # Servidor web Kestrel, API y templates HTML
 ├── Configuration/          # Gestión de configuración y modelos
 ├── Parsec/                 # Interfaz con driver Parsec VDD
 ├── Streaming/              # Captura de pantalla y transmisión
-├── Infrastructure/         # Servicios transversales (red, certificados, runtime)
+├── Infrastructure/         # Servicios base (hosting, runtime, input)
 ├── Program.cs              # Punto de entrada
 └── docs/                   # Documentación adicional
 ```

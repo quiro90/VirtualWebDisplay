@@ -81,14 +81,22 @@ VirtualWebDisplay_Parsec/
 │   │   ├── ResolutionConfigurationForm.cs
 │   │   ├── ScreenTabControls.cs
 │   │   └── InstallDialog.cs
-│   └── HtmlTemplates/
-│       ├── IHtmlTemplate.cs
-│       ├── WebImagePageTemplate.cs
-│       ├── RtcPageTemplate.cs
-│       ├── TemplateVersionHelper.cs           ← Versionado dinámico
-│       ├── TemplateParameterHelper.cs         ← DRY parámetros
-│       ├── SecurityPageTemplate.cs
-│       └── ViewerLimitPageTemplate.cs
+│   ├── Helpers/
+│   ├── Messaging/
+│   └── Theme/
+├── Web/
+│   ├── Api/
+│   ├── Handlers/
+│   ├── Hosting/
+│   ├── HtmlTemplates/
+│   │   ├── IHtmlTemplate.cs
+│   │   ├── WebImagePageTemplate.cs
+│   │   ├── RtcPageTemplate.cs
+│   │   ├── TemplateVersionHelper.cs           ← Versionado dinámico
+│   │   ├── TemplateParameterHelper.cs         ← DRY parámetros
+│   │   ├── SecurityPageTemplate.cs
+│   │   └── ViewerLimitPageTemplate.cs
+│   └── Security/
 ├── wwwroot/                                    ← Archivos estáticos
 │   └── js/                                     ← JavaScript modular
 │       ├── common/
@@ -118,14 +126,14 @@ VirtualWebDisplay_Parsec/
 │   ├── CaptureService.cs
 │   └── WebRtcStreamService.cs
 ├── Infrastructure/
-│   ├── ScreenRuntimeContext.cs
-│   ├── NetworkAddressHelper.cs
-│   ├── LocalCertificateProvider.cs
-│   ├── SingleInstanceManager.cs
-│   ├── RuntimeAccessHelper.cs                  ← Fase 2
-│   └── RuntimeCleanupHelper.cs                 ← Fase 2
-├── Controllers/
-│   └── SecurityLoginRequest.cs                 ← Fase 2
+│   ├── Drivers/
+│   ├── Hosting/
+│   ├── Input/
+│   ├── Runtime/
+│   │   ├── ScreenRuntimeContext.cs
+│   │   ├── RuntimeAccessHelper.cs
+│   │   └── RuntimeCleanupHelper.cs
+│   └── Tasks/
 ├── Program.cs
 └── VirtualWebDisplay_Parsec.csproj
 ```
@@ -797,6 +805,18 @@ taskkill /F /IM VirtualWebDisplay_Parsec.exe
 - [.NET 10 Documentation](https://docs.microsoft.com/dotnet/)
 - [ASP.NET Core](https://docs.microsoft.com/aspnet/core/)
 - [SIPSorcery WebRTC](https://github.com/sipsorcery-org/sipsorcery)
+- [Parsec VDD](https://github.com/nomi-san/parsec-vdd)
+
+---
+
+## Contacto y Contribución
+
+Para preguntas o sugerencias:
+- **GitHub Issues**: https://github.com/quiro90/VirtualWebDisplay/issues
+- **Pull Requests**: Bienvenidos (seguir convenciones de este documento)
+
+¡Happy Coding! 🚀
+cery WebRTC](https://github.com/sipsorcery-org/sipsorcery)
 - [Parsec VDD](https://github.com/nomi-san/parsec-vdd)
 
 ---

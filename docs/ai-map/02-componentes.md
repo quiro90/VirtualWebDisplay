@@ -111,13 +111,13 @@ Rol: controles por pantalla. Emite eventos en caliente para:
 
 ## HTML templates cliente
 
-### `UI/HtmlTemplates/WebImagePageTemplate.cs`
+### `Web/HtmlTemplates/WebImagePageTemplate.cs`
 Modo polling `/cap`. Usa `div#screen` con `background-image` para evitar drag/long-press nativo en iPad Safari.
 
-### `UI/HtmlTemplates/RtcPageTemplate.cs`
+### `Web/HtmlTemplates/RtcPageTemplate.cs`
 Modo WebRTC (DataChannel + render cliente).
 
-### `UI/HtmlTemplates/TouchInputScriptHelper.cs`
+### `Web/HtmlTemplates/TouchInputScriptHelper.cs`
 Script touch compartido para ambos modos.
 Gestos actuales:
 - 1 dedo: tap/click izquierdo, hold = drag
@@ -146,5 +146,6 @@ Config por pantalla: puertos, modo, intervalo, calidad, fit, seguridad, viewers 
 - Rutas/API: `WebApiEndpoints.cs` + `Controllers/Handlers/*`
 - Touch: `InputHandler.cs` + `TouchInputScriptHelper.cs`
 - UI local: `UI/Forms/*` y `UI/TrayIcon/*`
-- UX web: `UI/HtmlTemplates/*`
+- UX web: `Web/HtmlTemplates/*`
 - Persistencia/config: `Configuration/Models/*` + `VirtualScreenSettingsStore.cs`
+tore.cs`
