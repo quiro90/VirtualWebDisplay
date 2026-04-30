@@ -862,7 +862,7 @@ MouseInputHelper.Scroll(deltaX, deltaY);
 
 ### Parsec VDD (Virtual Display Driver)
 - **Qué es**: Driver de Windows que crea monitores virtuales
-- **Instalación**: https://parsec.app/downloads (o https://builds.parsec.app/vdd/parsec-vdd-0.45.0.0.exe)
+- **Instalación**: https://github.com/nomi-san/parsec-vdd/releases
 - **Uso**: P/Invoke desde `ParsecVddDriverApi` (compartido)
 - **Verificación**: `IDriverVerifier.Verify()` (abstracción) o `ParsecVddDriverVerifier` (implementación)
 - **Arquitectura**: 
@@ -911,7 +911,7 @@ dotnet run
 
 ### "Parsec VDD no detectado"
 - **Causa**: Driver no instalado
-- **Solución**: Instalar desde https://parsec.app/downloads
+- **Solución**: Instalar desde https://github.com/nomi-san/parsec-vdd/releases
 
 ### "Puerto en uso"
 - **Causa**: Otra app usa el puerto
