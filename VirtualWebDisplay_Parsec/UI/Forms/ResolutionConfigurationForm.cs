@@ -41,7 +41,6 @@ public sealed class ResolutionConfigurationForm : Form
     private string _selectedWindowTheme;
     private ServiceState _serviceState;
 
-    public VirtualWebDisplaySettings Selection { get; private set; } = new();
     public bool WasStarted => _serviceState == ServiceState.Started;
 
     public event Action<VirtualWebDisplaySettings>? ConfigurationSaved;
@@ -298,7 +297,6 @@ public sealed class ResolutionConfigurationForm : Form
         if (!ValidateAndBuildSelection(out var selection))
             return false;
 
-        Selection = selection;
         ConfigurationSaved?.Invoke(selection);
         return true;
     }
@@ -310,12 +308,6 @@ public sealed class ResolutionConfigurationForm : Form
             _screen1Controls.BuildConfig(alwaysEnabled: true),
             _screen2Controls.BuildConfig(alwaysEnabled: false),
             out selection);
-
-    private void CloseDialog()
-    {
-        DialogResult = DialogResult.OK;
-        Close();
-    }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
