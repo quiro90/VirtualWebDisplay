@@ -261,7 +261,7 @@ public sealed class ScreenTabControls
         {
             Left = blockLeft + 160,
             Top = currentTop,
-            Width = 180,
+            Width = 200,
             Text = AppText.Get("Tab_TouchPreserveCursor_Checkbox"),
         };
 
