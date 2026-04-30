@@ -2,7 +2,7 @@ using System.Net;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.Controllers.Handlers;
+namespace VirtualWebDisplay.Web.Handlers;
 
 /// <summary>
 /// Maneja la captura de pantalla como imagen estática (GET /cap)

@@ -3,7 +3,7 @@ using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.Streaming.Models;
 
-namespace VirtualWebDisplay.Controllers.Handlers;
+namespace VirtualWebDisplay.Web.Handlers;
 
 /// <summary>
 /// Maneja la negociación WebRTC (POST /webrtc/offer).

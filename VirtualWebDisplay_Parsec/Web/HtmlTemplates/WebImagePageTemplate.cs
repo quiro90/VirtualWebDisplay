@@ -1,7 +1,7 @@
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 /// <summary>
 /// HTML template for the WebImage page (periodically refreshed JPEG image).

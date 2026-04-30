@@ -1,7 +1,7 @@
-﻿using System.Net.NetworkInformation;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Web.Security;
 
 using System.Net.NetworkInformation;
 using System.Net.Sockets;

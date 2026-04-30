@@ -2,7 +2,7 @@ using System.Net;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 public sealed class ViewerLimitPageTemplate
 {

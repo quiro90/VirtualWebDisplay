@@ -1,7 +1,12 @@
 global using VirtualWebDisplay.Web.Hosting;
+global using VirtualWebDisplay.Web.Api;
+global using VirtualWebDisplay.Web.Handlers;
+global using VirtualWebDisplay.Web.HtmlTemplates;
+global using VirtualWebDisplay.Web.Security;
 global using VirtualWebDisplay.Infrastructure.Hosting;
 global using VirtualWebDisplay.Infrastructure.Runtime;
 global using VirtualWebDisplay.Infrastructure.Input;
 global using VirtualWebDisplay.Infrastructure.Tasks;
 global using VirtualWebDisplay.UI.Messaging;
+global using VirtualWebDisplay.UI.Helpers;
 global using VirtualWebDisplay.Parsec.Display;

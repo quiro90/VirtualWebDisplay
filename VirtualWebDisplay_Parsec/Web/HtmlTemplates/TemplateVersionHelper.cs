@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 /// <summary>
 /// Proporciona versionado automático para archivos estáticos (JavaScript, CSS).

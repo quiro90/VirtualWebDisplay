@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Web.Security;
 
 /// <summary>
 /// Rate limiter simple para proteger contra flooding de eventos.

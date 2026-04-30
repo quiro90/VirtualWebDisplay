@@ -1,6 +1,6 @@
 using VirtualWebDisplay.Infrastructure;
 
-namespace VirtualWebDisplay.Controllers.Handlers;
+namespace VirtualWebDisplay.Web.Handlers;
 
 internal static class KeepaliveHandler
 {

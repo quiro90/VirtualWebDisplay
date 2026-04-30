@@ -1,7 +1,7 @@
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.Controllers.Handlers;
+namespace VirtualWebDisplay.Web.Handlers;
 
 /// <summary>
 /// Maneja la autenticación vía código de seguridad (POST /auth/login).

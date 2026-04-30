@@ -1,10 +1,8 @@
-using VirtualWebDisplay.Controllers.Handlers;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Streaming.Models;
-using VirtualWebDisplay.UI.HtmlTemplates;
 
 
-namespace VirtualWebDisplay.Controllers;
+namespace VirtualWebDisplay.Web.Api;
 
 /// <summary>
 /// Registra todos los endpoints HTTP de la aplicación en el <see cref="WebApplication"/>.

@@ -1,21 +1,21 @@
-Ôªøusing VirtualWebDisplay.Infrastructure;
+using VirtualWebDisplay.Infrastructure;
 using System.Windows.Forms;
 
-namespace VirtualWebDisplay.Controllers.Handlers;
+namespace VirtualWebDisplay.Web.Handlers;
 
 /// <summary>
-/// Maneja entrada de usuario desde cliente (toques t√°ctiles de tablet).
-/// Traduce eventos t√°ctiles a clics de mouse en la pantalla virtual Parsec.
+/// Maneja entrada de usuario desde cliente (toques t·ctiles de tablet).
+/// Traduce eventos t·ctiles a clics de mouse en la pantalla virtual Parsec.
 /// Usa mapeo directo de viewport al monitor virtual detectado.
 /// Incluye rate limiting para proteger contra flooding de eventos.
 /// </summary>
 internal static class InputHandler
 {
-    // Rate limiters por cliente/sesi√≥n (viewerKey)
+    // Rate limiters por cliente/sesiÛn (viewerKey)
     private static readonly Dictionary<string, RateLimiter> _rateLimiters = new();
     private static readonly object _rateLimiterLock = new object();
 
-    // Configuraci√≥n de rate limiting
+    // ConfiguraciÛn de rate limiting
     private const int DEFAULT_MAX_EVENTS_PER_SECOND = 100;
 
     // mouse virtual
@@ -23,7 +23,7 @@ internal static class InputHandler
     private static int _virtualY;
     private static bool _virtualInitialized;
 
-    // Estad√≠sticas b√°sicas de entrada t√°ctil (Sprint 2)
+    // EstadÌsticas b·sicas de entrada t·ctil (Sprint 2)
     private static long _totalEvents;
     private static long _totalErrors;
     private static long _rateLimitedEvents;
@@ -40,22 +40,22 @@ internal static class InputHandler
     private const int DRAG_STALE_TIMEOUT_MS = 1200;
 
     /// <summary>
-    /// POST /input/touch - Recibe eventos t√°ctiles y los convierte en clics de mouse.
-    /// Soporta tanto WebImage como WebRTC (ambos modos de transmisi√≥n).
+    /// POST /input/touch - Recibe eventos t·ctiles y los convierte en clics de mouse.
+    /// Soporta tanto WebImage como WebRTC (ambos modos de transmisiÛn).
     /// </summary>
     internal static IResult HandleTouchInput(
         HttpContext ctx,
         TouchInputRequest request,
         IReadOnlyList<ScreenRuntimeContext> runtimes)
     {
-        // Validaci√≥n b√°sica
+        // ValidaciÛn b·sica
         if (request == null)
             return Results.BadRequest(new { error = "Request body required" });
 
         if (string.IsNullOrEmpty(request.Type))
             return Results.BadRequest(new { error = "Type field required" });
 
-        // Resolver runtime y verificar autorizaci√≥n
+        // Resolver runtime y verificar autorizaciÛn
         var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
 
         if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
@@ -65,12 +65,12 @@ internal static class InputHandler
         if (!runtime.Config.TouchInputEnabled)
             return Results.NoContent();
 
-        // Registrar telemetr√≠a b√°sica por evento
+        // Registrar telemetrÌa b·sica por evento
         var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         RegisterEvent(nowMs);
         RegisterLatency(nowMs, request.Timestamp);
 
-        // Rate limiting por cliente/sesi√≥n
+        // Rate limiting por cliente/sesiÛn
         var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, runtime);
         if (!CheckRateLimit(viewerKey))
         {
@@ -81,19 +81,19 @@ internal static class InputHandler
 
         // -----------------------------------------------------------------------
         // FAILSAFE PROACTIVO: antes de procesar cualquier evento nuevo, liberar
-        // el bot√≥n si el drag qued√≥ colgado por inactividad (red inestable,
-        // p√©rdida de eventos, nueva secuencia sin haber cerrado la anterior).
+        // el botÛn si el drag quedÛ colgado por inactividad (red inestable,
+        // pÈrdida de eventos, nueva secuencia sin haber cerrado la anterior).
         // -----------------------------------------------------------------------
         ReleaseDragIfStale();
 
         try
         {
-            // Determinar acci√≥n sem√°ntica temprano para aplicar l√≥gica diferenciada.
+            // Determinar acciÛn sem·ntica temprano para aplicar lÛgica diferenciada.
             var action = (request.Action ?? string.Empty).ToLowerInvariant();
 
             // -----------------------------------------------------------------------
             // MANEJO ESPECIAL DE FIN DE GESTOS (DRAGEND / SCROLLEND):
-            // La prioridad absoluta es finalizar la interacci√≥n.
+            // La prioridad absoluta es finalizar la interacciÛn.
             // Las coordenadas pueden llegar nulas/incompletas cuando el dedo abandona
             // el viewport, lo que antes causaba 400 Bad Request. Ahora se toleran.
             // -----------------------------------------------------------------------
@@ -109,7 +109,7 @@ internal static class InputHandler
             }
 
             // Para el resto de acciones, las coordenadas son necesarias.
-            // Si llegan nulas (cliente defectuoso), rechazar con 400 s√≥lo si no es dragend.
+            // Si llegan nulas (cliente defectuoso), rechazar con 400 sÛlo si no es dragend.
             if (request.X is null || request.Y is null)
             {
                 RegisterError();
@@ -118,7 +118,7 @@ internal static class InputHandler
 
             var targetBounds = ResolveTargetMonitorBounds(runtime);
 
-            // Mapear coordenadas viewport ‚Üí pantalla virtual (considerando rotaci√≥n).
+            // Mapear coordenadas viewport ? pantalla virtual (considerando rotaciÛn).
             // Usamos los valores con fallback seguro para ViewportWidth/Height.
             var (screenX, screenY) = MapCoordinates(
                 request.X.Value,
@@ -177,7 +177,7 @@ internal static class InputHandler
                 case "dragend":
                 case "scrollmove":
                 case "scrollend":
-                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled est√° activo
+                    // Los gestos (drag/scroll) solo funcionan si TouchGesturesEnabled est· activo
                     if (!runtime.Config.TouchGesturesEnabled)
                         return Results.NoContent();
 
@@ -199,7 +199,7 @@ internal static class InputHandler
     }
 
     /// <summary>
-    /// GET /input/stats - Devuelve estad√≠sticas agregadas de entrada t√°ctil.
+    /// GET /input/stats - Devuelve estadÌsticas agregadas de entrada t·ctil.
     /// </summary>
     internal static IResult HandleTouchStats(HttpContext ctx, IReadOnlyList<ScreenRuntimeContext> runtimes)
     {
@@ -230,8 +230,8 @@ internal static class InputHandler
 
     /// <summary>
     /// Mapea coordenadas del viewport del navegador a coordenadas locales del monitor objetivo.
-    /// Usa Math.Clamp para garantizar que los valores nunca excedan los l√≠mites del monitor,
-    /// evitando coordenadas negativas o fuera de rango que causar√≠an comportamiento indefinido en Windows.
+    /// Usa Math.Clamp para garantizar que los valores nunca excedan los lÌmites del monitor,
+    /// evitando coordenadas negativas o fuera de rango que causarÌan comportamiento indefinido en Windows.
     /// </summary>
     private static (int screenX, int screenY) MapCoordinates(
         double viewportX,
@@ -245,20 +245,20 @@ internal static class InputHandler
         double normX = viewportWidth > 0 ? viewportX / viewportWidth : 0;
         double normY = viewportHeight > 0 ? viewportY / viewportHeight : 0;
 
-        // Clamp a [0, 1] para evitar coordenadas inv√°lidas (dedo fuera de viewport)
+        // Clamp a [0, 1] para evitar coordenadas inv·lidas (dedo fuera de viewport)
         normX = Math.Clamp(normX, 0.0, 1.0);
         normY = Math.Clamp(normY, 0.0, 1.0);
 
-        // Paso 2: Mapear directo a resoluci√≥n local del monitor.
+        // Paso 2: Mapear directo a resoluciÛn local del monitor.
         int screenX = (int)Math.Round(normX * Math.Max(1, screenWidth - 1));
         int screenY = (int)Math.Round(normY * Math.Max(1, screenHeight - 1));
 
-        // Asegurar que est√°n dentro de l√≠mites v√°lidos (defensa en profundidad)
+        // Asegurar que est·n dentro de lÌmites v·lidos (defensa en profundidad)
         screenX = Math.Clamp(screenX, 0, Math.Max(0, screenWidth - 1));
         screenY = Math.Clamp(screenY, 0, Math.Max(0, screenHeight - 1));
 
         System.Diagnostics.Debug.WriteLine(
-            $"[InputHandler] MapCoordinates: viewport({viewportX:F1},{viewportY:F1}) ‚Üí localScreen({screenX},{screenY})");
+            $"[InputHandler] MapCoordinates: viewport({viewportX:F1},{viewportY:F1}) ? localScreen({screenX},{screenY})");
 
         return (screenX, screenY);
     }
@@ -387,7 +387,7 @@ internal static class InputHandler
     }
 
     /// <summary>
-    /// Libera el bot√≥n izquierdo si el drag lleva m√°s de DRAG_STALE_TIMEOUT_MS ms sin actividad.
+    /// Libera el botÛn izquierdo si el drag lleva m·s de DRAG_STALE_TIMEOUT_MS ms sin actividad.
     /// Se llama al inicio de cada request para limpiar estado inconsistente por eventos perdidos.
     /// </summary>
     private static void ReleaseDragIfStale()
@@ -414,8 +414,8 @@ internal static class InputHandler
     }
 
     /// <summary>
-    /// Verifica si el cliente est√° dentro del l√≠mite de eventos por segundo.
-    /// Mantiene un rate limiter por cliente/sesi√≥n.
+    /// Verifica si el cliente est· dentro del lÌmite de eventos por segundo.
+    /// Mantiene un rate limiter por cliente/sesiÛn.
     /// </summary>
     private static bool CheckRateLimit(string viewerKey)
     {
@@ -505,8 +505,8 @@ internal static class InputHandler
     }
 
     /// <summary>
-    /// Ejecuta un click del tipo especificado, eligiendo autom√°ticamente entre
-    /// el m√©todo normal o el que preserva el cursor seg√∫n la configuraci√≥n.
+    /// Ejecuta un click del tipo especificado, eligiendo autom·ticamente entre
+    /// el mÈtodo normal o el que preserva el cursor seg˙n la configuraciÛn.
     /// </summary>
     private static void ExecuteClick(MouseClickType clickType, int x, int y, bool preserveCursor)
     {
@@ -536,7 +536,7 @@ internal static class InputHandler
     }
 
     /// <summary>
-    /// Ejecuta una acci√≥n de gesto (drag/scroll). Centraliza la l√≥gica repetitiva.
+    /// Ejecuta una acciÛn de gesto (drag/scroll). Centraliza la lÛgica repetitiva.
     /// </summary>
     private static IResult ExecuteGestureAction(string action, long nowMs, TouchInputRequest request, ScreenRuntimeContext runtime)
     {
@@ -561,7 +561,7 @@ internal static class InputHandler
 
             case "dragend":
                 EndDragIfActive();
-                // Restaurar puntero solo si TouchPreserveCursor est√° activo
+                // Restaurar puntero solo si TouchPreserveCursor est· activo
                 if (runtime.Config.TouchPreserveCursor)
                 {
                     MouseInputHelper.RestoreLastCursorPosition();

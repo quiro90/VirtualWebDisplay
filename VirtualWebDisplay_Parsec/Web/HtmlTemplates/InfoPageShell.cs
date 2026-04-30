@@ -1,7 +1,7 @@
 using System.Net;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 internal static class InfoPageShell
 {

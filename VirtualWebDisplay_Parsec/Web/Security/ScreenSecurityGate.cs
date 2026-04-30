@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Web.Security;
 
 public sealed class ScreenSecurityGate
 {

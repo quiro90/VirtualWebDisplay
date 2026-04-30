@@ -1,7 +1,7 @@
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 /// <summary>
 /// HTML template for the WebRTC page (continuous live stream).

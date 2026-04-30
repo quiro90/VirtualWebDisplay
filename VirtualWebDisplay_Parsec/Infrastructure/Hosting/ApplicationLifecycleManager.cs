@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using System.Security.Cryptography.X509Certificates;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
-using VirtualWebDisplay.Controllers;
 using VirtualWebDisplay.Infrastructure.Drivers;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.TrayIcon;

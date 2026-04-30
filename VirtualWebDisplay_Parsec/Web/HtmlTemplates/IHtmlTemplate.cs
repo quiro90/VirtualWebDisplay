@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 /// <summary>
 /// Interface for HTML templates that generate pages dynamically.

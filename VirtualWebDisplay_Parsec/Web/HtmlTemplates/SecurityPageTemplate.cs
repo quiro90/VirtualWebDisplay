@@ -3,7 +3,7 @@ using System.Text.Json;
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 public sealed class SecurityPageTemplate
 {

@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Web.Security;
 
 /// <summary>
 /// Tracks and limits the number of simultaneous viewers per screen.

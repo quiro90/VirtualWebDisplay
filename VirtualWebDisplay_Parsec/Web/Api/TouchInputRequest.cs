@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.Controllers;
+namespace VirtualWebDisplay.Web.Api;
 
 /// <summary>
 /// Representa un evento táctil enviado desde el cliente web (tablet).

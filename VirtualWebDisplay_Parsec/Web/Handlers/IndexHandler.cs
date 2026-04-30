@@ -1,8 +1,7 @@
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Infrastructure;
-using VirtualWebDisplay.UI.HtmlTemplates;
 
-namespace VirtualWebDisplay.Controllers.Handlers;
+namespace VirtualWebDisplay.Web.Handlers;
 
 /// <summary>
 /// Maneja la página principal del display (GET /).

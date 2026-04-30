@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.UI.HtmlTemplates;
+namespace VirtualWebDisplay.Web.HtmlTemplates;
 
 /// <summary>
 /// Helper para procesar parámetros comunes de templates HTML.
