@@ -23,6 +23,7 @@
         // Configuración
         _config: null,
         _screenElement: null,
+        _imgElement: null,
 
         // Estado
         _seq: 0,
@@ -63,6 +64,26 @@
 
             // Configurar prevención de gestos nativos
             this._preventNativeGestures();
+
+            // Preparar capa de renderizado (img) de forma optimizada
+            this._imgElement = document.createElement('img');
+            this._imgElement.id = 'stream-img';
+            this._imgElement.style.width = '100%';
+            this._imgElement.style.height = '100%';
+            this._imgElement.style.objectFit = config.imageFit || 'cover';
+            
+            // CRÍTICO: Previene que la imagen intercepte el toque
+            this._imgElement.style.pointerEvents = 'none';
+            
+            // Deshabilita comportamientos nativos de navegadores por precaución
+            this._imgElement.style.webkitUserDrag = 'none';
+            this._imgElement.style.webkitTouchCallout = 'none';
+            this._imgElement.style.userSelect = 'none';
+            this._imgElement.style.webkitUserSelect = 'none';
+            
+            // Limpiar background anterior si existía para evitar solapamiento
+            this._screenElement.style.backgroundImage = 'none';
+            this._screenElement.appendChild(this._imgElement);
 
             // Iniciar polling
             this._start();
@@ -144,7 +165,7 @@
             const pre = new Image();
 
             pre.onload = () => {
-                this._screenElement.style.backgroundImage = 'url(\'' + pre.src + '\')';
+                this._imgElement.src = pre.src;
                 setTimeout(() => this._next(), this._intervalMs);
             };
 
