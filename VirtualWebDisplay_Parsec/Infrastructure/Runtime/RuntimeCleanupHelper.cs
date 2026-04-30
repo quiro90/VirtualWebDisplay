@@ -1,7 +1,6 @@
 using System.Windows.Forms;
-using VirtualWebDisplay.Infrastructure.Polling;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 public static class RuntimeCleanupHelper
 {

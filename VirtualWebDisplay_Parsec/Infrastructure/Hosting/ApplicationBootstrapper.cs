@@ -4,7 +4,7 @@ using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure.Drivers;
 using VirtualWebDisplay.UI.TrayIcon;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Hosting;
 
 /// <summary>
 /// Orquesta el inicio completo de la aplicación: verificación de driver,

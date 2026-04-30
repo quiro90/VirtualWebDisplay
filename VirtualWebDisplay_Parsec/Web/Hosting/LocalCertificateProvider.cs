@@ -1,29 +1,29 @@
-﻿using System.Net;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Web.Hosting;
 
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 /// <summary>
-/// Genera y almacena en cachÃ© un certificado TLS autofirmado con SANs para la IP y el hostname
+/// Genera y almacena en caché un certificado TLS autofirmado con SANs para la IP y el hostname
 /// locales. El archivo .crt (DER) puede ser descargado e instalado en dispositivos clientes para
-/// que Safari (iOS/macOS) confÃ­e en la conexiÃ³n HTTPS.
+/// que Safari (iOS/macOS) confíe en la conexión HTTPS.
 /// </summary>
 public static class LocalCertificateProvider
 {
     private const string PfxFileName = "localca.pfx";
     private const string CrtFileName = "localca.crt";
 
-    /// <summary>DÃ­as de validez del certificado. iOS/Safari exige â‰¤ 825 dÃ­as.</summary>
+    /// <summary>Días de validez del certificado. iOS/Safari exige ≤ 825 días.</summary>
     private const int ValidityDays = 400;
 
     /// <summary>
     /// Devuelve un certificado X.509 listo para usar en Kestrel y los bytes DER para descarga.
-    /// Si ya existe un certificado vÃ¡lido en <paramref name="storeDir"/> lo reutiliza; en caso
+    /// Si ya existe un certificado válido en <paramref name="storeDir"/> lo reutiliza; en caso
     /// contrario genera uno nuevo.
     /// </summary>
     public static (X509Certificate2 Certificate, byte[] DerBytes) GetOrCreate(
@@ -51,7 +51,7 @@ public static class LocalCertificateProvider
 
                 existing.Dispose();
             }
-            catch { /* cert corrupto â†’ regenerar */ }
+            catch { /* cert corrupto → regenerar */ }
         }
 
         return Generate(storeDir, pfxPath, crtPath, localIp, hostName);
@@ -71,7 +71,7 @@ public static class LocalCertificateProvider
             HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1);
 
-        // BÃ¡sico: certificado de CA para que iOS permita marcarlo como "de confianza total"
+        // Básico: certificado de CA para que iOS permita marcarlo como "de confianza total"
         req.CertificateExtensions.Add(
             new X509BasicConstraintsExtension(
                 certificateAuthority: true,
@@ -94,7 +94,7 @@ public static class LocalCertificateProvider
         req.CertificateExtensions.Add(
             new X509SubjectKeyIdentifierExtension(req.PublicKey, critical: false));
 
-        // SANs â€” imprescindibles para Chrome, Edge y Safari modernos
+        // SANs — imprescindibles para Chrome, Edge y Safari modernos
         var san = new SubjectAlternativeNameBuilder();
         san.AddDnsName("localhost");
         san.AddDnsName(hostName);

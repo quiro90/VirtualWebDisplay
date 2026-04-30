@@ -4,7 +4,6 @@ using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure.Drivers;
-using VirtualWebDisplay.Infrastructure.Polling;
 using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.Parsec;

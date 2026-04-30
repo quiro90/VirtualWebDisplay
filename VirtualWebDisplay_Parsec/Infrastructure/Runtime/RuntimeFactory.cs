@@ -2,11 +2,10 @@ using Microsoft.Extensions.Logging;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure.Drivers;
-using VirtualWebDisplay.Infrastructure.Messaging;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.Forms;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 /// <summary>
 /// Construye los <see cref="ScreenRuntimeContext"/> para cada pantalla habilitada

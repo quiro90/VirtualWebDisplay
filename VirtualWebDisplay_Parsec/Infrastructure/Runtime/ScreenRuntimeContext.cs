@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using VirtualWebDisplay.Configuration.Models;
 using VirtualWebDisplay.Infrastructure.Drivers;
 using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.Streaming;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 {

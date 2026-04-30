@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 /// <summary>
 /// Gestiona el estado del servicio de manera centralizada.

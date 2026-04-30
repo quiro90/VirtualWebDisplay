@@ -8,7 +8,7 @@ using VirtualWebDisplay.Infrastructure.Drivers;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.TrayIcon;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Hosting;
 
 /// <summary>
 /// Gestiona el ciclo de vida de la aplicación: bucle principal de inicio/parada,

@@ -1,4 +1,4 @@
-namespace VirtualWebDisplay.Infrastructure.Polling;
+namespace VirtualWebDisplay.Infrastructure.Tasks;
 
 /// <summary>
 /// Helper genérico para polling con timeout.

@@ -1,17 +1,17 @@
-Ôªøusing Microsoft.Win32;
+using Microsoft.Win32;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Parsec;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Parsec.Display;
 
 /// <summary>
-/// Detecta cambios de resoluci√≥n de los monitores virtuales activos y los persiste
-/// en <c>virtualscreen.display.json</c> para restaurarlos en el pr√≥ximo arranque.
+/// Detecta cambios de resoluciÛn de los monitores virtuales activos y los persiste
+/// en <c>virtualscreen.display.json</c> para restaurarlos en el prÛximo arranque.
 ///
 /// <para>
-/// <b>Por qu√© un hilo STA dedicado:</b> <see cref="SystemEvents.DisplaySettingsChanged"/>
-/// s√≥lo se dispara si existe un message-pump Win32 en el hilo que hizo el subscribe.
-/// El hilo async principal no tiene pump, por lo que el evento nunca llegar√≠a.
+/// <b>Por quÈ un hilo STA dedicado:</b> <see cref="SystemEvents.DisplaySettingsChanged"/>
+/// sÛlo se dispara si existe un message-pump Win32 en el hilo que hizo el subscribe.
+/// El hilo async principal no tiene pump, por lo que el evento nunca llegarÌa.
 /// </para>
 /// </summary>
 internal sealed class VirtualResolutionWatcher : IDisposable
@@ -53,7 +53,7 @@ internal sealed class VirtualResolutionWatcher : IDisposable
         var anyRestored = false;
         foreach (var runtime in _runtimes)
         {
-            // Sincronizar siempre el Config con la resoluci√≥n real de Windows.
+            // Sincronizar siempre el Config con la resoluciÛn real de Windows.
             if (current.TryGetValue(runtime.Id, out var cur))
             {
                 runtime.Config.Width  = cur.Width;
@@ -61,13 +61,13 @@ internal sealed class VirtualResolutionWatcher : IDisposable
             }
 
             if (!saved.TryGetValue(runtime.Id, out var res))
-                continue; // Sin historial: se usar√° la que Windows asign√≥.
+                continue; // Sin historial: se usar· la que Windows asignÛ.
 
             var deviceName = runtime.DisplayManager.WindowsDeviceName;
             if (string.IsNullOrWhiteSpace(deviceName))
                 continue;
 
-            // Solo aplicar si la resoluci√≥n guardada difiere de la actual.
+            // Solo aplicar si la resoluciÛn guardada difiere de la actual.
             if (current.TryGetValue(runtime.Id, out cur) && cur == res)
                 continue;
 

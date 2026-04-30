@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 public static class RuntimeAccessHelper
 {

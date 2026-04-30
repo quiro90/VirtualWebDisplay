@@ -1,6 +1,6 @@
 using System.Security.Cryptography.X509Certificates;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Web.Hosting;
 
 /// <summary>
 /// Configura los puertos HTTP y HTTPS en Kestrel para cada runtime activo.

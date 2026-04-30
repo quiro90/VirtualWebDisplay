@@ -1,6 +1,6 @@
 using VirtualWebDisplay.Localization;
 
-namespace VirtualWebDisplay.Infrastructure.Messaging;
+namespace VirtualWebDisplay.UI.Messaging;
 
 /// <summary>
 /// Centraliza la construcción de mensajes de error durante el inicio de la aplicación.

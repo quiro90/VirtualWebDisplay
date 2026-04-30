@@ -1,11 +1,10 @@
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Infrastructure.Drivers;
-using VirtualWebDisplay.Infrastructure.Messaging;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.Forms;
 
-namespace VirtualWebDisplay.Infrastructure;
+namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 /// <summary>
 /// Inicializa los runtimes de pantalla: crea los displays virtuales necesarios, asigna los
