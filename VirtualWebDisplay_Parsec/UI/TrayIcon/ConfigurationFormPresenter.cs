@@ -82,6 +82,13 @@ internal sealed class ConfigurationFormPresenter
             return;
         }
 
+        if (_configForm is not null && !_configForm.IsDisposed)
+        {
+            _configForm.BringToFront();
+            _configForm.Activate();
+            return;
+        }
+
         var hasStarted = _serviceState.IsStarted;
         _configForm = CreateForm(isInitialStartup: false, hasStarted, hasStarted ? screenRuntimes : null);
         try
@@ -90,7 +97,7 @@ internal sealed class ConfigurationFormPresenter
         }
         finally
         {
-            _configForm.Dispose();
+            _configForm?.Dispose();
             _configForm = null;
         }
     }
