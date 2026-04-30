@@ -511,8 +511,6 @@ public sealed class ScreenTabControls
         UpdateState();
     }
 
-    public bool IsEnabledState() => IsTabEnabled();
-
     private bool IsTabEnabled()
     {
         if (!_allowDisable)

@@ -68,8 +68,6 @@ internal sealed class ConfigurationFormPresenter
         _startupForm.Show();
     }
 
-    internal void ClearStartupForm() => _startupForm = null;
-
     // ── Config dialog ────────────────────────────────────────────────────────
 
     /// <summary>
