@@ -41,11 +41,23 @@ internal static class TemplateParameterHelper
     /// <summary>
     /// Extrae y convierte el delay de hold para gestos táctiles.
     /// </summary>
-    public static int GetGestureHoldDelayMs(Dictionary<string, object> parameters)
-    {
-        var gestureHoldDelayMsObj = parameters.GetValueOrDefault("gestureHoldDelayMs", 300);
-        return gestureHoldDelayMsObj is int holdInt ? holdInt : Convert.ToInt32(gestureHoldDelayMsObj);
-    }
+    public static bool GetTouchZoomEnabled(Dictionary<string, object> parameters)
+        => parameters.TryGetValue("touchZoomEnabled", out var val) && Convert.ToBoolean(val);
+
+    public static int GetTouchZoomDelayMs(Dictionary<string, object> parameters)
+        => parameters.TryGetValue("touchZoomDelayMs", out var val) ? Convert.ToInt32(val) : 50;
+
+    public static bool GetTouchHoldEnabled(Dictionary<string, object> parameters)
+        => parameters.TryGetValue("touchHoldEnabled", out var val) && Convert.ToBoolean(val);
+
+    public static int GetTouchHoldDelayMs(Dictionary<string, object> parameters)
+        => parameters.TryGetValue("touchHoldDelayMs", out var val) ? Convert.ToInt32(val) : 250;
+
+    public static bool GetTouchScrollEnabled(Dictionary<string, object> parameters)
+        => parameters.TryGetValue("touchScrollEnabled", out var val) && Convert.ToBoolean(val);
+
+    public static int GetTouchScrollDelayMs(Dictionary<string, object> parameters)
+        => parameters.TryGetValue("touchScrollDelayMs", out var val) ? Convert.ToInt32(val) : 250;
 
     /// <summary>
     /// Calcula el throttling de eventos táctiles basándose en el intervalo de captura.

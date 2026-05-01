@@ -22,8 +22,12 @@ public sealed class VirtualWebDisplaySettings
 
         TransmissionModeOptions.EnsureValidSelection(Screen1);
         TransmissionModeOptions.EnsureValidSelection(Screen2);
-        Screen1.TouchGestureHoldDelayMs = TouchGestureOptions.ClampHoldDelay(Screen1.TouchGestureHoldDelayMs);
-        Screen2.TouchGestureHoldDelayMs = TouchGestureOptions.ClampHoldDelay(Screen2.TouchGestureHoldDelayMs);
+        Screen1.TouchZoomDelayMs = TouchGestureOptions.ClampDelay(Screen1.TouchZoomDelayMs);
+        Screen2.TouchZoomDelayMs = TouchGestureOptions.ClampDelay(Screen2.TouchZoomDelayMs);
+        Screen1.TouchHoldDelayMs = TouchGestureOptions.ClampDelay(Screen1.TouchHoldDelayMs);
+        Screen2.TouchHoldDelayMs = TouchGestureOptions.ClampDelay(Screen2.TouchHoldDelayMs);
+        Screen1.TouchScrollDelayMs = TouchGestureOptions.ClampDelay(Screen1.TouchScrollDelayMs);
+        Screen2.TouchScrollDelayMs = TouchGestureOptions.ClampDelay(Screen2.TouchScrollDelayMs);
 
         // Asignar puerto por defecto solo si no está configurado.
         // Los puertos configurados por el usuario se respetan.

@@ -40,7 +40,12 @@ internal static class IndexHandler
             ["title"] = runtime.DisplayName,
             ["browserImageFit"] = browserImageFit,
             ["intervalMs"] = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
-            ["gestureHoldDelayMs"] = runtime.Config.TouchGestureHoldDelayMs,
+            ["touchZoomEnabled"] = runtime.Config.TouchZoomEnabled,
+            ["touchZoomDelayMs"] = runtime.Config.TouchZoomDelayMs,
+            ["touchHoldEnabled"] = runtime.Config.TouchHoldEnabled,
+            ["touchHoldDelayMs"] = runtime.Config.TouchHoldDelayMs,
+            ["touchScrollEnabled"] = runtime.Config.TouchScrollEnabled,
+            ["touchScrollDelayMs"] = runtime.Config.TouchScrollDelayMs,
         };
 
         var html = TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod)

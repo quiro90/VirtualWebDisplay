@@ -23,9 +23,13 @@
     "JpegQuality": 40,
     "MaxViewers": 1,
     "TouchInputEnabled": false,
-    "TouchGesturesEnabled": true,
     "TouchPreserveCursor": false,
-    "TouchGestureHoldDelayMs": 300,
+    "TouchZoomEnabled": true,
+    "TouchZoomDelayMs": 50,
+    "TouchHoldEnabled": true,
+    "TouchHoldDelayMs": 250,
+    "TouchScrollEnabled": true,
+    "TouchScrollDelayMs": 250,
     "ScreenSecurityEnabled": true,
     "MonitorIndex": -1,
     "VirtualDisplayPlacement": "right",
@@ -41,9 +45,13 @@
     "JpegQuality": 45,
     "MaxViewers": 0,
     "TouchInputEnabled": true,
-    "TouchGesturesEnabled": true,
     "TouchPreserveCursor": false,
-    "TouchGestureHoldDelayMs": 300,
+    "TouchZoomEnabled": true,
+    "TouchZoomDelayMs": 50,
+    "TouchHoldEnabled": true,
+    "TouchHoldDelayMs": 250,
+    "TouchScrollEnabled": true,
+    "TouchScrollDelayMs": 250,
     "ScreenSecurityEnabled": false,
     "MonitorIndex": -1,
     "VirtualDisplayPlacement": "left",
@@ -82,22 +90,18 @@
 
 - Endpoint de entrada: `POST /input/touch`
 - Estadisticas: `GET /input/stats`
-- **Modos de Entrada Táctil** (configurables por pantalla):
-  - **Tap only (cursor not affected)**: Solo taps/clicks sin gestos. El cursor NO se mueve al tocar.
-    - 1 dedo tap: click izquierdo
-    - 2 dedos tap: click derecho
-    - 3+ dedos tap: click central
-  - **Gestures (cursor affected)**: Gestos completos con drag, scroll y clicks. El cursor SE MUEVE al tocar.
-    - 1 dedo tap: click izquierdo
-    - 1 dedo hold + drag: arrastrar (drag)
-    - 2 dedos hold + drag: scroll vertical y horizontal (ambos sentidos, inversión natural)
-    - 2 dedos tap: click derecho
-    - 3+ dedos tap: click central
+- **Configuraciones Granulares** (configurables por pantalla):
+  - `TouchPreserveCursor`: preserva posición del cursor al tocar.
+  - `TouchZoomEnabled`: habilita el gesto de pellizco (zoom local, no envia evento al host).
+  - `TouchHoldEnabled`: habilita mantener toque para arrastrar (drag).
+  - `TouchScrollEnabled`: habilita scroll con dos dedos (inversión natural).
+- **Tiempos de respuesta (Delays)**:
+  - `TouchZoomDelayMs`: milisegundos requeridos antes de activar zoom (por defecto 50ms).
+  - `TouchHoldDelayMs`: milisegundos de presión requeridos antes de iniciar drag (por defecto 250ms).
+  - `TouchScrollDelayMs`: milisegundos de presión de 2 dedos antes de iniciar scroll (por defecto 250ms).
 - **Configuración en Caliente** (sin reiniciar servicio):
-  - `TouchInputEnabled`: activa/desactiva entrada táctil por pantalla (Táctil/Normal toggle)
-  - `TouchGesturesEnabled`: habilita gestos de arrastre y scroll (cuando modo Gestures seleccionado)
-  - `TouchPreserveCursor`: preserva posición del cursor (cuando modo Tap only seleccionado)
-  - `TouchGestureHoldDelayMs`: tiempo de hold en ms para activar drag/scroll (300ms por defecto, solo en modo Gestures)
+  - `TouchInputEnabled`: activa/desactiva completamente la entrada táctil por pantalla (Master toggle).
+  - Todas las configuraciones mencionadas anteriormente se aplican en tiempo real al cambiarlas desde la UI.
 
 ## WebImage en iPad/Safari
 

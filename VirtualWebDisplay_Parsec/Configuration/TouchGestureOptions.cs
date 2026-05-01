@@ -2,9 +2,8 @@ namespace VirtualWebDisplay.Configuration;
 
 public static class TouchGestureOptions
 {
-    public const int MinHoldDelayMs = 150;
-    public const int MaxHoldDelayMs = 2000;
-    public const int DefaultHoldDelayMs = 300;
+    public const int MinDelayMs = 10;
+    public const int MaxDelayMs = 2000;
 
-    public static int ClampHoldDelay(int value) => Math.Clamp(value, MinHoldDelayMs, MaxHoldDelayMs);
+    public static int ClampDelay(int value) => Math.Clamp(value, MinDelayMs, MaxDelayMs);
 }

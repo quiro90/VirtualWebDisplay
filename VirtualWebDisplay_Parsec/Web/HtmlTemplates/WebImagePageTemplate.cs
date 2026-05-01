@@ -19,7 +19,12 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
         var browserImageFit = TemplateParameterHelper.GetBrowserImageFit(parameters);
         var backgroundSize = TemplateParameterHelper.GetBackgroundSize(browserImageFit);
         var intervalMs = TemplateParameterHelper.GetIntervalMs(parameters);
-        var gestureHoldDelayMs = TemplateParameterHelper.GetGestureHoldDelayMs(parameters);
+        var touchZoomEnabled = TemplateParameterHelper.GetTouchZoomEnabled(parameters).ToString().ToLower();
+        var touchZoomDelayMs = TemplateParameterHelper.GetTouchZoomDelayMs(parameters);
+        var touchHoldEnabled = TemplateParameterHelper.GetTouchHoldEnabled(parameters).ToString().ToLower();
+        var touchHoldDelayMs = TemplateParameterHelper.GetTouchHoldDelayMs(parameters);
+        var touchScrollEnabled = TemplateParameterHelper.GetTouchScrollEnabled(parameters).ToString().ToLower();
+        var touchScrollDelayMs = TemplateParameterHelper.GetTouchScrollDelayMs(parameters);
         var throttleMs = TemplateParameterHelper.CalculateThrottleMs(intervalMs);
         var htmlLang = AppText.HtmlLang;
 
@@ -102,7 +107,12 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                         TouchInput.init({
                             elementId: 'screen',
                             throttleMs: {{throttleMs}},
-                            holdDelayMs: {{gestureHoldDelayMs}}
+                            touchZoomEnabled: {{touchZoomEnabled}},
+                            touchZoomDelayMs: {{touchZoomDelayMs}},
+                            touchHoldEnabled: {{touchHoldEnabled}},
+                            touchHoldDelayMs: {{touchHoldDelayMs}},
+                            touchScrollEnabled: {{touchScrollEnabled}},
+                            touchScrollDelayMs: {{touchScrollDelayMs}}
                         });
                     }
                 })();

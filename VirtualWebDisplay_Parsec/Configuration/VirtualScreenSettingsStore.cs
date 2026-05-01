@@ -50,20 +50,20 @@ public sealed class VirtualScreenSettingsStore
         if (!TryReadLegacyGlobalTouchGestureHoldDelay(out var legacyGlobalHoldDelay))
             return;
 
-        var screen1IsDefault = settings.Screen1.TouchGestureHoldDelayMs == TouchGestureOptions.DefaultHoldDelayMs;
-        var screen2IsDefault = settings.Screen2.TouchGestureHoldDelayMs == TouchGestureOptions.DefaultHoldDelayMs;
+        var screen1IsDefault = settings.Screen1.TouchHoldDelayMs == 250;
+        var screen2IsDefault = settings.Screen2.TouchHoldDelayMs == 250;
 
         if (!screen1IsDefault || !screen2IsDefault)
             return;
 
-        var migrated = TouchGestureOptions.ClampHoldDelay(legacyGlobalHoldDelay);
-        settings.Screen1.TouchGestureHoldDelayMs = migrated;
-        settings.Screen2.TouchGestureHoldDelayMs = migrated;
+        var migrated = TouchGestureOptions.ClampDelay(legacyGlobalHoldDelay);
+        settings.Screen1.TouchHoldDelayMs = migrated;
+        settings.Screen2.TouchHoldDelayMs = migrated;
     }
 
     private bool TryReadLegacyGlobalTouchGestureHoldDelay(out int holdDelayMs)
     {
-        holdDelayMs = TouchGestureOptions.DefaultHoldDelayMs;
+        holdDelayMs = 250;
 
         try
         {

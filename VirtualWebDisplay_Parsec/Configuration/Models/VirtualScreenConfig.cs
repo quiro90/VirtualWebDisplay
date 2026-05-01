@@ -61,16 +61,34 @@ public sealed class VirtualScreenConfig
     public bool TouchInputEnabled { get; set; }
 
     /// <summary>
-    /// Hold time in milliseconds required to activate gesture modes
-    /// (1 finger drag and 2-finger scroll).
+    /// Whether the zoom (pinch) gesture is enabled.
     /// </summary>
-    public int TouchGestureHoldDelayMs { get; set; } = 300;
+    public bool TouchZoomEnabled { get; set; } = true;
 
     /// <summary>
-    /// Whether touch gestures (drag and scroll) are enabled.
-    /// If false, only taps will work, no gestures.
+    /// Delay in milliseconds before triggering the zoom gesture.
     /// </summary>
-    public bool TouchGesturesEnabled { get; set; } = true;
+    public int TouchZoomDelayMs { get; set; } = 50;
+
+    /// <summary>
+    /// Whether the hold (long press) gesture is enabled.
+    /// </summary>
+    public bool TouchHoldEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Delay in milliseconds before triggering the hold gesture.
+    /// </summary>
+    public int TouchHoldDelayMs { get; set; } = 250;
+
+    /// <summary>
+    /// Whether the scroll (two fingers) gesture is enabled.
+    /// </summary>
+    public bool TouchScrollEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Delay in milliseconds before triggering the scroll gesture.
+    /// </summary>
+    public int TouchScrollDelayMs { get; set; } = 250;
 
     /// <summary>
     /// Whether to preserve cursor position after tap actions.
@@ -121,8 +139,12 @@ public sealed class VirtualScreenConfig
         ScreenSecurityEnabled = ScreenSecurityEnabled,
         MaxViewers = MaxViewers,
         TouchInputEnabled = TouchInputEnabled,
-        TouchGestureHoldDelayMs = TouchGestureHoldDelayMs,
-        TouchGesturesEnabled = TouchGesturesEnabled,
+        TouchZoomEnabled = TouchZoomEnabled,
+        TouchZoomDelayMs = TouchZoomDelayMs,
+        TouchHoldEnabled = TouchHoldEnabled,
+        TouchHoldDelayMs = TouchHoldDelayMs,
+        TouchScrollEnabled = TouchScrollEnabled,
+        TouchScrollDelayMs = TouchScrollDelayMs,
         TouchPreserveCursor = TouchPreserveCursor,
         Port = Port,
         MonitorIndex = MonitorIndex,
@@ -145,8 +167,12 @@ public sealed class VirtualScreenConfig
         target.ScreenSecurityEnabled = ScreenSecurityEnabled;
         target.MaxViewers = MaxViewers;
         target.TouchInputEnabled = TouchInputEnabled;
-        target.TouchGestureHoldDelayMs = TouchGestureHoldDelayMs;
-        target.TouchGesturesEnabled = TouchGesturesEnabled;
+        target.TouchZoomEnabled = TouchZoomEnabled;
+        target.TouchZoomDelayMs = TouchZoomDelayMs;
+        target.TouchHoldEnabled = TouchHoldEnabled;
+        target.TouchHoldDelayMs = TouchHoldDelayMs;
+        target.TouchScrollEnabled = TouchScrollEnabled;
+        target.TouchScrollDelayMs = TouchScrollDelayMs;
         target.TouchPreserveCursor = TouchPreserveCursor;
         target.Port = Port;
         target.MonitorIndex = MonitorIndex;

@@ -55,10 +55,10 @@ Rol: icono de bandeja, menu y coordinacion de start/stop.
 Rol: abrir formularios y aplicar cambios sobre settings/runtimes.
 
 **Optimizaciones recientes**:
-- `ApplyScreenPropertyChange(screenId, Action)`: helper genérico para eliminar duplicación
-- `ApplyTouchModeChange(screenId, preserveCursor, gesturesEnabled)`: handler consolidado para modo táctil
-- Consolidación de eventos: 6 eventos originales → 4 eventos optimizados
-- Hot-reload: todos los cambios táctiles se aplican sin reiniciar el servicio
+- `ApplyScreenPropertyChange(screenId, Action)`: helper genérico para eliminar duplicación.
+- `ApplyTouchGestureChange(screenId, gesture, enabled, delay)`: handler consolidado para activar/desactivar y configurar el retardo de gestos (Zoom, Hold, Scroll).
+- Consolidación de eventos y delegación.
+- Hot-reload: todos los cambios táctiles se aplican sin reiniciar el servicio.
 
 ### `UI/Forms/ResolutionConfigurationForm.cs`
 Rol: formulario principal de configuración.
@@ -85,9 +85,9 @@ Rol: formulario principal de configuración.
 
 ### `UI/Forms/ScreenTabControls.cs`
 Rol: controles por pantalla. Emite eventos en caliente para:
-- `TouchInputChanged` (Táctil/Normal toggle)
-- `TouchModeChanged` (modo táctil: Tap only vs Gestures)
-- `TouchGestureHoldDelayChanged` (ms de hold para gestos)
+- `TouchInputChanged` (Táctil/Normal toggle general)
+- `TouchPreserveCursorChanged` (Recordar posición del puntero)
+- `TouchZoomChanged`, `TouchHoldChanged`, `TouchScrollChanged` (Toggle granular y delays)
 
 **Métodos públicos**:
 - `GetAccessUrl()`: retorna la URL de acceso actual `http://{IP}:{Port}` (usado por indicadores)
@@ -101,32 +101,33 @@ Rol: controles por pantalla. Emite eventos en caliente para:
 - ✅ Método `GetAccessUrl()` agregado para exponer la URL sin mostrarla en la tab
 
 **Arquitectura de Touch Mode**:
-- Usa un `ComboBox` con 2 opciones mutuamente exclusivas (reemplazó 2 checkboxes contradictorios)
-- `TouchModeItem` record: `(PreserveCursor: bool, GesturesEnabled: bool, DisplayName: string)`
-- **Tap only**: `PreserveCursor=true, GesturesEnabled=false` - cursor no se mueve al tocar
-- **Gestures**: `PreserveCursor=false, GesturesEnabled=true` - cursor se mueve, drag/scroll habilitados
-- Master/slave logic: el ComboBox de modo controla el `Enabled` del NumericUpDown de ms
+- Sustitución de opciones excluyentes por checkboxes granulares.
+- Checkboxes individuales por cada gesto (Zoom, Mantener toque, Scroll) con sus respectivos tiempos de respuesta en milisegundos (`NumericUpDown`).
+- Master/slave logic: El CheckBox maestro "Entrada táctil" (`TouchInputEnabled`) habilita o deshabilita los sub-controles de la UI.
+- Activar el checkbox de un gesto, habilita inmediatamente la configuración de tiempo para este.
 - Todos los cambios se aplican y persisten al instante, sin reinicio
 - Localización completa vía AppText (EN/ES) con cambio de idioma en vivo
 
 ## HTML templates cliente
 
 ### `Web/HtmlTemplates/WebImagePageTemplate.cs`
-Modo polling `/cap`. Usa `div#screen` con `background-image` para evitar drag/long-press nativo en iPad Safari.
+Modo polling `/cap`. Usa `div#screen` con `background-image` para evitar drag/long-press nativo en iPad Safari. Transmite parámetros granulares al script de touch `TouchInput.init`.
 
 ### `Web/HtmlTemplates/RtcPageTemplate.cs`
-Modo WebRTC (DataChannel + render cliente).
+Modo WebRTC (DataChannel + render cliente). Transmite parámetros granulares al script de touch `TouchInput.init`.
 
-### `Web/HtmlTemplates/TouchInputScriptHelper.cs`
+### `wwwroot/js/touch/touch-input.js`
 Script touch compartido para ambos modos.
 Gestos actuales:
-- 1 dedo: tap/click izquierdo, hold = drag
-- 2 dedos: scroll vertical y horizontal (ambos sentidos, inversión natural, configurable por ms de hold)
+- 1 dedo: tap/click izquierdo.
+- 1 dedo hold: drag (configurable por ms de hold).
+- 2 dedos: scroll vertical y horizontal (ambos sentidos, inversión natural, configurable por ms de hold).
+- 2 dedos pellizco (zoom): escalado web local.
 - 2 dedos tap: click derecho
 - 3+ dedos: click central
-El script emite scroll horizontal y vertical tras el hold configurado, y ambos sentidos están invertidos para sensación natural.
+El script emite eventos luego de respetar los bloqueos configurados de delay y los toggles por gesto. Todos los sentidos están invertidos para sensación natural.
 ### `Controllers/Handlers/InputHandler.cs`
-Rol: endpoint `/input/touch` para traducir eventos táctiles a mouse. Soporta drag, tap y scroll vertical y horizontal (ambos sentidos, inversión natural). La lógica es compacta y no duplica código: ambos ejes se procesan en un solo método.
+Rol: endpoint `/input/touch` para traducir eventos táctiles a mouse. Soporta drag, tap y scroll vertical y horizontal (ambos sentidos, inversión natural). Verifica sub-gates como `TouchHoldEnabled` y `TouchScrollEnabled` para permitir el paso del evento a la VM.
 
 ## Configuracion y persistencia
 

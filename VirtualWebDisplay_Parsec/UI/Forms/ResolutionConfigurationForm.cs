@@ -46,12 +46,18 @@ public sealed class ResolutionConfigurationForm : Form
     public event Action<VirtualWebDisplaySettings>? ConfigurationSaved;
     public event Action? StartupConfirmed;
     public event Action? StopRequested;
-    public event Action<bool>? Screen1TouchInputChanged;
-    public event Action<bool>? Screen2TouchInputChanged;
-    public event Action<int>? Screen1TouchGestureHoldDelayChanged;
-    public event Action<int>? Screen2TouchGestureHoldDelayChanged;
-    public event Action<bool, bool>? Screen1TouchModeChanged; // (preserveCursor, gesturesEnabled)
-    public event Action<bool, bool>? Screen2TouchModeChanged; // (preserveCursor, gesturesEnabled)
+    public event Action<bool>? Screen1TouchInputChange;
+    public event Action<bool>? Screen2TouchInputChange;
+    public event Action<bool>? Screen1TouchPreserveCursorChanged;
+    public event Action<bool>? Screen2TouchPreserveCursorChanged;
+
+    // Zoom, Hold, Scroll (enabled, delayMs)
+    public event Action<bool, int>? Screen1TouchZoomChanged;
+    public event Action<bool, int>? Screen2TouchZoomChanged;
+    public event Action<bool, int>? Screen1TouchHoldChanged;
+    public event Action<bool, int>? Screen2TouchHoldChanged;
+    public event Action<bool, int>? Screen1TouchScrollChanged;
+    public event Action<bool, int>? Screen2TouchScrollChanged;
 
     private string AcceptButtonText => _serviceState switch
     {
@@ -82,7 +88,7 @@ public sealed class ResolutionConfigurationForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = isInitialStartup;
-        ClientSize = new Size(540, 545);
+        ClientSize = new Size(540, 555);
 
         var workingCopy = new VirtualWebDisplaySettings
         {
@@ -172,7 +178,7 @@ public sealed class ResolutionConfigurationForm : Form
             Left = 10,
             Top = 86,
             Width = 520,
-            Height = 408,
+            Height = 421,
         };
 
         _screen1Controls = new ScreenTabControls(
@@ -196,7 +202,7 @@ public sealed class ResolutionConfigurationForm : Form
         _acceptButton = new Button
         {
             Left   = 352,
-            Top    = 503,
+            Top    = 516,
             Width  = 84,
             Height = 30,
             Text   = AcceptButtonText,
@@ -207,7 +213,7 @@ public sealed class ResolutionConfigurationForm : Form
         _cancelButton = new Button
         {
             Left   = 444,
-            Top    = 503,
+            Top    = 516,
             Width  = 84,
             Height = 30,
             Text   = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
@@ -245,12 +251,20 @@ public sealed class ResolutionConfigurationForm : Form
             _screen2Controls.SetEnabledState(_enableScreen2Check.Checked);
             UpdateScreenIndicatorsVisibility();
         };
-        _screen1Controls.TouchInputChanged += enabled => Screen1TouchInputChanged?.Invoke(enabled);
-        _screen2Controls.TouchInputChanged += enabled => Screen2TouchInputChanged?.Invoke(enabled);
-        _screen1Controls.TouchGestureHoldDelayChanged += value => Screen1TouchGestureHoldDelayChanged?.Invoke(value);
-        _screen2Controls.TouchGestureHoldDelayChanged += value => Screen2TouchGestureHoldDelayChanged?.Invoke(value);
-        _screen1Controls.TouchModeChanged += (preserveCursor, gesturesEnabled) => Screen1TouchModeChanged?.Invoke(preserveCursor, gesturesEnabled);
-        _screen2Controls.TouchModeChanged += (preserveCursor, gesturesEnabled) => Screen2TouchModeChanged?.Invoke(preserveCursor, gesturesEnabled);
+        _screen1Controls.TouchInputChanged += enabled => Screen1TouchInputChange?.Invoke(enabled);
+        _screen2Controls.TouchInputChanged += enabled => Screen2TouchInputChange?.Invoke(enabled);
+        
+        _screen1Controls.TouchPreserveCursorChanged += enabled => Screen1TouchPreserveCursorChanged?.Invoke(enabled);
+        _screen2Controls.TouchPreserveCursorChanged += enabled => Screen2TouchPreserveCursorChanged?.Invoke(enabled);
+        
+        _screen1Controls.TouchZoomChanged += (enabled, delay) => Screen1TouchZoomChanged?.Invoke(enabled, delay);
+        _screen2Controls.TouchZoomChanged += (enabled, delay) => Screen2TouchZoomChanged?.Invoke(enabled, delay);
+        
+        _screen1Controls.TouchHoldChanged += (enabled, delay) => Screen1TouchHoldChanged?.Invoke(enabled, delay);
+        _screen2Controls.TouchHoldChanged += (enabled, delay) => Screen2TouchHoldChanged?.Invoke(enabled, delay);
+        
+        _screen1Controls.TouchScrollChanged += (enabled, delay) => Screen1TouchScrollChanged?.Invoke(enabled, delay);
+        _screen2Controls.TouchScrollChanged += (enabled, delay) => Screen2TouchScrollChanged?.Invoke(enabled, delay);
 
         ApplyLocalization();
         ApplyTheme();

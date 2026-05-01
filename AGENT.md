@@ -514,9 +514,13 @@ public sealed class CaptureService : BackgroundService
 | `ScreenSecurityEnabled` | bool | Activa clave de acceso por pantalla |
 | `MonitorIndex` | int | Índice en Screen.AllScreens (-1 = auto) |
 | `TouchInputEnabled` | bool | Activa/desactiva entrada táctil por pantalla |
-| `TouchGesturesEnabled` | bool | Habilita gestos (drag/scroll) - true por defecto |
 | `TouchPreserveCursor` | bool | Preserva cursor al tocar - false por defecto |
-| `TouchGestureHoldDelayMs` | int | Umbral de hold para gestos en ms (300 por defecto) |
+| `TouchZoomEnabled` | bool | Habilita gesto de zoom (pellizco) - true por defecto |
+| `TouchZoomDelayMs` | int | Delay en ms para activar zoom (50ms por defecto) |
+| `TouchHoldEnabled` | bool | Habilita mantener toque para arrastrar - true por defecto |
+| `TouchHoldDelayMs` | int | Delay en ms para activar arrastre (250ms por defecto) |
+| `TouchScrollEnabled` | bool | Habilita scroll con dos dedos - true por defecto |
+| `TouchScrollDelayMs` | int | Delay en ms para activar scroll (250ms por defecto) |
 
 ---
 
@@ -527,71 +531,53 @@ public sealed class CaptureService : BackgroundService
 **Flujo completo**:
 ```
 Cliente (Navegador)
-  ├─ TouchInputScriptHelper.cs genera eventos tactiles
+  ├─ touch-input.js genera eventos tactiles (con bloqueos temporales por delay de cada gesto)
   ├─ POST /input/touch con (fingerCount, action, normalizedX/Y, deltaX/Y)
   └─ InputHandler.cs procesa eventos
       ├─ Gate: TouchInputEnabled (NoContent si false)
-      ├─ Gate: TouchGesturesEnabled (NoContent si false para gestos)
+      ├─ Gate: Enablers granulares (ej: TouchHoldEnabled para dragstart, TouchScrollEnabled para scroll)
       ├─ Convierte coordenadas normalizadas → píxeles
-      ├─ Ejecuta acción según modo:
-      │   ├─ Tap only: MouseInputHelper.ClickPreservingCursor()
-      │   └─ Gestures: MouseInputHelper.Click() + Drag/Scroll
+      ├─ Ejecuta acción según modo (Tap, Click, Drag, Scroll)
       └─ Actualiza métricas (eventsPerSecond, avgLatencyMs)
 ```
 
-### Modos Táctiles (Mutuamente Exclusivos)
+### Modos Táctiles (Granulares)
 
-**UI: ComboBox con 2 opciones**:
+En vez de modos excluyentes, los gestos se configuran granularmente:
 
-| Modo UI | TouchGesturesEnabled | TouchPreserveCursor | Comportamiento |
-|---------|---------------------|---------------------|----------------|
-| **Tap only (cursor not affected)** | `false` | `true` | Solo taps, cursor NO se mueve |
-| **Gestures (cursor affected)** | `true` | `false` | Taps + drag + scroll, cursor SE MUEVE |
-
-**Gestos por Modo**:
-
-**Tap only**:
-- 1 dedo tap → click izquierdo (cursor no se mueve)
-- 2 dedos tap → click derecho (cursor no se mueve)
-- 3+ dedos tap → click central (cursor no se mueve)
-
-**Gestures**:
-- 1 dedo tap → click izquierdo (cursor se mueve)
-- 1 dedo hold + drag → arrastrar (drag)
-- 2 dedos tap → click derecho (cursor se mueve)
-- 2 dedos hold + drag → scroll vertical/horizontal (inversión natural)
-- 3+ dedos tap → click central (cursor se mueve)
-- Umbral: `TouchGestureHoldDelayMs` (300ms por defecto)
+- **TouchPreserveCursor**: Si es `true`, los taps (1/2/3 dedos) no mueven el cursor.
+- **Zoom (Pellizco)**: Toggle `TouchZoomEnabled` y delay `TouchZoomDelayMs`. Escalado visual web (no mueve scroll nativo).
+- **Mantener toque**: Toggle `TouchHoldEnabled` y delay `TouchHoldDelayMs`. 1 dedo hold + drag → arrastrar.
+- **Scroll (Dos dedos)**: Toggle `TouchScrollEnabled` y delay `TouchScrollDelayMs`. 2 dedos hold + drag → scroll vertical/horizontal (inversión natural).
 
 ### Componentes Clave
 
 **1. UI/Forms/ScreenTabControls.cs**:
-- `TouchModeItem` record: `(PreserveCursor: bool, GesturesEnabled: bool, DisplayName: string)`
-- ComboBox con 2 items mutuamente exclusivos (reemplazó 2 checkboxes contradictorios)
-- Master/slave logic: ComboBox controla `Enabled` del NumericUpDown de ms
-- Eventos: `TouchInputChanged`, `TouchModeChanged`, `TouchGestureHoldDelayChanged`
-- Localización completa vía `AppText` (EN/ES)
+- Master logic: El Checkbox `TouchInputEnabled` habilita/deshabilita todos los checkboxes de gestos.
+- Checkboxes individuales: `TouchPreserveCursor`, `TouchZoomEnabled`, `TouchHoldEnabled`, `TouchScrollEnabled`.
+- Delays granulares: `NumericUpDown` independientes que se habilitan junto con su respectivo checkbox.
+- Eventos: `TouchInputChanged`, `TouchZoomChanged`, `TouchHoldChanged`, `TouchScrollChanged`, etc.
+- Localización completa vía `AppText` (EN/ES).
 
 **2. Controllers/Handlers/InputHandler.cs**:
-- `ExecuteClick(type, x, y, preserveCursor)`: helper consolidado para clicks
-- `ExecuteGestureAction(action, nowMs, request)`: procesamiento centralizado de gestos
-- Gate por `TouchGesturesEnabled`: retorna `NoContent` cuando gestos deshabilitados
-- Soporta scroll horizontal y vertical simultáneo (inversión natural)
+- `ExecuteClick(type, x, y, preserveCursor)`: helper consolidado para clicks.
+- `ExecuteGestureAction(action, nowMs, request)`: procesamiento centralizado de gestos.
+- Gates por propiedades granulares: ignora `dragstart`/`dragmove`/`dragend` si `!TouchHoldEnabled`. Lo mismo para scroll.
+- Soporta scroll horizontal y vertical simultáneo (inversión natural).
 
 **3. wwwroot/js/touch/touch-input.js**:
-- Script estático compartido para WebImage y WebRTC
-- Emite eventos por `POST /input/touch`
-- Scroll invertido naturalmente (drag hacia abajo = scroll hacia abajo)
-- Previene comportamiento nativo de Safari (drag-and-drop, long-press)
+- Script estático compartido para WebImage y WebRTC.
+- Soporta Zoom nativo por transformaciones CSS sin envío de coordenadas.
+- Delays granulares aplicados mediante timeouts de `pendingTap` y `pendingScroll`.
+- Scroll invertido naturalmente (drag hacia abajo = scroll hacia abajo).
 
 **4. Configuration/Models/VirtualScreenConfig.cs**:
-- Propiedades: `TouchInputEnabled`, `TouchGesturesEnabled`, `TouchPreserveCursor`, `TouchGestureHoldDelayMs`
-- Incluidas en `Clone()` y `CopyTo()` para persistencia
+- Propiedades: `TouchInputEnabled`, `TouchZoomEnabled`, `TouchZoomDelayMs`, `TouchHoldEnabled`, etc.
+- Incluidas en `Clone()` y `CopyTo()` para persistencia.
 
 **5. UI/TrayIcon/ConfigurationFormPresenter.cs**:
-- `ApplyTouchModeChange(screenId, preserveCursor, gesturesEnabled)`: handler consolidado
-- `ApplyScreenPropertyChange(screenId, Action)`: helper genérico para eliminar duplicación
-- Hot-reload: todos los cambios se aplican sin reiniciar servicio
+- Handlers como `ApplyTouchGestureChange(screenId, gesture, enabled, delay)`.
+- Hot-reload: todos los cambios se aplican sin reiniciar servicio.
 
 ### Hot-Reload de Configuración Táctil
 
@@ -601,12 +587,12 @@ Cliente (Navegador)
 3. Form invoca → `ConfigurationFormPresenter`
 4. Presenter actualiza → `VirtualWebDisplaySettings` (en memoria + JSON)
 5. Presenter aplica → `ScreenRuntimeContext.Config` (runtime activo)
-6. Próxima request a `/input/touch` usa nueva configuración
+6. Próxima request a `/input/touch` (o inyección en templates si aplica) usa nueva configuración
 
 **Controles hot-reload**:
 - Checkbox "Táctil/Normal" (`TouchInputEnabled`)
-- ComboBox de modo (`TouchGesturesEnabled` + `TouchPreserveCursor`)
-- NumericUpDown de ms (`TouchGestureHoldDelayMs`)
+- Checkboxes y Delays de Zoom, Mantener Toque y Scroll.
+- Checkbox "Recordar posición del puntero".
 
 ### Endpoints Táctiles
 

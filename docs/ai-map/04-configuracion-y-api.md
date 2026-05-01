@@ -35,9 +35,13 @@ Screen2: VirtualScreenConfig
 | `JpegQuality` | 40 | Calidad de compresión 10-100 (compartido por ambos modos) |
 | `MaxViewers` | 1 | Máximo de viewers simultáneos (`0` = sin límite) |
 | `TouchInputEnabled` | false | Habilita touch remoto para esa pantalla (editable en caliente, por pantalla, sin reinicio) |
-| `TouchGesturesEnabled` | true | Habilita gestos de drag y scroll (editable en caliente, false = solo taps) |
 | `TouchPreserveCursor` | false | Preserva posición del cursor al tocar (editable en caliente, true = cursor no se mueve) |
-| `TouchGestureHoldDelayMs` | 300 | Tiempo de hold (ms) para activar drag/scroll. Permite configurar el umbral de activación de gestos y scroll (editable en caliente, por pantalla, sin reinicio). |
+| `TouchZoomEnabled` | true | Habilita gesto de zoom/pellizco (editable en caliente) |
+| `TouchZoomDelayMs` | 50 | Tiempo (ms) para activar zoom (editable en caliente) |
+| `TouchHoldEnabled` | true | Habilita mantener toque para drag (editable en caliente) |
+| `TouchHoldDelayMs` | 250 | Tiempo (ms) de presión para activar drag (editable en caliente) |
+| `TouchScrollEnabled` | true | Habilita scroll con dos dedos (editable en caliente) |
+| `TouchScrollDelayMs` | 250 | Tiempo (ms) de presión para activar scroll (editable en caliente) |
 | `MonitorIndex` | -1 | -1=auto (VDD creado), 0=primario, 1+=otros |
 | `VirtualDisplayPlacement` | "right" | right / left / top / bottom / **duplicate** |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |
@@ -223,9 +227,7 @@ AppText.NormalizeLanguage("en")       // Normaliza código de idioma
 
 #### Entrada táctil
 - `Tab_Section_TouchInput`: "Touch Input" / "Entrada Táctil"
-- `Tab_Label_TouchMode`: "Touch mode:" / "Modo táctil:"
-- `Tab_TouchMode_TapOnly`: "Tap only (cursor not affected)" / "Solo toques (no afecta cursor)"
-- `Tab_TouchMode_Gestures`: "Gestures (cursor affected)" / "Gestos (afecta cursor)"
+- `Tab_TouchPreserveCursor_Checkbox`: "Preserve cursor position on tap" / "Recordar posición del puntero"
 
 #### Claves obsoletas eliminadas
 Las siguientes claves fueron eliminadas de los archivos `.resx` por no tener uso:

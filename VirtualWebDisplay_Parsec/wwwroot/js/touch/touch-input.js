@@ -20,9 +20,17 @@
      * Sistema de entrada táctil con soporte de gestos.
      */
     const TouchInput = {
-        // Configuración
+        // Configuration parameters
         _config: null,
         _screenElement: null,
+
+        // Delays & Enablers
+        _touchZoomEnabled: true,
+        _touchZoomDelayMs: 50,
+        _touchHoldEnabled: true,
+        _touchHoldDelayMs: 250,
+        _touchScrollEnabled: true,
+        _touchScrollDelayMs: 250,
 
         // Estado de gestos
         _state: {
@@ -54,7 +62,6 @@
         _recentLatencies: [],
 
         // Constantes (sincronizadas con Configuration/TouchInputConstants.cs)
-        _HOLD_DELAY_MS: 300,
         _TAP_MAX_MOVE_PX: 14,        // TouchInputConstants.TapMaxMovePx
         _MIN_THROTTLE_MS: 10,        // TouchInputConstants.MinThrottleMs
         _DEFAULT_THROTTLE_MS: 50,    // TouchInputConstants.DefaultThrottleMs
@@ -69,7 +76,6 @@
          * @param {Object} config - Configuración del sistema
          * @param {string} config.elementId - ID del elemento HTML que recibirá eventos táctiles
          * @param {number} [config.throttleMs=50] - Throttling de eventos en milisegundos (mínimo 10ms)
-         * @param {number} [config.holdDelayMs=300] - Delay para activar hold-to-drag en milisegundos
          */
         init(config) {
             if (!config || !config.elementId) {
@@ -92,9 +98,12 @@
                 this._touchThrottle = this._DEFAULT_THROTTLE_MS;
             }
 
-            if (config.holdDelayMs && config.holdDelayMs >= 100) {
-                this._HOLD_DELAY_MS = config.holdDelayMs;
-            }
+            this._touchZoomEnabled = config.touchZoomEnabled ?? true;
+            this._touchZoomDelayMs = config.touchZoomDelayMs ?? 50;
+            this._touchHoldEnabled = config.touchHoldEnabled ?? true;
+            this._touchHoldDelayMs = config.touchHoldDelayMs ?? 250;
+            this._touchScrollEnabled = config.touchScrollEnabled ?? true;
+            this._touchScrollDelayMs = config.touchScrollDelayMs ?? 250;
 
             // Adjuntar event listeners
             this._attachListeners();
@@ -102,7 +111,12 @@
             log.info('Initialized (absolute pointer enabled)', {
                 elementId: config.elementId,
                 throttleMs: this._touchThrottle,
-                holdDelayMs: this._HOLD_DELAY_MS
+                touchZoomEnabled: this._touchZoomEnabled,
+                touchZoomDelayMs: this._touchZoomDelayMs,
+                touchHoldEnabled: this._touchHoldEnabled,
+                touchHoldDelayMs: this._touchHoldDelayMs,
+                touchScrollEnabled: this._touchScrollEnabled,
+                touchScrollDelayMs: this._touchScrollDelayMs
             });
         },
 
@@ -159,6 +173,7 @@
                 }
                 
                 try {
+                    this._state.touchStartTime = now;
                     this._state.pinchBaseDist = this._getPinchDistance(e.touches);
                     this._state.isZooming = false;
                     this._state.initialTransform = this._screenElement.style.transform || '';
@@ -194,11 +209,12 @@
             const rect = this._screenElement.getBoundingClientRect();
             const fingerCount = e.touches.length;
 
-            if (fingerCount >= 2) {
+            if (fingerCount >= 2 && this._touchZoomEnabled && this._state.mode !== 'scroll') {
                 try {
                     const currentDist = this._getPinchDistance(e.touches);
+                    const timeSinceStart = now - this._state.touchStartTime;
                     
-                    if (!this._state.isZooming && Math.abs(currentDist - this._state.pinchBaseDist) > 15) {
+                    if (!this._state.isZooming && Math.abs(currentDist - this._state.pinchBaseDist) > 40 && timeSinceStart >= this._touchZoomDelayMs) {
                         this._state.isZooming = true;
                         const center = this._getCenter(e.touches, rect);
                         this._screenElement.style.transformOrigin = `${center.x}px ${center.y}px`;
@@ -207,14 +223,12 @@
 
                     if (this._state.isZooming) {
                         const scale = Math.max(0.5, currentDist / this._state.pinchBaseDist);
-                        const currentAngle = this._getPinchAngle(e.touches);
-                        const angleDiff = currentAngle - this._state.pinchBaseAngle;
                         
                         const absCenter = this._getAbsoluteCenter(e.touches);
                         const panX = absCenter.x - this._state.initialViewportCenterX;
                         const panY = absCenter.y - this._state.initialViewportCenterY;
                         
-                        this._screenElement.style.transform = `translate(${panX}px, ${panY}px) scale(${scale}) rotate(${angleDiff}deg)`;
+                        this._screenElement.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
                         return; // No procesar scroll de servidor mientras se hace zoom
                     }
                 } catch (err) {
@@ -423,24 +437,26 @@
             });
 
             this._clearHoldTimer();
-            this._state.holdTimer = setTimeout(() => {
-                if (this._state.mode !== 'pendingTap') {
-                    return;
-                }
+            if (this._touchHoldEnabled) {
+                this._state.holdTimer = setTimeout(() => {
+                    if (this._state.mode !== 'pendingTap') {
+                        return;
+                    }
 
-                this._state.mode = 'drag';
+                    this._state.mode = 'drag';
 
-                this._sendTouchInput({
-                    type: 'touchstart',
-                    action: 'dragstart',
-                    x: this._state.lastX,
-                    y: this._state.lastY,
-                    viewportWidth: rect.width,
-                    viewportHeight: rect.height,
-                    fingers: 1,
-                    timestamp: Date.now()
-                });
-            }, this._HOLD_DELAY_MS);
+                    this._sendTouchInput({
+                        type: 'touchstart',
+                        action: 'dragstart',
+                        x: this._state.lastX,
+                        y: this._state.lastY,
+                        viewportWidth: rect.width,
+                        viewportHeight: rect.height,
+                        fingers: 1,
+                        timestamp: Date.now()
+                    });
+                }, this._touchHoldDelayMs);
+            }
 
             this._touchEventCount++;
             this._recentLocalEvents.push(now);
@@ -469,12 +485,14 @@
             });
 
             this._clearHoldTimer();
-            this._state.holdTimer = setTimeout(() => {
-                if (this._state.mode !== 'pendingScroll') {
-                    return;
-                }
-                this._state.mode = 'scroll';
-            }, this._HOLD_DELAY_MS);
+            if (this._touchScrollEnabled) {
+                this._state.holdTimer = setTimeout(() => {
+                    if (this._state.mode !== 'pendingScroll') {
+                        return;
+                    }
+                    this._state.mode = 'scroll';
+                }, this._touchScrollDelayMs);
+            }
 
             this._touchEventCount++;
             this._recentLocalEvents.push(now);
