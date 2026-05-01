@@ -26,7 +26,6 @@
 
         // Delays & Enablers
         _touchZoomEnabled: true,
-        _touchZoomDelayMs: 50,
         _touchHoldEnabled: true,
         _touchHoldDelayMs: 250,
         _touchScrollEnabled: true,
@@ -99,7 +98,6 @@
             }
 
             this._touchZoomEnabled = config.touchZoomEnabled ?? true;
-            this._touchZoomDelayMs = config.touchZoomDelayMs ?? 50;
             this._touchHoldEnabled = config.touchHoldEnabled ?? true;
             this._touchHoldDelayMs = config.touchHoldDelayMs ?? 250;
             this._touchScrollEnabled = config.touchScrollEnabled ?? true;
@@ -108,16 +106,38 @@
             // Adjuntar event listeners
             this._attachListeners();
 
+            // Iniciar sincronización en tiempo real (Hot-Reload)
+            this._startConfigPolling();
+
             log.info('Initialized (absolute pointer enabled)', {
                 elementId: config.elementId,
                 throttleMs: this._touchThrottle,
                 touchZoomEnabled: this._touchZoomEnabled,
-                touchZoomDelayMs: this._touchZoomDelayMs,
                 touchHoldEnabled: this._touchHoldEnabled,
                 touchHoldDelayMs: this._touchHoldDelayMs,
                 touchScrollEnabled: this._touchScrollEnabled,
                 touchScrollDelayMs: this._touchScrollDelayMs
             });
+        },
+
+        /**
+         * Inicia el polling para actualizar la configuración táctil en tiempo real (Hot-Reload).
+         * @private
+         */
+        _startConfigPolling() {
+            setInterval(() => {
+                fetch('/config')
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (!data) return;
+                        const cfg = data.config || data;
+                        if (typeof cfg.touchZoomEnabled !== 'undefined') this._touchZoomEnabled = cfg.touchZoomEnabled;
+                        if (typeof cfg.touchHoldEnabled !== 'undefined') this._touchHoldEnabled = cfg.touchHoldEnabled;
+                        if (typeof cfg.touchHoldDelayMs !== 'undefined') this._touchHoldDelayMs = cfg.touchHoldDelayMs;
+                        if (typeof cfg.touchScrollEnabled !== 'undefined') this._touchScrollEnabled = cfg.touchScrollEnabled;
+                        if (typeof cfg.touchScrollDelayMs !== 'undefined') this._touchScrollDelayMs = cfg.touchScrollDelayMs;
+                    }).catch(() => {});
+            }, 2000);
         },
 
         /**
@@ -209,13 +229,15 @@
             const rect = this._screenElement.getBoundingClientRect();
             const fingerCount = e.touches.length;
 
-            if (fingerCount >= 2 && this._touchZoomEnabled && this._state.mode !== 'scroll') {
+            if (fingerCount >= 2 && this._touchZoomEnabled && (this._state.isZooming || this._state.mode !== 'scroll')) {
                 try {
                     const currentDist = this._getPinchDistance(e.touches);
-                    const timeSinceStart = now - this._state.touchStartTime;
                     
-                    if (!this._state.isZooming && Math.abs(currentDist - this._state.pinchBaseDist) > 40 && timeSinceStart >= this._touchZoomDelayMs) {
+                    // Evaluamos solo por distancia (30px de tolerancia), el tiempo entorpece un pellizco natural
+                    if (!this._state.isZooming && Math.abs(currentDist - this._state.pinchBaseDist) > 30) {
                         this._state.isZooming = true;
+                        this._state.mode = 'zoom';
+                        this._clearHoldTimer();
                         const center = this._getCenter(e.touches, rect);
                         this._screenElement.style.transformOrigin = `${center.x}px ${center.y}px`;
                         this._screenElement.style.transition = 'none';

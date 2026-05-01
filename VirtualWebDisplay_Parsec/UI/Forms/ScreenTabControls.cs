@@ -35,7 +35,6 @@ public sealed class ScreenTabControls
     private readonly CheckBox _touchInputCheckBox;
     private readonly CheckBox _touchPreserveCursorCheckBox;
     private readonly CheckBox _touchZoomCheckBox;
-    private readonly ThemedNumericUpDown _touchZoomDelayInput;
     private readonly CheckBox _touchHoldCheckBox;
     private readonly ThemedNumericUpDown _touchHoldDelayInput;
     private readonly CheckBox _touchScrollCheckBox;
@@ -280,17 +279,6 @@ public sealed class ScreenTabControls
             Text = "Zoom (Pellizco)"
         };
 
-        _touchZoomDelayInput = new ThemedNumericUpDown
-        {
-            Left = blockLeft + 140,
-            Top = currentTop + 24,
-            Width = 56,
-            Minimum = TouchGestureOptions.MinDelayMs,
-            Maximum = TouchGestureOptions.MaxDelayMs,
-            DecimalPlaces = 0,
-            Increment = 10M,
-        };
-
         _touchHoldCheckBox = new CheckBox
         {
             Left = blockLeft,
@@ -356,7 +344,6 @@ public sealed class ScreenTabControls
             _touchInputCheckBox,
             _touchPreserveCursorCheckBox,
             _touchZoomCheckBox,
-            _touchZoomDelayInput,
             _touchHoldCheckBox,
             _touchHoldDelayInput,
             _touchScrollCheckBox,
@@ -392,12 +379,6 @@ public sealed class ScreenTabControls
         _touchZoomCheckBox.CheckedChanged += (_, _) =>
         {
             UpdateState();
-            TouchZoomChanged?.Invoke(_touchZoomCheckBox.Checked, (int)_touchZoomDelayInput.Value);
-        };
-        _touchZoomDelayInput.ValueChanged += (_, _) =>
-        {
-            UpdateState();
-            TouchZoomChanged?.Invoke(_touchZoomCheckBox.Checked, (int)_touchZoomDelayInput.Value);
         };
 
         _touchHoldCheckBox.CheckedChanged += (_, _) =>
@@ -474,7 +455,6 @@ public sealed class ScreenTabControls
         config.TouchPreserveCursor = _touchPreserveCursorCheckBox.Checked;
 
         config.TouchZoomEnabled = _touchZoomCheckBox.Checked;
-        config.TouchZoomDelayMs = (int)_touchZoomDelayInput.Value;
         
         config.TouchHoldEnabled = _touchHoldCheckBox.Checked;
         config.TouchHoldDelayMs = (int)_touchHoldDelayInput.Value;
@@ -505,7 +485,6 @@ public sealed class ScreenTabControls
         _touchPreserveCursorCheckBox.Checked = config.TouchPreserveCursor;
 
         _touchZoomCheckBox.Checked = config.TouchZoomEnabled;
-        _touchZoomDelayInput.Value = Math.Clamp(config.TouchZoomDelayMs, _touchZoomDelayInput.Minimum, _touchZoomDelayInput.Maximum);
 
         _touchHoldCheckBox.Checked = config.TouchHoldEnabled;
         _touchHoldDelayInput.Value = Math.Clamp(config.TouchHoldDelayMs, _touchHoldDelayInput.Minimum, _touchHoldDelayInput.Maximum);
@@ -532,7 +511,6 @@ public sealed class ScreenTabControls
             _windowsDisplayButton,
             _touchInputCheckBox,
             _touchZoomCheckBox,
-            _touchZoomDelayInput,
             _touchHoldCheckBox,
             _touchHoldDelayInput,
             _touchScrollCheckBox,
@@ -647,7 +625,6 @@ public sealed class ScreenTabControls
         _touchPreserveCursorCheckBox.Enabled = baseTouchState;
         
         _touchZoomCheckBox.Enabled = baseTouchState;
-        _touchZoomDelayInput.Enabled = baseTouchState && _touchZoomCheckBox.Checked;
         
         _touchHoldCheckBox.Enabled = baseTouchState;
         _touchHoldDelayInput.Enabled = baseTouchState && _touchHoldCheckBox.Checked;

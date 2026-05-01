@@ -22,8 +22,6 @@ public sealed class VirtualWebDisplaySettings
 
         TransmissionModeOptions.EnsureValidSelection(Screen1);
         TransmissionModeOptions.EnsureValidSelection(Screen2);
-        Screen1.TouchZoomDelayMs = TouchGestureOptions.ClampDelay(Screen1.TouchZoomDelayMs);
-        Screen2.TouchZoomDelayMs = TouchGestureOptions.ClampDelay(Screen2.TouchZoomDelayMs);
         Screen1.TouchHoldDelayMs = TouchGestureOptions.ClampDelay(Screen1.TouchHoldDelayMs);
         Screen2.TouchHoldDelayMs = TouchGestureOptions.ClampDelay(Screen2.TouchHoldDelayMs);
         Screen1.TouchScrollDelayMs = TouchGestureOptions.ClampDelay(Screen1.TouchScrollDelayMs);
