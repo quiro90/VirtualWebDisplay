@@ -8,7 +8,6 @@ internal sealed class ThemedComboBox : ComboBox
 {
     private const int WmPaint = 0x000F;
     private const int WmNcPaint = 0x0085;
-
     private Color _backgroundColor = SystemColors.Window;
     private Color _foregroundColor = SystemColors.WindowText;
     private Color _borderColor = SystemColors.ActiveBorder;

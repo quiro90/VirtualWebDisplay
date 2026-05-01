@@ -11,8 +11,6 @@ Implementar un control estricto para garantizar que solo se pueda ejecutar una �
 
 2. Comportamiento del Tray Icon (NotifyIcon):
 
-Al hacer un solo clic (izquierdo) sobre el icono de la bandeja del sistema, la ventana principal debe abrirse y mostrarse correctamente.
+Al hacer un solo clic o doble (izquierdo) sobre el icono de la bandeja del sistema, la ventana principal debe abrirse y mostrarse correctamente.
 
 Si la ventana ya está abierta o minimizada, debe restaurarse (WindowState.Normal) y traerse al frente (BringToFront() / Activate()) para quedar visible por encima de otras ventanas. Lo mismo aplica si apreta la opción "Configuracion..." que abre la ventana de la app.
-
-3. Renombra del menu del TrayIcon la opción "Configuración..." a "Mostrar" es mas entendible.

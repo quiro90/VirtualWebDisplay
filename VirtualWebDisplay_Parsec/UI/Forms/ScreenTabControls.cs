@@ -54,7 +54,6 @@ public sealed class ScreenTabControls
 
     public event Action<bool>? TouchInputChanged;
     public event Action<bool>? TouchPreserveCursorChanged;
-    public event Action<bool, int>? TouchZoomChanged;
     public event Action<bool, int>? TouchHoldChanged;
     public event Action<bool, int>? TouchScrollChanged;
 
@@ -276,7 +275,7 @@ public sealed class ScreenTabControls
             Left = blockLeft,
             Top = currentTop + 24,
             Width = 140,
-            Text = "Zoom (Pellizco)"
+            Text = AppText.Get("Tab_TouchZoom_Checkbox")
         };
 
         _touchHoldCheckBox = new CheckBox
@@ -284,7 +283,7 @@ public sealed class ScreenTabControls
             Left = blockLeft,
             Top = currentTop + 48,
             Width = 140,
-            Text = "Mantener toque"
+            Text = AppText.Get("Tab_TouchHold_Checkbox")
         };
 
         _touchHoldDelayInput = new ThemedNumericUpDown
@@ -303,7 +302,7 @@ public sealed class ScreenTabControls
             Left = blockLeft,
             Top = currentTop + 72,
             Width = 140,
-            Text = "Scroll (Dos dedos)"
+            Text = AppText.Get("Tab_TouchScroll_Checkbox")
         };
 
         _touchScrollDelayInput = new ThemedNumericUpDown
@@ -424,6 +423,9 @@ public sealed class ScreenTabControls
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
         _touchInputCheckBox.Text = AppText.Get("Tab_Section_TouchInput");
         _touchPreserveCursorCheckBox.Text = AppText.Get("Tab_TouchPreserveCursor_Checkbox");
+        _touchZoomCheckBox.Text = AppText.Get("Tab_TouchZoom_Checkbox");
+        _touchHoldCheckBox.Text = AppText.Get("Tab_TouchHold_Checkbox");
+        _touchScrollCheckBox.Text = AppText.Get("Tab_TouchScroll_Checkbox");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
         _windowsDisplayButton.Text = AppText.Get("Tab_Button_OpenWindowsDisplay");
         _screenSecurityCodeTextBox.PlaceholderText = AppText.Get("Tab_SecurityCode_Pending");
@@ -607,6 +609,7 @@ public sealed class ScreenTabControls
         SetHelpToolTip(AppText.Get("Tab_Help_MaxViewers"), _maxViewersLabel, _maxViewersInput);
         SetHelpToolTip(AppText.Get("Tab_TouchPreserveCursor_Help"), _touchPreserveCursorCheckBox);
         SetHelpToolTip(AppText.Get("Tab_Help_ScreenSecurity"), _screenSecurityCheckBox, _screenSecurityCodeTextBox, _screenSecurityCodeToggleButton);
+        SetHelpToolTip(AppText.Get("Tab_Help_TouchGestureDelay"), _touchHoldDelayInput, _touchScrollDelayInput);
     }
 
     /// <summary>

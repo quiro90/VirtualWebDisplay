@@ -52,8 +52,6 @@ public sealed class ResolutionConfigurationForm : Form
     public event Action<bool>? Screen2TouchPreserveCursorChanged;
 
     // Zoom, Hold, Scroll (enabled, delayMs)
-    public event Action<bool, int>? Screen1TouchZoomChanged;
-    public event Action<bool, int>? Screen2TouchZoomChanged;
     public event Action<bool, int>? Screen1TouchHoldChanged;
     public event Action<bool, int>? Screen2TouchHoldChanged;
     public event Action<bool, int>? Screen1TouchScrollChanged;
@@ -231,7 +229,7 @@ public sealed class ResolutionConfigurationForm : Form
         };
 
         _screen1Indicator = CreateScreenIndicator(10, "1⇗: 📺", _screen1Controls);
-        _screen2Indicator = CreateScreenIndicator(_screen1Indicator.Width + 8, "2⇗: 📺", _screen2Controls);
+        _screen2Indicator = CreateScreenIndicator(_screen1Indicator.Width + 5, "2⇗: 📺", _screen2Controls);
         _screen2Indicator.Visible = false;
 
         _titleBarPanel.Controls.AddRange([_titleLabel, _configurationButton, _closeButton]);
@@ -256,9 +254,6 @@ public sealed class ResolutionConfigurationForm : Form
         
         _screen1Controls.TouchPreserveCursorChanged += enabled => Screen1TouchPreserveCursorChanged?.Invoke(enabled);
         _screen2Controls.TouchPreserveCursorChanged += enabled => Screen2TouchPreserveCursorChanged?.Invoke(enabled);
-        
-        _screen1Controls.TouchZoomChanged += (enabled, delay) => Screen1TouchZoomChanged?.Invoke(enabled, delay);
-        _screen2Controls.TouchZoomChanged += (enabled, delay) => Screen2TouchZoomChanged?.Invoke(enabled, delay);
         
         _screen1Controls.TouchHoldChanged += (enabled, delay) => Screen1TouchHoldChanged?.Invoke(enabled, delay);
         _screen2Controls.TouchHoldChanged += (enabled, delay) => Screen2TouchHoldChanged?.Invoke(enabled, delay);

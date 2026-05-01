@@ -79,8 +79,12 @@
   <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Tap only</value></data>
   <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestures</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Touch Input</value></data>
+  <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pinch)</value></data>
+  <data name="Tab_TouchHold_Checkbox" xml:space="preserve"><value>Hold touch</value></data>
+  <data name="Tab_TouchScroll_Checkbox" xml:space="preserve"><value>Scroll (Two fingers)</value></data>
   <data name="Tab_Help_TouchMode" xml:space="preserve"><value>Tap only: clicks without moving cursor, no drag/scroll. Gestures: enables drag/scroll but cursor moves to touch location.</value></data>
   <data name="Tab_Help_TouchGestures" xml:space="preserve"><value>Hold time for touch gestures. Lower values react faster; higher values reduce accidental drags/scroll.</value></data>
+  <data name="Tab_Help_TouchGestureDelay" xml:space="preserve"><value>Delay in milliseconds before triggering the gesture. A higher value helps prevent accidental triggers.</value></data>
   <data name="Tab_Help_MaxViewers" xml:space="preserve"><value>This is the maximum number of devices allowed to watch your screen stream. If it is 0, the limit is disabled.</value></data>
 
   <data name="About_Title" xml:space="preserve"><value>About Virtual Web Display</value></data>
@@ -90,7 +94,7 @@
   <data name="About_Message" xml:space="preserve"><value>Virtual Web Display was created to stream a virtual desktop to any other device connected to the same local network in a simple, direct way.</value></data>
   <data name="About_Footer" xml:space="preserve"><value>Thank you for choosing Virtual Web Display.</value></data>
 
-  <data name="Tray_Menu_Configuration" xml:space="preserve"><value>Configuration...</value></data>
+  <data name="Tray_Menu_OpenAndView" xml:space="preserve"><value>Configuration...</value></data>
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>
   <data name="Tray_Menu_Restart" xml:space="preserve"><value>Restart</value></data>
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>

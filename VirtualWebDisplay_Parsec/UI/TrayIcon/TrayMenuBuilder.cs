@@ -21,7 +21,7 @@ internal static class TrayMenuBuilder
         Action onExit)
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add(AppText.Get("Tray_Menu_Configuration"), null, (_, _) => onShowConfiguration());
+        menu.Items.Add(AppText.Get("Tray_Menu_OpenAndView"), null, (_, _) => onShowConfiguration());
 
         if (screenRuntimes.Count > 0)
         {

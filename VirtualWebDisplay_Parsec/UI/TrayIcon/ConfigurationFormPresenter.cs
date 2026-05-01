@@ -131,12 +131,10 @@ internal sealed class ConfigurationFormPresenter
         form.StartupConfirmed   += () => StartupConfirmed?.Invoke();
         form.Screen1TouchInputChange += enabled => ApplyTouchInputChange("screen1", enabled);
         form.Screen2TouchInputChange += enabled => ApplyTouchInputChange("screen2", enabled);
-        form.Screen1TouchZoomChanged += (enabled, delay) => ApplyTouchGestureChange("screen1", "zoom", enabled, delay);
         form.Screen1TouchHoldChanged += (enabled, delay) => ApplyTouchGestureChange("screen1", "hold", enabled, delay);
         form.Screen1TouchScrollChanged += (enabled, delay) => ApplyTouchGestureChange("screen1", "scroll", enabled, delay);
         form.Screen1TouchPreserveCursorChanged += (enabled) => ApplyScreenPropertyChange("screen1", screen => screen.TouchPreserveCursor = enabled);
 
-        form.Screen2TouchZoomChanged += (enabled, delay) => ApplyTouchGestureChange("screen2", "zoom", enabled, delay);
         form.Screen2TouchHoldChanged += (enabled, delay) => ApplyTouchGestureChange("screen2", "hold", enabled, delay);
         form.Screen2TouchScrollChanged += (enabled, delay) => ApplyTouchGestureChange("screen2", "scroll", enabled, delay);
         form.Screen2TouchPreserveCursorChanged += (enabled) => ApplyScreenPropertyChange("screen2", screen => screen.TouchPreserveCursor = enabled);
@@ -174,10 +172,6 @@ internal sealed class ConfigurationFormPresenter
         {
             switch (gesture)
             {
-                case "zoom":
-                    screen.TouchZoomEnabled = enabled;
-                    screen.TouchZoomDelayMs = clamped;
-                    break;
                 case "hold":
                     screen.TouchHoldEnabled = enabled;
                     screen.TouchHoldDelayMs = clamped;
