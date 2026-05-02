@@ -273,7 +273,7 @@ public sealed class ScreenTabControls
         {
             Left = blockLeft,
             Top = currentTop + 24,
-            Width = 140,
+            Width = 190,
             Text = AppText.Get("Tab_TouchZoom_Checkbox")
         };
 

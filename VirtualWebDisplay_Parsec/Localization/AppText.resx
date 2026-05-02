@@ -83,7 +83,7 @@
   <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Tap only</value></data>
   <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestures</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Touch Input</value></data>
-  <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pinch)</value></data>
+  <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pinch) (affects cursor)</value></data>
   <data name="Tab_TouchHold_Checkbox" xml:space="preserve"><value>Hold touch</value></data>
   <data name="Tab_TouchScroll_Checkbox" xml:space="preserve"><value>Scroll (Two fingers)</value></data>
   <data name="Tab_Help_TouchMode" xml:space="preserve"><value>Tap only: clicks without moving cursor, no drag/scroll. Gestures: enables drag/scroll but cursor moves to touch location.</value></data>
