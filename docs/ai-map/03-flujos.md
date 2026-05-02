@@ -17,6 +17,7 @@
 10. Para cada runtime:
    - crea monitor virtual (`DisplayManager.TryCreate`),
    - detecta el índice de monitor Windows (`WindowsMonitorIndex`),
+   - `VirtualResolutionWatcher` restaura la resolución y posición (X/Y) previas desde `virtualscreen.display.json`,
    - arranca `CaptureService`,
    - arranca `WebRtcStreamService`.
 11. `tray.ConfigureRuntimeActions(exitRequested, stopRequested, runtimes)`:
@@ -35,8 +36,8 @@
    - manda IOCTL `Add`,
    - inicia keep-alive (loop `Update`),
    - detecta qué pantalla apareció en `Screen.AllScreens`,
-   - aplica resolución y posición usando `VirtualDisplayPlacementOptions.GetPosition(...)`,
-   - actualiza `MonitorIndex`, `Width` y `Height` reales en el config.
+   - aplica resolución y posición inicial (delegando en el SO mediante `windows_managed` o en modo `duplicate`),
+   - actualiza `MonitorIndex`, `Width`, `Height` y posición (`SavedPositionX`, `SavedPositionY`) leyendo directamente la API de Windows.
 
 ## 3. Captura de frame
 1. `CaptureService.ExecuteAsync()` corre en loop.
@@ -156,3 +157,4 @@ Todos los runtimes escuchan en el mismo proceso. Cada request HTTP:
 - El tray es la única interfaz de operación; el servidor web no expone panel administrativo.
 - `BrowserImageFit` se aplica en el CSS del HTML servido, no en el JPEG generado.
 - El gate de touch está del lado backend para evitar desincronización de estado con el cliente web.
+- Separación de estado: las preferencias de usuario van en `virtualscreen.user.json`, mientras que el estado dinámico del hardware (resolución y posición en Windows) se vigila y persiste en `virtualscreen.display.json`.

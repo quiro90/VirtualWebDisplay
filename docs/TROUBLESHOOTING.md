@@ -333,6 +333,23 @@ Console.WriteLine($"Bounds: X={bounds.X}, Y={bounds.Y}, Width={bounds.Width}, He
 
 ---
 
+### Pantalla Virtual No Recuerda su Posición o Resolución
+
+**Síntoma**: Al iniciar el servicio, la pantalla virtual no se ubica donde se dejó la última vez o su resolución vuelve a valores por defecto.
+
+**Causa**: El archivo de estado de hardware (`virtualscreen.display.json`) está corrupto, desincronizado o no se tienen permisos de escritura sobre él.
+
+**Solución**:
+
+1. Detener el servicio desde el Tray Icon.
+2. Eliminar el caché de estado del display:
+   ```powershell
+   del C:\Users\<Usuario>\.virtualwebdisplay\virtualscreen.display.json
+   ```
+3. Iniciar el servicio nuevamente y acomodar la pantalla en la configuración de Windows.
+
+---
+
 ## Problemas de Red y Conectividad
 
 ### No Puedo Acceder desde Navegador (localhost)
