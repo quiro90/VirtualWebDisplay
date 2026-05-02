@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
@@ -18,6 +19,7 @@ public sealed class CaptureService : BackgroundService
     private byte[] _currentFrame = [];
     private readonly Lock _frameLock = new();
     private ulong _lastRawHash;
+    private long _lastActivityTimestamp;
 
     // Codec cached once to avoid repeated lookups
     private static readonly ImageCodecInfo JpegCodec =
@@ -35,11 +37,34 @@ public sealed class CaptureService : BackgroundService
         lock (_frameLock) return _currentFrame;
     }
 
+    /// <summary>Notifies the service that a client has recently requested a frame.</summary>
+    public void RecordActivity()
+    {
+        Interlocked.Exchange(ref _lastActivityTimestamp, DateTime.UtcNow.Ticks);
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Initialize activity to allow the first frame to be captured immediately.
+        RecordActivity();
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var captureStart = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            var lastActivity = new DateTime(Interlocked.Read(ref _lastActivityTimestamp));
+
+            // In USB mode, if there's no recent client activity (e.g., within 3s), enter an idle state to save CPU.
+            bool hasNoRecentActivity = (now - lastActivity).TotalSeconds > 3;
+            bool isIdle = _config.NetworkMode == NetworkAccessMode.USB && hasNoRecentActivity;
+
+            if (isIdle)
+            {
+                // While idle, poll at a low rate (2 FPS) waiting for activity to resume.
+                await Task.Delay(TimeSpan.FromSeconds(0.5), stoppingToken);
+                continue;
+            }
+
+            var captureStart = now;
             var interval = TimeSpan.FromSeconds(TransmissionModeOptions.GetEffectiveCaptureIntervalSeconds(_config));
 
             try
@@ -47,7 +72,7 @@ public sealed class CaptureService : BackgroundService
                 using var bitmap = CaptureFrame();
                 if (bitmap is null)
                 {
-                    await Task.Delay(interval, stoppingToken);
+                    await Task.Delay(500, stoppingToken); // Wait a bit before retrying on capture failure
                     continue;
                 }
 
@@ -181,4 +206,3 @@ public sealed class CaptureService : BackgroundService
             ?? new Rectangle(0, 0, _config.Width, _config.Height);
     }
 }
-

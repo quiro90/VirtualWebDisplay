@@ -124,6 +124,12 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public string BrowserImageFit { get; set; } = "contain";
 
+    /// <summary>
+    /// Modo de acceso a la red para la transmisión.
+    /// WiFi = Acceso estándar, USB = Anclaje de red USB (max 1 viewer, sin seguridad).
+    /// </summary>
+    public NetworkAccessMode NetworkMode { get; set; } = NetworkAccessMode.WiFi;
+
     public VirtualScreenConfig Clone() => new()
     {
         Enabled = Enabled,
@@ -150,6 +156,7 @@ public sealed class VirtualScreenConfig
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
         BrowserImageFit = BrowserImageFit,
+        NetworkMode = NetworkMode,
     };
 
     public void CopyTo(VirtualScreenConfig target)
@@ -178,7 +185,6 @@ public sealed class VirtualScreenConfig
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;
         target.BrowserImageFit = BrowserImageFit;
+        target.NetworkMode = NetworkMode;
     }
 }
-
-

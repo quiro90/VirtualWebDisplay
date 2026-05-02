@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Configuration.Models;
+using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.UI.Helpers;
 
@@ -85,11 +86,11 @@ public sealed class ScreenTabControls
             {
                 Left = 14,
                 Top = currentTop,
-                Width = 270,
+            Width = 270,
                 Text = AppText.Get("Tab_EnableExperimental"),
             };
             TabPage.Controls.Add(_enabledCheckBox);
-            currentTop += 28;
+        currentTop += 28;
         }
 
         // Fila 1: Puerto | Transmisión | Posición
@@ -404,7 +405,18 @@ public sealed class ScreenTabControls
 
     public TabPage TabPage { get; }
 
-    public string GetAccessUrl() => $"http://{_localIp}:{(int)_portInput.Value}";
+    public string GetAccessUrl()
+    {
+        var port = (int)_portInput.Value;
+        if (_baseConfig.NetworkMode == NetworkAccessMode.USB)
+        {
+            var usbIp = UsbNetworkHelper.GetUsbTetheringIp();
+            if (!string.IsNullOrEmpty(usbIp))
+                return $"http://{usbIp}:{port}";
+            return $"http://{_localIp}:{port}"; // Fallback instantáneo sin romper la UI
+        }
+        return $"http://{_localIp}:{port}";
+    }
 
     public void ApplyLocalization()
     {
@@ -465,6 +477,7 @@ public sealed class ScreenTabControls
         config.ScreenSecurityEnabled = _screenSecurityCheckBox.Checked;
         config.BrowserImageFit = ((ImageFitItem)_browserImageFitCombo.SelectedItem!).Fit;
         config.VirtualDisplayPlacement = ((PlacementItem)_placementCombo.SelectedItem!).Placement;
+        config.NetworkMode = _baseConfig.NetworkMode;
 
         TransmissionModeOptions.EnsureValidSelection(config);
         return config;
@@ -504,6 +517,7 @@ public sealed class ScreenTabControls
     private void UpdateState()
     {
         var enabled = IsTabEnabled();
+        var isUsb = _baseConfig.NetworkMode == NetworkAccessMode.USB;
 
         // Controles que permanecen habilitados durante el servicio (ajustes en caliente)
         var hotReloadControls = new Control[]
@@ -532,10 +546,27 @@ public sealed class ScreenTabControls
             }
         }
 
+        if (isUsb)
+        {
+            _screenSecurityCheckBox.Enabled = false;
+            _maxViewersInput.Enabled = false;
+        }
+
         _jpegQualityValueLabel.Text = $"{_jpegQualitySlider.Value}%";
 
         UpdateSecurityCodePreview(enabled);
         UpdateTouchDependentControls();
+    }
+
+    public void SetNetworkMode(NetworkAccessMode mode)
+    {
+        _baseConfig.NetworkMode = mode;
+        if (mode == NetworkAccessMode.USB)
+        {
+            _screenSecurityCheckBox.Checked = false;
+            _maxViewersInput.Value = 1;
+        }
+        UpdateState();
     }
 
     public void SetEnabledState(bool enabled)

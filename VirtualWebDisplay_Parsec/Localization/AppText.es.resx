@@ -42,6 +42,9 @@
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Cerrar</value></data>
   <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Pantalla 1</value></data>
   <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Pantalla 2</value></data>
+  <data name="Form_Config_NetworkMode" xml:space="preserve"><value>Tipo de conexión</value></data>
+  <data name="Tab_NetworkMode_WiFi" xml:space="preserve"><value>Acceso WiFi</value></data>
+  <data name="Tab_NetworkMode_USB" xml:space="preserve"><value>Acceso USB (experimental)</value></data>
 
   <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>La pantalla 2 debe usar un puerto distinto al de la pantalla 1.</value></data>
   <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Puerto duplicado</value></data>
