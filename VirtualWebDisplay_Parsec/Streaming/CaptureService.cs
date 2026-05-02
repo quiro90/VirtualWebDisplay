@@ -19,7 +19,6 @@ public sealed class CaptureService : BackgroundService
     private byte[] _currentFrame = [];
     private readonly Lock _frameLock = new();
     private ulong _lastRawHash;
-    private long _lastActivityTimestamp;
 
     // Codec cached once to avoid repeated lookups
     private static readonly ImageCodecInfo JpegCodec =
@@ -37,33 +36,11 @@ public sealed class CaptureService : BackgroundService
         lock (_frameLock) return _currentFrame;
     }
 
-    /// <summary>Notifies the service that a client has recently requested a frame.</summary>
-    public void RecordActivity()
-    {
-        Interlocked.Exchange(ref _lastActivityTimestamp, DateTime.UtcNow.Ticks);
-    }
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Initialize activity to allow the first frame to be captured immediately.
-        RecordActivity();
-
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = DateTime.UtcNow;
-            var lastActivity = new DateTime(Interlocked.Read(ref _lastActivityTimestamp));
-
-            // If there's no recent client activity (e.g., within 3s), enter an idle state to save CPU.
-            bool hasNoRecentActivity = (now - lastActivity).TotalSeconds > 3;
-            bool isIdle = hasNoRecentActivity;
-
-            if (isIdle)
-            {
-                // While idle, poll at a low rate (2 FPS) waiting for activity to resume.
-                await Task.Delay(TimeSpan.FromSeconds(0.5), stoppingToken);
-                continue;
-            }
-
             var captureStart = now;
             var interval = TimeSpan.FromSeconds(TransmissionModeOptions.GetEffectiveCaptureIntervalSeconds(_config));
 

@@ -82,7 +82,6 @@ VirtualWebDisplay_Parsec/
 │   ├── RuntimeStartupHelper.cs             ← Helper de inicio de runtimes
 │   ├── RuntimeCleanupHelper.cs             ← Helper de limpieza (usa PollingHelper)
 │   ├── NetworkAddressHelper.cs             ← Detección IP local
- │   ├── UsbNetworkHelper.cs                 ← Helper para detección de IP en anclaje USB
 │   ├── LocalCertificateProvider.cs         ← Cert SSL autofirmado
 │   ├── SingleInstanceActivator.cs          ← Mutex UI y activación de ventana (Local)
 │   └── Hosting/SingleInstanceManager.cs    ← Mutex ciclo de vida del servicio (Local)
@@ -516,7 +515,6 @@ public sealed class CaptureService : BackgroundService
 | `BrowserImageFit` | string | "contain", "cover", "fill" |
 | `ScreenSecurityEnabled` | bool | Activa clave de acceso por pantalla |
 | `MonitorIndex` | int | Índice en Screen.AllScreens (-1 = auto) |
-| `NetworkMode` | string | "WiFi" o "USB". USB deshabilita seguridad y limita a 1 viewer. |
 | `TouchInputEnabled` | bool | Activa/desactiva entrada táctil por pantalla |
 | `TouchPreserveCursor` | bool | Preserva cursor al tocar - false por defecto |
 | `TouchZoomEnabled` | bool | Habilita gesto de zoom (pellizco) - true por defecto |

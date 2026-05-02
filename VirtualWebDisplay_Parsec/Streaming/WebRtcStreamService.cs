@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.Extensions.Hosting;
+﻿﻿﻿﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
 using System.Buffers;
@@ -105,7 +105,6 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
                     var frame = _captureService.GetCurrentFrame();
                     if (frame.Length > 0 && !ReferenceEquals(frame, lastFrame))
                     {
-                        _captureService.RecordActivity();
                         lastFrame = frame;
                         var frameId = ++_frameId;
                         foreach (var peerEntry in _peers.ToArray())
