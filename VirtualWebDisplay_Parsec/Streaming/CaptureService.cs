@@ -53,9 +53,9 @@ public sealed class CaptureService : BackgroundService
             var now = DateTime.UtcNow;
             var lastActivity = new DateTime(Interlocked.Read(ref _lastActivityTimestamp));
 
-            // In USB mode, if there's no recent client activity (e.g., within 3s), enter an idle state to save CPU.
+            // If there's no recent client activity (e.g., within 3s), enter an idle state to save CPU.
             bool hasNoRecentActivity = (now - lastActivity).TotalSeconds > 3;
-            bool isIdle = _config.NetworkMode == NetworkAccessMode.USB && hasNoRecentActivity;
+            bool isIdle = hasNoRecentActivity;
 
             if (isIdle)
             {

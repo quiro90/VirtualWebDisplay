@@ -42,7 +42,7 @@
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Screen 1</value></data>
   <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Screen 2</value></data>
-  <data name="Form_Config_NetworkMode" xml:space="preserve"><value>Connection Type</value></data>
+  <data name="Form_Config_NetworkMode" xml:space="preserve"><value>Transmission</value></data>
   <data name="Tab_NetworkMode_WiFi" xml:space="preserve"><value>WiFi Access</value></data>
   <data name="Tab_NetworkMode_USB" xml:space="preserve"><value>USB Access (experimental)</value></data>
   <data name="Tab_Placement_WindowsManaged" xml:space="preserve"><value>Windows Managed</value></data>

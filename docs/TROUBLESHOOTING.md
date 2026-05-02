@@ -881,6 +881,18 @@ Al reportar un problema en GitHub, incluir:
 
 ## FAQ
 
+### ¿Puedo conectar mi tablet/celular por cable USB en lugar de WiFi?
+
+**Sí, especialmente en dispositivos Android.** Aunque la aplicación no tiene un botón explícito de "Modo USB" en la interfaz, puedes usar el cable para obtener la mejor latencia y estabilidad (evitando el lag del WiFi):
+
+1. Conecta tu dispositivo Android a la PC mediante el cable USB.
+2. En tu Android, ve a **Ajustes > Redes e Internet > Zona Wi-Fi / Compartir conexión** (los nombres pueden variar según la marca).
+3. Activa la opción **Anclaje de red por USB** (USB Tethering).
+4. Windows detectará tu teléfono como si fuera una conexión de red por cable (asegúrate de que el Firewall de Windows permita conexiones públicas/privadas para la app).
+5. Abre el navegador en tu Android e ingresa la URL de la aplicación que se muestra en tu PC. El sistema operativo enrutará automáticamente el tráfico a través del cable USB.
+
+---
+
 ### ¿Puedo usar más de 2 pantallas virtuales?
 
 **Actualmente**: No, limitado a 2 pantallas.

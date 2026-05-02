@@ -33,12 +33,6 @@ public sealed class ResolutionConfigurationForm : Form
     private readonly bool _isInitialStartup;
     private readonly AppearanceSettingsStore? _appearanceStore;
 
-    private readonly Button _networkModeButton;
-    private readonly ContextMenuStrip _networkModeMenu;
-    private readonly ToolStripMenuItem _wifiMenuItem;
-    private readonly ToolStripMenuItem _usbMenuItem;
-    private NetworkAccessMode _selectedNetworkMode;
-
     private readonly Label _screen1Indicator;
     private readonly Label _screen2Indicator;
     private readonly ToolTip _screenIndicatorTooltip;
@@ -106,8 +100,6 @@ public sealed class ResolutionConfigurationForm : Form
         _selectedLanguageCode = AppText.NormalizeLanguage(workingCopy.UiLanguage);
         _selectedWindowTheme = WindowThemeOptions.Normalize(workingCopy.WindowTheme);
 
-        _selectedNetworkMode = workingCopy.Screen1.NetworkMode;
-
         _titleBarPanel = new Panel
         {
             Left = 0,
@@ -170,34 +162,6 @@ public sealed class ResolutionConfigurationForm : Form
         };
         _closeButton.FlatAppearance.BorderSize = 1;
         _closeButton.Click += (_, _) => Close();
-
-        _networkModeMenu = new ContextMenuStrip();
-        _networkModeMenu.ShowImageMargin = false;
-        _networkModeMenu.ShowCheckMargin = true;
-        _networkModeMenu.Padding = Padding.Empty;
-        
-        _wifiMenuItem = new ToolStripMenuItem();
-        _wifiMenuItem.Click += (_, _) => SelectNetworkMode(NetworkAccessMode.WiFi);
-        
-        _usbMenuItem = new ToolStripMenuItem();
-        _usbMenuItem.Click += (_, _) => SelectNetworkMode(NetworkAccessMode.USB);
-        
-        _networkModeMenu.Items.AddRange([_wifiMenuItem, _usbMenuItem]);
-
-        _networkModeButton = new Button
-        {
-            Width = 140,
-            Height = 30,
-            Left = ClientSize.Width - 230,
-            Top = 8,
-            Anchor = AnchorStyles.Top | AnchorStyles.Right,
-            FlatStyle = FlatStyle.Flat,
-            Text = AppText.Get("Form_Config_NetworkMode") ?? "Tipo de conexión",
-            Font = new Font(Font.FontFamily, 9, FontStyle.Regular),
-            TabStop = false,
-        };
-        _networkModeButton.FlatAppearance.BorderSize = 1;
-        _networkModeButton.Click += (_, _) => _networkModeMenu.Show(_networkModeButton, new Point(0, _networkModeButton.Height));
 
         _enableScreen2Check = new CheckBox
         {
@@ -268,7 +232,7 @@ public sealed class ResolutionConfigurationForm : Form
         _screen2Indicator = CreateScreenIndicator(_screen1Indicator.Width + 5, "2⇗: 📺", _screen2Controls);
         _screen2Indicator.Visible = false;
 
-        _titleBarPanel.Controls.AddRange([_titleLabel, _networkModeButton, _configurationButton, _closeButton]);
+        _titleBarPanel.Controls.AddRange([_titleLabel, _configurationButton, _closeButton]);
         Controls.AddRange([_titleBarPanel, _enableScreen2Check, _tabs, _screen1Indicator, _screen2Indicator, _acceptButton, _cancelButton]);
 
         AcceptButton = _acceptButton;
@@ -302,8 +266,6 @@ public sealed class ResolutionConfigurationForm : Form
         ApplyRuntimeSecurityCodes(screenRuntimes);
         if (_serviceState == ServiceState.Started)
             SetConfigurationControlsLocked(true);
-
-        SelectNetworkMode(_selectedNetworkMode);
     }
 
     public void NotifyServiceStarted(IReadOnlyList<ScreenRuntimeContext>? screenRuntimes = null)
@@ -313,31 +275,6 @@ public sealed class ResolutionConfigurationForm : Form
         ApplyRuntimeSecurityCodes(screenRuntimes);
         SetConfigurationControlsLocked(true);
         UpdateScreenIndicatorsVisibility();
-    }
-
-    private void UsbDetectionTimer_Tick(object? sender, EventArgs e)
-    {
-        bool usbAvailable = UsbNetworkHelper.IsUsbTetheringAvailable();
-
-        if (!usbAvailable && _selectedNetworkMode == NetworkAccessMode.USB)
-        {
-            SelectNetworkMode(NetworkAccessMode.WiFi);
-        }
-
-        if (_usbMenuItem.Enabled != usbAvailable)
-        {
-            _usbMenuItem.Enabled = usbAvailable;
-        }
-    }
-
-    private void SelectNetworkMode(NetworkAccessMode mode)
-    {
-        _selectedNetworkMode = mode;
-        _wifiMenuItem.Checked = mode == NetworkAccessMode.WiFi;
-        _usbMenuItem.Checked = mode == NetworkAccessMode.USB;
-        
-        _screen1Controls.SetNetworkMode(mode);
-        _screen2Controls.SetNetworkMode(mode);
     }
 
     private void AcceptButton_Click(object? sender, EventArgs e)
@@ -423,10 +360,6 @@ public sealed class ResolutionConfigurationForm : Form
         UpdateScreenIndicatorTooltip(_screen1Indicator, _screen1Controls.GetAccessUrl());
         if (_screen2Indicator.Visible)
             UpdateScreenIndicatorTooltip(_screen2Indicator, _screen2Controls.GetAccessUrl());
-
-        _networkModeButton.Text = AppText.Get("Form_Config_NetworkMode") ?? "Tipo de conexión";
-        _wifiMenuItem.Text = AppText.Get("Tab_NetworkMode_WiFi") ?? "Acceso WiFi";
-        _usbMenuItem.Text = AppText.Get("Tab_NetworkMode_USB") ?? "Acceso USB (experimental)";
 
         BuildConfigurationMenu();
     }
@@ -550,7 +483,6 @@ public sealed class ResolutionConfigurationForm : Form
         FormThemeApplicator.ApplyThemeRecursive(this, palette);
         FormThemeApplicator.StyleTitleButton(_configurationButton, palette);
         FormThemeApplicator.StyleTitleButton(_closeButton, palette);
-        FormThemeApplicator.StyleTitleButton(_networkModeButton, palette);
 
         // Aplicar tema a indicadores de pantalla
         _screen1Indicator.ForeColor = palette.Link;
@@ -565,7 +497,6 @@ public sealed class ResolutionConfigurationForm : Form
             pageBackground:        palette.Panel);
 
         FormThemeApplicator.ApplyThemeToMenu(_configurationMenu, palette);
-        FormThemeApplicator.ApplyThemeToMenu(_networkModeMenu, palette);
         Invalidate();
     }
 
