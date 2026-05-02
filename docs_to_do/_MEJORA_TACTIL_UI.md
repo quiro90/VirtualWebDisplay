@@ -1,3 +1,5 @@
+Quiero que tomes el rol de un analista desarrolador sinior C# y JS. Comprende la estructura del sistema y quiero que de forma ordenada y con buenas practicas hagas lo siguiente:
+
 
 Mejoras sobre UI y tray icon.
 

@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows.Forms;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Infrastructure;
@@ -33,6 +36,19 @@ if (args.Length >= 2 && args[0] == "--set-custom-modes")
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Instancia Única de UI ────────────────────────────────────────────────────
+var processPath = Path.GetFullPath(Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? AppContext.BaseDirectory);
+var pathHash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(processPath)))[..24];
+
+using var uiActivator = new SingleInstanceActivator($"VirtualWebDisplay_UI_{pathHash}");
+
+if (!uiActivator.IsFirstInstance)
+{
+    uiActivator.SignalFirstInstanceAndExit();
+    return;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 var appearanceStore = new AppearanceSettingsStore();
 var appearance = appearanceStore.Load();
 AppText.ApplyCulture(appearance.UiLanguage);
@@ -44,8 +60,9 @@ settings.EnsureValid();
 settings.UiLanguage = appearance.UiLanguage;
 settings.WindowTheme = appearance.WindowTheme;
 
-using var singleInstance = SingleInstanceManager.CreateForCurrentExecutable();
-if (!singleInstance.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
+// Usamos el namespace completo para resolver la ambigüedad con el nuevo SingleInstanceActivator
+using var serviceLifecycleManager = VirtualWebDisplay.Infrastructure.Hosting.SingleInstanceManager.CreateForCurrentExecutable();
+if (!serviceLifecycleManager.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
 {
     MessageBox.Show(
         AppText.Get("Program_SingleInstanceCloseFailed_Message"),
@@ -58,7 +75,12 @@ if (!singleInstance.EnsureSingleInstance(TimeSpan.FromSeconds(10)))
 var localIp = NetworkAddressHelper.DetectLocalIp();
 var hostName = Dns.GetHostName();
 
-using var tray = new VirtualDisplayTrayController(settings, settingsStore, appearanceStore, localIp);
+using var tray = new VirtualDisplayTrayController(
+    uiActivator,
+    settings,
+    settingsStore,
+    appearanceStore,
+    localIp);
 
 var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
 if (!autoStart && !tray.ShowStartupConfiguration())
@@ -77,8 +99,8 @@ var certStoreDir = Path.Combine(
 var (tlsCert, tlsCertDerBytes) = LocalCertificateProvider.GetOrCreate(certStoreDir, localIp, hostName);
 
 await ApplicationBootstrapper.RunAsync(
-    tray, settings, appearanceStore, resolutionStore, singleInstance,
+    tray, settings, appearanceStore, resolutionStore, serviceLifecycleManager,
     args, tlsCert, tlsCertDerBytes, hostName, localIp);
 
-singleInstance.Dispose();
+serviceLifecycleManager.Dispose();
 Environment.Exit(0);

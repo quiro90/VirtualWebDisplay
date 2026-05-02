@@ -77,15 +77,13 @@ internal sealed class ConfigurationFormPresenter
     {
         if (_startupForm is not null && !_startupForm.IsDisposed)
         {
-            _startupForm.BringToFront();
-            _startupForm.Activate();
+            ActivateAndShow(_startupForm);
             return;
         }
 
         if (_configForm is not null && !_configForm.IsDisposed)
         {
-            _configForm.BringToFront();
-            _configForm.Activate();
+            ActivateAndShow(_configForm);
             return;
         }
 
@@ -100,6 +98,19 @@ internal sealed class ConfigurationFormPresenter
             _configForm?.Dispose();
             _configForm = null;
         }
+    }
+
+    private void ActivateAndShow(Form form)
+    {
+        form.InvokeSafely(() =>
+        {
+            if (form.WindowState == FormWindowState.Minimized)
+            {
+                form.WindowState = FormWindowState.Normal;
+            }
+            form.BringToFront();
+            form.Activate();
+        });
     }
 
     // ── Service state notifications (privados, manejados por eventos) ────────

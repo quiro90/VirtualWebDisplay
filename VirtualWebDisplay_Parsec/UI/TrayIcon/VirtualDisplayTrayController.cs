@@ -18,6 +18,7 @@ namespace VirtualWebDisplay.UI.TrayIcon;
 public sealed class VirtualDisplayTrayController : IDisposable
 {
     private readonly ConfigurationFormPresenter _formPresenter;
+    private readonly SingleInstanceActivator _singleInstanceActivator;
     private readonly ServiceStateManager _serviceState;
     private readonly Thread _uiThread;
     private readonly ManualResetEventSlim _ready = new(false);
@@ -38,11 +39,18 @@ public sealed class VirtualDisplayTrayController : IDisposable
         return stream is not null ? new Icon(stream) : SystemIcons.Application;
     }
 
-    public VirtualDisplayTrayController(VirtualWebDisplaySettings settings, VirtualScreenSettingsStore settingsStore, AppearanceSettingsStore appearanceStore, string localIp)
+    public VirtualDisplayTrayController(
+        SingleInstanceActivator singleInstanceActivator,
+        VirtualWebDisplaySettings settings,
+        VirtualScreenSettingsStore settingsStore,
+        AppearanceSettingsStore appearanceStore,
+        string localIp)
     {
+        _singleInstanceActivator = singleInstanceActivator;
         _serviceState = new ServiceStateManager(ServiceState.Stopped);
         _formPresenter = new ConfigurationFormPresenter(settings, settingsStore, appearanceStore, localIp, _serviceState);
 
+        _singleInstanceActivator.ShowApplicationRequested += OnShowApplicationRequested;
         // Suscribirse a eventos de estado del servicio
         _serviceState.StateChanged += OnServiceStateChanged;
         _serviceState.ServiceStarted += OnServiceStarted;
@@ -126,7 +134,8 @@ public sealed class VirtualDisplayTrayController : IDisposable
             ContextMenuStrip = _contextMenu,
         };
 
-        _notifyIcon.DoubleClick += (_, _) => ShowConfigurationDialog();
+        _notifyIcon.MouseClick += OnNotifyIconClick;
+        _notifyIcon.DoubleClick += OnNotifyIconClick;
         _ready.Set();
 
         Application.Run(_context);
@@ -147,6 +156,24 @@ public sealed class VirtualDisplayTrayController : IDisposable
             onStopService:       StopService,
             onStartService:      StartService,
             onExit:              ExitApplication);
+
+    private void OnShowApplicationRequested()
+    {
+        // This is called from a background thread, so we must invoke it on the UI thread.
+        _invoker.InvokeSafely(ShowConfigurationDialog);
+    }
+
+    private void OnNotifyIconClick(object? sender, EventArgs e)
+    {
+        // If it's a mouse click event, only respond to the left button.
+        // DoubleClick event sends EventArgs, not MouseEventArgs, so we can't check the button,
+        // but it's conventional for it to be the left button.
+        if (e is MouseEventArgs me && me.Button != MouseButtons.Left)
+        {
+            return;
+        }
+        ShowConfigurationDialog();
+    }
 
     private void ShowConfigurationDialog() =>
         _formPresenter.ShowConfigurationDialog(_serviceState.ScreenRuntimes);
@@ -243,6 +270,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
             return;
 
         _disposed = true;
+        _singleInstanceActivator.ShowApplicationRequested -= OnShowApplicationRequested;
         _invoker.InvokeSafely(() => _context?.ExitThread());
         if (!_uiThread.Join(1500))
             _uiThread.Interrupt();
