@@ -1,8 +1,8 @@
-﻿# Flujos de ejecución
+﻿﻿# Flujos de ejecución
 
 ## 1. Arranque completo
-1. `Program.cs` crea `SingleInstanceManager`.
-2. Si ya existe otra instancia, intenta cerrarla y espera hasta 10 segundos.
+1. `Program.cs` crea `SingleInstanceActivator` (UI) basado en el hash del ejecutable. Si ya existe otra instancia de UI, envía una señal por `EventWaitHandle` para mostrar la ventana original y sale silenciosamente.
+2. Si es la primera instancia UI, luego crea `SingleInstanceManager` (Servicio). Si un servicio background huérfano persiste, intenta cerrarlo por fuerza bruta y espera hasta 10 segundos.
 3. Carga settings con `VirtualScreenSettingsStore.Load()`.
 4. Crea `VirtualDisplayTrayController` (inicia hilo STA en background).
    - Internamente crea `ServiceStateManager` en estado `Stopped`
@@ -80,7 +80,7 @@ En WebImage se bloquea drag/long-press nativo con:
 - menor sensación de polling.
 
 ## 6. Cambio de configuración en runtime
-1. El usuario abre `Configuración...` desde el tray (doble clic o menú contextual).
+1. El usuario hace clic izquierdo (simple o doble) en el tray icon, o abre `Configuración...` desde el menú contextual. Si la ventana de configuración ya estaba abierta o minimizada, se restaura a su estado normal y se trae al frente (`BringToFront` / `Activate`).
 2. `ResolutionConfigurationForm` trabaja sobre una copia clonada de settings (`Screen1.Clone()` + `Screen2.Clone()`).
 3. Cambios en “Gestos ms” y “Táctil/Normal” se aplican y persisten en caliente, por pantalla, sin reinicio.
 4. Si acepta, `ApplySelection(...)` copia valores al objeto real vía `VirtualScreenConfig.CopyTo(...)`.

@@ -83,7 +83,8 @@ VirtualWebDisplay_Parsec/
 │   ├── RuntimeCleanupHelper.cs             ← Helper de limpieza (usa PollingHelper)
 │   ├── NetworkAddressHelper.cs             ← Detección IP local
 │   ├── LocalCertificateProvider.cs         ← Cert SSL autofirmado
-│   └── SingleInstanceManager.cs            ← Mutex single instance
+│   ├── SingleInstanceActivator.cs          ← Mutex UI y activación de ventana (Local)
+│   └── Hosting/SingleInstanceManager.cs    ← Mutex ciclo de vida del servicio (Local)
 │
 └── Program.cs                       ← 🚀 Entry Point (usa ApplicationBootstrapper)
 ```
