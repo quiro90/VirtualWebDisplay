@@ -267,8 +267,6 @@ public sealed class ScreenTabControls
             Text = AppText.Get("Tab_TouchPreserveCursor_Checkbox"),
         };
 
-        currentTop += 28;
-
         // Fila 2: Zoom, Hold, Scroll
         _touchZoomCheckBox = new CheckBox
         {

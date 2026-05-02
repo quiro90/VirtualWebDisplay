@@ -86,7 +86,7 @@ public sealed class ResolutionConfigurationForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = isInitialStartup;
-        ClientSize = new Size(540, 555);
+        ClientSize = new Size(540, 538);
 
         var workingCopy = new VirtualWebDisplaySettings
         {
@@ -176,7 +176,7 @@ public sealed class ResolutionConfigurationForm : Form
             Left = 10,
             Top = 86,
             Width = 520,
-            Height = 421,
+            Height = 401,
         };
 
         _screen1Controls = new ScreenTabControls(
@@ -200,7 +200,7 @@ public sealed class ResolutionConfigurationForm : Form
         _acceptButton = new Button
         {
             Left   = 352,
-            Top    = 516,
+            Top    = 494,
             Width  = 84,
             Height = 30,
             Text   = AcceptButtonText,
@@ -211,7 +211,7 @@ public sealed class ResolutionConfigurationForm : Form
         _cancelButton = new Button
         {
             Left   = 444,
-            Top    = 516,
+            Top    = 494,
             Width  = 84,
             Height = 30,
             Text   = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
@@ -227,7 +227,7 @@ public sealed class ResolutionConfigurationForm : Form
             ReshowDelay = 150,
             ShowAlways = true,
         };
-
+        
         _screen1Indicator = CreateScreenIndicator(10, "1⇗: 📺", _screen1Controls);
         _screen2Indicator = CreateScreenIndicator(_screen1Indicator.Width + 5, "2⇗: 📺", _screen2Controls);
         _screen2Indicator.Visible = false;
