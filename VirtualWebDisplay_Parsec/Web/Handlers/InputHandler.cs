@@ -21,6 +21,7 @@ internal static class InputHandler
     // mouse virtual
     private static int _virtualX;
     private static int _virtualY;
+    private static bool _virtualInitialized;
 
     // Estad�sticas b�sicas de entrada t�ctil (Sprint 2)
     private static long _totalEvents;
@@ -133,6 +134,7 @@ internal static class InputHandler
 
             _virtualX = desktopX;
             _virtualY = desktopY;
+            _virtualInitialized = true;
 
             System.Diagnostics.Debug.WriteLine(
                 $"[InputHandler] Bounds({targetBounds.Left},{targetBounds.Top},{targetBounds.Width}x{targetBounds.Height}) " +
@@ -162,15 +164,11 @@ internal static class InputHandler
 
                 case "rightclick":
                     EndDragIfActive();
-                    if (runtime.Config.TouchPreserveCursor)
-                        MouseInputHelper.SaveCurrentCursorPosition();
                     ExecuteClick(MouseClickType.Right, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "middleclick":
                     EndDragIfActive();
-                    if (runtime.Config.TouchPreserveCursor)
-                        MouseInputHelper.SaveCurrentCursorPosition();
                     ExecuteClick(MouseClickType.Middle, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
                     break;
 
@@ -305,14 +303,12 @@ internal static class InputHandler
         {
             // Dos dedos = click derecho, restaurando el cursor original del PC.
             EndDragIfActive();
-            MouseInputHelper.SaveCurrentCursorPosition();
             MouseInputHelper.RightClickPreservingCursor(screenX, screenY);
         }
         else if (fingers >= 3)
         {
             // Tres o mas dedos = click central, restaurando el cursor original del PC.
             EndDragIfActive();
-            MouseInputHelper.SaveCurrentCursorPosition();
             MouseInputHelper.MiddleClickPreservingCursor(screenX, screenY);
         }
 
@@ -558,6 +554,8 @@ internal static class InputHandler
                 break;
 
             case "dragmove":
+                if (runtime.Config.TouchPreserveCursor)
+                    MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 MarkDragActivity(nowMs);
                 break;
@@ -573,6 +571,8 @@ internal static class InputHandler
                 break;
 
             case "scrollmove":
+                if (runtime.Config.TouchPreserveCursor)
+                    MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 int dy = (int)(request.ScrollDeltaY ?? 0.0);
                 int dx = (int)(request.ScrollDeltaX ?? 0.0);
