@@ -45,7 +45,7 @@
   <data name="Form_Config_NetworkMode" xml:space="preserve"><value>Connection Type</value></data>
   <data name="Tab_NetworkMode_WiFi" xml:space="preserve"><value>WiFi Access</value></data>
   <data name="Tab_NetworkMode_USB" xml:space="preserve"><value>USB Access (experimental)</value></data>
-
+  <data name="Tab_Placement_WindowsManaged" xml:space="preserve"><value>Windows Managed</value></data>
 
   <data name="Validation_DuplicatePort_Message" xml:space="preserve"><value>Screen 2 must use a different port than Screen 1.</value></data>
   <data name="Validation_DuplicatePort_Title" xml:space="preserve"><value>VirtualWebDisplay - Duplicate port</value></data>

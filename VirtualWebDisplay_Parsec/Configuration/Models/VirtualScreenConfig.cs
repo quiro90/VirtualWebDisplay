@@ -112,8 +112,23 @@ public sealed class VirtualScreenConfig
     /// Side of the primary monitor where the virtual display should be attached.
     /// Values accepted: right, left, top, bottom.
     /// También acepta: derecha, izquierda, arriba, abajo.
+    /// Ahora también: windows_managed
     /// </summary>
-    public string VirtualDisplayPlacement { get; set; } = "right";
+    public string VirtualDisplayPlacement { get; set; } = "windows_managed";
+
+    /// <summary>
+    /// La última posición X conocida de la pantalla virtual. Se guarda al detener el servicio.
+    /// Es nulo si nunca se ha guardado una posición.
+    /// </summary>
+    [JsonIgnore]
+    public int? SavedPositionX { get; set; }
+
+    /// <summary>
+    /// La última posición Y conocida de la pantalla virtual. Se guarda al detener el servicio.
+    /// Es nulo si nunca se ha guardado una posición.
+    /// </summary>
+    [JsonIgnore]
+    public int? SavedPositionY { get; set; }
 
     /// <summary>
     /// How the Kindle page should fit the incoming image into the visible browser area.
@@ -155,6 +170,8 @@ public sealed class VirtualScreenConfig
         Port = Port,
         MonitorIndex = MonitorIndex,
         VirtualDisplayPlacement = VirtualDisplayPlacement,
+        SavedPositionX = SavedPositionX,
+        SavedPositionY = SavedPositionY,
         BrowserImageFit = BrowserImageFit,
         NetworkMode = NetworkMode,
     };
@@ -184,6 +201,8 @@ public sealed class VirtualScreenConfig
         target.Port = Port;
         target.MonitorIndex = MonitorIndex;
         target.VirtualDisplayPlacement = VirtualDisplayPlacement;
+        target.SavedPositionX = SavedPositionX;
+        target.SavedPositionY = SavedPositionY;
         target.BrowserImageFit = BrowserImageFit;
         target.NetworkMode = NetworkMode;
     }

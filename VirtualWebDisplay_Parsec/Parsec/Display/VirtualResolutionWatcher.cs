@@ -5,13 +5,13 @@ using VirtualWebDisplay.Parsec;
 namespace VirtualWebDisplay.Parsec.Display;
 
 /// <summary>
-/// Detecta cambios de resolución de los monitores virtuales activos y los persiste
-/// en <c>virtualscreen.display.json</c> para restaurarlos en el próximo arranque.
+/// Detecta cambios de resoluciï¿½n de los monitores virtuales activos y los persiste
+/// en <c>virtualscreen.display.json</c> para restaurarlos en el prï¿½ximo arranque.
 ///
 /// <para>
-/// <b>Por qué un hilo STA dedicado:</b> <see cref="SystemEvents.DisplaySettingsChanged"/>
-/// sólo se dispara si existe un message-pump Win32 en el hilo que hizo el subscribe.
-/// El hilo async principal no tiene pump, por lo que el evento nunca llegaría.
+/// <b>Por quï¿½ un hilo STA dedicado:</b> <see cref="SystemEvents.DisplaySettingsChanged"/>
+/// sï¿½lo se dispara si existe un message-pump Win32 en el hilo que hizo el subscribe.
+/// El hilo async principal no tiene pump, por lo que el evento nunca llegarï¿½a.
 /// </para>
 /// </summary>
 internal sealed class VirtualResolutionWatcher : IDisposable
@@ -48,31 +48,38 @@ internal sealed class VirtualResolutionWatcher : IDisposable
     public void RestoreOrSeedResolutions()
     {
         var saved = _store.Load();
-        var current = ReadCurrentResolutions();
+        var current = ReadCurrentMetrics();
 
         var anyRestored = false;
         foreach (var runtime in _runtimes)
         {
-            // Sincronizar siempre el Config con la resolución real de Windows.
+            // Sincronizar siempre el Config con la resoluciï¿½n real de Windows.
             if (current.TryGetValue(runtime.Id, out var cur))
             {
                 runtime.Config.Width  = cur.Width;
                 runtime.Config.Height = cur.Height;
+                if (string.Equals(runtime.Config.VirtualDisplayPlacement?.Trim(), "windows_managed", StringComparison.OrdinalIgnoreCase))
+                {
+                    runtime.Config.SavedPositionX = cur.X;
+                    runtime.Config.SavedPositionY = cur.Y;
+                }
             }
 
             if (!saved.TryGetValue(runtime.Id, out var res))
-                continue; // Sin historial: se usará la que Windows asignó.
+                continue; // Sin historial: se usarï¿½ la que Windows asignï¿½.
 
             var deviceName = runtime.DisplayManager.WindowsDeviceName;
             if (string.IsNullOrWhiteSpace(deviceName))
                 continue;
 
-            // Solo aplicar si la resolución guardada difiere de la actual.
-            if (current.TryGetValue(runtime.Id, out cur) && cur == res)
+            // Solo aplicar si la resoluciï¿½n guardada difiere de la actual.
+            if (current.TryGetValue(runtime.Id, out cur) && cur.Width == res.Width && cur.Height == res.Height && cur.X == res.X && cur.Y == res.Y)
                 continue;
 
             runtime.Config.Width  = res.Width;
             runtime.Config.Height = res.Height;
+            runtime.Config.SavedPositionX = res.X;
+            runtime.Config.SavedPositionY = res.Y;
 
             var (ok, _) = runtime.DisplayManager.TryReconfigure(runtime.Config);
             if (ok)
@@ -110,16 +117,16 @@ internal sealed class VirtualResolutionWatcher : IDisposable
 
     // -- Helpers ------------------------------------------------------------------
 
-    private Dictionary<string, (int Width, int Height)> ReadCurrentResolutions()
+    private Dictionary<string, (int Width, int Height, int X, int Y)> ReadCurrentMetrics()
     {
-        var result = new Dictionary<string, (int Width, int Height)>();
+        var result = new Dictionary<string, (int Width, int Height, int X, int Y)>();
         foreach (var runtime in _runtimes)
         {
             var deviceName = runtime.DisplayManager.WindowsDeviceName;
             if (string.IsNullOrWhiteSpace(deviceName))
                 continue;
 
-            var res = VirtualDisplayManager.TryGetCurrentResolution(deviceName);
+            var res = VirtualDisplayManager.TryGetCurrentDisplayMetrics(deviceName);
             if (res is null)
                 continue;
 
@@ -130,7 +137,7 @@ internal sealed class VirtualResolutionWatcher : IDisposable
 
     private void PersistCurrentResolutions()
     {
-        var current = ReadCurrentResolutions();
+        var current = ReadCurrentMetrics();
         if (current.Count == 0)
             return;
 

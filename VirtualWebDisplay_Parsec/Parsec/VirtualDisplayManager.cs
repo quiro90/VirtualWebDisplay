@@ -81,6 +81,7 @@ public sealed class VirtualDisplayManager : IDisposable
     private int _displayIdx = -1;
     private CancellationTokenSource? _keepAliveCancellation;
     private Task? _keepAliveTask;
+    private VirtualScreenConfig? _config;
 
     public VirtualDisplayManager(IDriverVerifier driverVerifier)
     {
@@ -93,6 +94,7 @@ public sealed class VirtualDisplayManager : IDisposable
 
     public (bool ok, string message) TryCreate(VirtualScreenConfig config)
     {
+        _config = config;
         try
         {
             var screensBefore = Screen.AllScreens;
@@ -223,12 +225,14 @@ public sealed class VirtualDisplayManager : IDisposable
         WindowsMonitorIndex = null;
         WindowsDeviceName = null;
         IsActive = false;
+        _config = null;
     }
 
     public (bool ok, string message) TryReconfigure(VirtualScreenConfig config)
     {
         if (!IsActive || string.IsNullOrWhiteSpace(WindowsDeviceName))
             return (false, AppText.Get("VDD_Status_NotReadyToReconfigure"));
+        _config = config;
 
         try
         {
@@ -267,7 +271,7 @@ public sealed class VirtualDisplayManager : IDisposable
 
         config.Width  = mode.dmPelsWidth;
         config.Height = mode.dmPelsHeight;
-        mode.dmPosition = GetVirtualDisplayPosition(primaryBounds, config.VirtualDisplayPlacement, config.Width, config.Height);
+        mode.dmPosition = GetVirtualDisplayPosition(primaryBounds, config, config.Width, config.Height);
         mode.dmFields = DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT;
 
         var result = ChangeDisplaySettingsEx(deviceName, ref mode, IntPtr.Zero, CDS_UPDATEREGISTRY | CDS_NORESET, IntPtr.Zero);
@@ -347,32 +351,56 @@ public sealed class VirtualDisplayManager : IDisposable
         if (WindowsMonitorIndex is int monitorIndex)
         {
             config.MonitorIndex = monitorIndex;
-            config.Width = screensNow[monitorIndex].Bounds.Width;
-            config.Height = screensNow[monitorIndex].Bounds.Height;
+            
+            var metrics = TryGetCurrentDisplayMetrics(WindowsDeviceName);
+            if (metrics.HasValue)
+            {
+                config.Width = metrics.Value.width;
+                config.Height = metrics.Value.height;
+                if (string.Equals(config.VirtualDisplayPlacement?.Trim(), "windows_managed", StringComparison.OrdinalIgnoreCase))
+                {
+                    config.SavedPositionX = metrics.Value.x;
+                    config.SavedPositionY = metrics.Value.y;
+                }
+            }
         }
     }
 
-    private static POINTL GetVirtualDisplayPosition(Rectangle primaryBounds, string? placement, int width, int height)
+    private static POINTL GetVirtualDisplayPosition(Rectangle primaryBounds, VirtualScreenConfig config, int width, int height)
     {
-        var position = VirtualDisplayPlacementOptions.GetPosition(primaryBounds, placement, width, height);
+        if (string.Equals(config.VirtualDisplayPlacement?.Trim(), "windows_managed", StringComparison.OrdinalIgnoreCase))
+        {
+            if (config.SavedPositionX.HasValue && config.SavedPositionY.HasValue)
+            {
+                return new POINTL { x = config.SavedPositionX.Value, y = config.SavedPositionY.Value };
+            }
+            var defaultPos = VirtualDisplayPlacementOptions.GetPosition(primaryBounds, "right", width, height);
+            return new POINTL { x = defaultPos.X, y = defaultPos.Y };
+        }
+
+        var position = VirtualDisplayPlacementOptions.GetPosition(primaryBounds, config.VirtualDisplayPlacement, width, height);
         return new POINTL { x = position.X, y = position.Y };
     }
 
-    private static string NormalizePlacementLabel(string? placement) =>
-        AppText.Get(VirtualDisplayPlacementOptions.GetLocalizationKey(placement));
+    private static string NormalizePlacementLabel(string? placement)
+    {
+        if (string.Equals(placement?.Trim(), "windows_managed", StringComparison.OrdinalIgnoreCase))
+            return AppText.Get("Tab_Placement_WindowsManaged");
+        return AppText.Get(VirtualDisplayPlacementOptions.GetLocalizationKey(placement));
+    }
 
     /// <summary>
-    /// Devuelve la resolución actual del monitor con el nombre de dispositivo dado,
+    /// Devuelve las métricas actuales (resolución y posición) del monitor con el nombre de dispositivo dado,
     /// o null si no puede obtenerse.
     /// </summary>
-    public static (int width, int height)? TryGetCurrentResolution(string deviceName)
+    public static (int width, int height, int x, int y)? TryGetCurrentDisplayMetrics(string deviceName)
     {
         var mode = CreateDevMode();
         if (!EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref mode))
             return null;
         if (mode.dmPelsWidth <= 0 || mode.dmPelsHeight <= 0)
             return null;
-        return (mode.dmPelsWidth, mode.dmPelsHeight);
+        return (mode.dmPelsWidth, mode.dmPelsHeight, mode.dmPosition.x, mode.dmPosition.y);
     }
 
     private static DEVMODE CreateDevMode() => new()
@@ -400,4 +428,3 @@ public sealed class VirtualDisplayManager : IDisposable
         Reset();
     }
 }
-

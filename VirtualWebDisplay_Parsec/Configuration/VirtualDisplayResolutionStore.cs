@@ -18,7 +18,7 @@ public sealed class VirtualDisplayResolutionStore
     }
 
     /// <summary>Carga el mapa de resoluciones. Clave: id del runtime ("screen1", "screen2").</summary>
-    public Dictionary<string, (int Width, int Height)> Load()
+    public Dictionary<string, (int Width, int Height, int X, int Y)> Load()
     {
         var raw = UserProfileFileHelper.TryDeserialize<Dictionary<string, ResolutionEntry>>(_filePath);
         if (raw is null)
@@ -26,15 +26,15 @@ public sealed class VirtualDisplayResolutionStore
 
         return raw
             .Where(kv => kv.Value.Width > 0 && kv.Value.Height > 0)
-            .ToDictionary(kv => kv.Key, kv => (kv.Value.Width, kv.Value.Height));
+            .ToDictionary(kv => kv.Key, kv => (kv.Value.Width, kv.Value.Height, kv.Value.X, kv.Value.Y));
     }
 
     /// <summary>Guarda el mapa de resoluciones.</summary>
-    public void Save(Dictionary<string, (int Width, int Height)> resolutions)
+    public void Save(Dictionary<string, (int Width, int Height, int X, int Y)> resolutions)
     {
         var raw = resolutions.ToDictionary(
             kv => kv.Key,
-            kv => new ResolutionEntry { Width = kv.Value.Width, Height = kv.Value.Height });
+            kv => new ResolutionEntry { Width = kv.Value.Width, Height = kv.Value.Height, X = kv.Value.X, Y = kv.Value.Y });
 
         var json = JsonSerializer.Serialize(raw, UserProfileFileHelper.JsonWriteOptions);
         UserProfileFileHelper.WriteAtomic(_filePath, json);
@@ -44,5 +44,7 @@ public sealed class VirtualDisplayResolutionStore
     {
         public int Width { get; set; }
         public int Height { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
     }
 }

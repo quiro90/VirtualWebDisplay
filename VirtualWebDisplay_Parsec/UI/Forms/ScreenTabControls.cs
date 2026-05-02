@@ -703,21 +703,18 @@ public sealed class ScreenTabControls
     {
         var selectedPlacement = defaultPlacement
             ?? (_placementCombo.SelectedItem as PlacementItem)?.Placement
-            ?? VirtualDisplayPlacementOptions.Right;
+            ?? "windows_managed";
 
         _placementCombo.Items.Clear();
         _placementCombo.Items.AddRange(
         [
-            new PlacementItem("right", AppText.Get("Tab_Placement_Right")),
-            new PlacementItem("left", AppText.Get("Tab_Placement_Left")),
-            new PlacementItem("top", AppText.Get("Tab_Placement_Top")),
-            new PlacementItem("bottom", AppText.Get("Tab_Placement_Bottom")),
+            new PlacementItem("windows_managed", AppText.Get("Tab_Placement_WindowsManaged")),
             new PlacementItem(VirtualDisplayPlacementOptions.Duplicate, AppText.Get("Tab_Placement_Duplicate")),
         ]);
 
         _placementCombo.SelectedItem = _placementCombo.Items.Cast<PlacementItem>()
-            .FirstOrDefault(item => item.Placement == VirtualDisplayPlacementOptions.Normalize(selectedPlacement))
-            ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == VirtualDisplayPlacementOptions.Right);
+            .FirstOrDefault(item => string.Equals(item.Placement, selectedPlacement, StringComparison.OrdinalIgnoreCase))
+            ?? _placementCombo.Items.Cast<PlacementItem>().First(item => item.Placement == "windows_managed");
     }
 
     private void RefreshBrowserFitOptions(string? defaultFit = null)
