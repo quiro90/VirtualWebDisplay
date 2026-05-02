@@ -1,4 +1,4 @@
-﻿# Visión general y arquitectura
+﻿﻿# Visión general y arquitectura
 
 ## Stack principal
 - `net10.0-windows`
@@ -8,7 +8,7 @@
 
 ## Objetivo del sistema
 
-VirtualWebDisplay crea hasta 2 pantallas virtuales Windows (Parsec VDD) y las expone por web local en modo `WebImage` o `Rtc`, con seguridad opcional, límite de viewers y entrada táctil remota.
+VirtualWebDisplay crea hasta 2 pantallas virtuales Windows (Parsec VDD) y las expone por web local (Wi-Fi o USB Tethering) en modo `WebImage` o `Rtc`, con seguridad opcional, límite de viewers y entrada táctil remota.
 
 ## Arquitectura conceptual (actual)
 

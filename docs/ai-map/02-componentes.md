@@ -29,6 +29,7 @@ Rol: crear/destruir monitor virtual (Parsec VDD), aplicar resolucion y placement
 
 ### `Streaming/CaptureService.cs`
 Rol: captura periodica del monitor y codificacion JPEG.
+**Optimización ("Idle Sleep")**: En modo USB, si ningún cliente solicita frames en 3 segundos (`RecordActivity()`), el servicio entra en reposo reduciendo su tasa de captura a 2 FPS, minimizando el consumo de CPU.
 
 ### `Streaming/WebRtcStreamService.cs`
 Rol: negociacion WebRTC y envio de frames por DataChannel.
@@ -68,6 +69,10 @@ Rol: formulario principal de configuración.
 - Pattern matching para texto del botón: `_serviceState switch { Started => "Stop", Starting => "Starting...", ... }`
 - `NotifyServiceStarted()` / `NotifyServiceStopped()`: actualizan UI según estado
 - Thread-safe: llamados vía `InvokeOnFormSafely()` desde otros threads
+
+**Gestión de Tipo de Conexión (USB/WiFi)**:
+- Botón interactivo en la barra de título para alternar `NetworkMode`.
+- Timer dinámico (`_usbDetectionTimer`) detecta en vivo si el anclaje USB está disponible. Si se desconecta, deshabilita la opción USB y hace fallback automático a WiFi.
 
 **Indicadores de pantalla (nuevo)**:
 - Muestra indicadores `1↗: 📺` y `2↗: 📺` en la parte inferior izquierda

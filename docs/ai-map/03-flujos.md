@@ -43,9 +43,10 @@
 2. Resuelve región con `GetCaptureRegion()` según `MonitorIndex`.
 3. Copia pantalla a `Bitmap`.
 4. Si corresponde, dibuja cursor.
-5. Codifica JPEG con `JpegQuality` configurado.
-6. Guarda bytes en `_currentFrame`.
-7. Espera `CaptureIntervalSeconds` antes del próximo frame.
+5. *(Optimización)* Si la red es `USB` y no hubo actividad cliente en 3 seg, entra en reposo bajando la tasa de captura a 2 FPS.
+6. Codifica JPEG con `JpegQuality` configurado.
+7. Guarda bytes en `_currentFrame`.
+8. Espera `CaptureIntervalSeconds` antes del próximo frame.
 
 ## 4. Modo `WebImage`
 1. El navegador abre `/`.
@@ -106,6 +107,9 @@ En WebImage se bloquea drag/long-press nativo con:
 - Click en 📺 (zona derecha) → `Clipboard.SetText()` + tooltip temporal "URL copiada"
 - Si se habilita/deshabilita Screen 2 → solo afecta visibilidad si `_wasStarted == true`
 - Al cambiar puerto → tooltip se actualiza automáticamente
+
+**Fallback Automático de Red**:
+- Un `Timer` UI evalúa la red USB. Si el cable se desconecta en modo USB, revierte la app a WiFi en caliente, actualiza la URL y deshabilita la opción.
 
 **Al presionar "Detener"**:
 - `StopRequested?.Invoke()` → detiene el servicio

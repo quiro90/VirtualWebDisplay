@@ -1,4 +1,4 @@
-﻿# Configuración, endpoints y contratos
+﻿﻿# Configuración, endpoints y contratos
 
 ## Persistencia
 
@@ -46,6 +46,7 @@ Screen2: VirtualScreenConfig
 | `VirtualDisplayPlacement` | "right" | right / left / top / bottom / **duplicate** |
 | `BrowserImageFit` | "contain" | fill/cover/contain (CSS object-fit en el navegador) |
 | `ScreenSecurityEnabled` | false | Activa protección por clave de 6 caracteres para esa pantalla |
+| `NetworkMode` | "WiFi" | WiFi = Acceso estándar, USB = Anclaje de red (max 1 viewer, sin seguridad) |
 
 ### `BrowserImageFit` — valores y efecto visual
 - `fill`: estira la imagen para llenar toda la pantalla del cliente (sin barras, puede deformar si hay diferencia de proporción)
@@ -228,6 +229,11 @@ AppText.NormalizeLanguage("en")       // Normaliza código de idioma
 #### Entrada táctil
 - `Tab_Section_TouchInput`: "Touch Input" / "Entrada Táctil"
 - `Tab_TouchPreserveCursor_Checkbox`: "Preserve cursor position on tap" / "Recordar posición del puntero"
+
+#### Red y Conexión
+- `Form_Config_NetworkMode`: "Connection Type" / "Tipo de conexión"
+- `Tab_NetworkMode_WiFi`: "WiFi Access" / "Acceso WiFi"
+- `Tab_NetworkMode_USB`: "USB Access (experimental)" / "Acceso USB (experimental)"
 
 #### Claves obsoletas eliminadas
 Las siguientes claves fueron eliminadas de los archivos `.resx` por no tener uso:
