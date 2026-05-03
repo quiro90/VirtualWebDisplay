@@ -33,9 +33,9 @@ public sealed class ScreenTabControls
     private readonly ThemedComboBox _browserImageFitCombo;
     private readonly Label _maxViewersLabel;
     private readonly ThemedNumericUpDown _maxViewersInput;
+    private readonly Label _touch_Zone_1;
     private readonly CheckBox _touchInputCheckBox;
     private readonly CheckBox _touchPreserveCursorCheckBox;
-    private readonly CheckBox _touchZoomCheckBox;
     private readonly CheckBox _touchHoldCheckBox;
     private readonly ThemedNumericUpDown _touchHoldDelayInput;
     private readonly CheckBox _touchScrollCheckBox;
@@ -246,9 +246,11 @@ public sealed class ScreenTabControls
         };
 
         currentTop += 10;
-
         int blockLeft = 14;
 
+        // Fila notas
+        _touch_Zone_1 = CreateLabel(AppText.Get("Label_TouchZone_l1"), 5, currentTop);
+        currentTop += 26;
 
         // CheckBox "Entrada Táctil"
         _touchInputCheckBox = new CheckBox
@@ -267,20 +269,12 @@ public sealed class ScreenTabControls
             Width = 200,
             Text = AppText.Get("Tab_TouchPreserveCursor_Checkbox"),
         };
-
-        // Fila 2: Zoom, Hold, Scroll
-        _touchZoomCheckBox = new CheckBox
-        {
-            Left = blockLeft,
-            Top = currentTop + 24,
-            Width = 190,
-            Text = AppText.Get("Tab_TouchZoom_Checkbox")
-        };
+        currentTop += 28;
 
         _touchHoldCheckBox = new CheckBox
         {
             Left = blockLeft,
-            Top = currentTop + 48,
+            Top = currentTop,
             Width = 140,
             Text = AppText.Get("Tab_TouchHold_Checkbox")
         };
@@ -288,18 +282,19 @@ public sealed class ScreenTabControls
         _touchHoldDelayInput = new ThemedNumericUpDown
         {
             Left = blockLeft + 140,
-            Top = currentTop + 48,
+            Top = currentTop,
             Width = 56,
             Minimum = TouchGestureOptions.MinDelayMs,
             Maximum = TouchGestureOptions.MaxDelayMs,
             DecimalPlaces = 0,
             Increment = 10M,
         };
+        currentTop += 24;
 
         _touchScrollCheckBox = new CheckBox
         {
             Left = blockLeft,
-            Top = currentTop + 72,
+            Top = currentTop,
             Width = 140,
             Text = AppText.Get("Tab_TouchScroll_Checkbox")
         };
@@ -307,7 +302,7 @@ public sealed class ScreenTabControls
         _touchScrollDelayInput = new ThemedNumericUpDown
         {
             Left = blockLeft + 140,
-            Top = currentTop + 72,
+            Top = currentTop,
             Width = 56,
             Minimum = TouchGestureOptions.MinDelayMs,
             Maximum = TouchGestureOptions.MaxDelayMs,
@@ -330,6 +325,7 @@ public sealed class ScreenTabControls
             _jpegQualitySlider,
             _jpegQualityValueLabel,
             _fitLabel,
+            _touch_Zone_1,
             _browserImageFitCombo,
             _maxViewersLabel,
             _maxViewersInput,
@@ -341,7 +337,6 @@ public sealed class ScreenTabControls
             _touchSectionDivider,
             _touchInputCheckBox,
             _touchPreserveCursorCheckBox,
-            _touchZoomCheckBox,
             _touchHoldCheckBox,
             _touchHoldDelayInput,
             _touchScrollCheckBox,
@@ -374,11 +369,6 @@ public sealed class ScreenTabControls
             UpdateState();
             TouchPreserveCursorChanged?.Invoke(_touchPreserveCursorCheckBox.Checked);
         };
-        _touchZoomCheckBox.CheckedChanged += (_, _) =>
-        {
-            UpdateState();
-        };
-
         _touchHoldCheckBox.CheckedChanged += (_, _) =>
         {
             UpdateState();
@@ -424,9 +414,9 @@ public sealed class ScreenTabControls
         _qualityLabel.Text = AppText.Get("Tab_Label_JpegQuality");
         _fitLabel.Text = AppText.Get("Tab_Label_BrowserFit");
         _maxViewersLabel.Text = AppText.Get("Tab_Label_MaxViewers");
+        _touch_Zone_1.Text = AppText.Get("Label_TouchZone_l1");
         _touchInputCheckBox.Text = AppText.Get("Tab_Section_TouchInput");
         _touchPreserveCursorCheckBox.Text = AppText.Get("Tab_TouchPreserveCursor_Checkbox");
-        _touchZoomCheckBox.Text = AppText.Get("Tab_TouchZoom_Checkbox");
         _touchHoldCheckBox.Text = AppText.Get("Tab_TouchHold_Checkbox");
         _touchScrollCheckBox.Text = AppText.Get("Tab_TouchScroll_Checkbox");
         _screenSecurityCheckBox.Text = AppText.Get("Tab_Label_ScreenSecurity");
@@ -458,8 +448,6 @@ public sealed class ScreenTabControls
         config.MaxViewers = (int)_maxViewersInput.Value;
         config.TouchInputEnabled = _touchInputCheckBox.Checked;
         config.TouchPreserveCursor = _touchPreserveCursorCheckBox.Checked;
-
-        config.TouchZoomEnabled = _touchZoomCheckBox.Checked;
         
         config.TouchHoldEnabled = _touchHoldCheckBox.Checked;
         config.TouchHoldDelayMs = (int)_touchHoldDelayInput.Value;
@@ -489,8 +477,6 @@ public sealed class ScreenTabControls
         _touchInputCheckBox.Checked = config.TouchInputEnabled;
         _touchPreserveCursorCheckBox.Checked = config.TouchPreserveCursor;
 
-        _touchZoomCheckBox.Checked = config.TouchZoomEnabled;
-
         _touchHoldCheckBox.Checked = config.TouchHoldEnabled;
         _touchHoldDelayInput.Value = Math.Clamp(config.TouchHoldDelayMs, _touchHoldDelayInput.Minimum, _touchHoldDelayInput.Maximum);
 
@@ -515,7 +501,6 @@ public sealed class ScreenTabControls
         {
             _windowsDisplayButton,
             _touchInputCheckBox,
-            _touchZoomCheckBox,
             _touchHoldCheckBox,
             _touchHoldDelayInput,
             _touchScrollCheckBox,
@@ -629,9 +614,7 @@ public sealed class ScreenTabControls
         var baseTouchState = _serviceRunning ? touchEnabled : (tabEnabled && touchEnabled);
 
         _touchPreserveCursorCheckBox.Enabled = baseTouchState;
-        
-        _touchZoomCheckBox.Enabled = baseTouchState;
-        
+                
         _touchHoldCheckBox.Enabled = baseTouchState;
         _touchHoldDelayInput.Enabled = baseTouchState && _touchHoldCheckBox.Checked;
         

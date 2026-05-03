@@ -1,7 +1,6 @@
 /**
- * Keep-alive signal para mantener la sesión activa.
- * Envía pings periódicos al servidor para evitar timeout de conexión.
- * Incluye funcionalidad opcional para mantener la pantalla del dispositivo encendida.
+ * Sistema para mantener la pantalla del dispositivo encendida.
+ * (Conserva el nombre Keepalive por compatibilidad con código existente).
  * 
  * @namespace Keepalive
  */
@@ -23,14 +22,7 @@
      * Sistema de keep-alive para mantener sesión activa.
      */
     const Keepalive = {
-        // Estado de red (Keepalive)
-        _intervalId: null,
-        _intervalMs: 10000,
         _visibilityHandler: null,
-
-        // Constantes (sincronizadas con Configuration/TouchInputConstants.cs)
-        _MIN_INTERVAL_MS: 1000,      // TouchInputConstants.MinKeepaliveIntervalMs
-        _DEFAULT_INTERVAL_MS: 10000, // TouchInputConstants.DefaultKeepaliveIntervalMs
 
         // Estado de Pantalla Activa (Wake Lock)
         _isAwakeEnabled: false,
@@ -40,29 +32,19 @@
         _fadeTimeoutId: null,
 
         /**
-         * Inicia el sistema de keep-alive y prepara la pantalla activa.
-         * @param {number} [intervalMs=10000] - Intervalo entre pings en milisegundos (mínimo 1000ms)
+         * Inicia el sistema para mantener la pantalla activa.
          */
-        start(intervalMs) {
-            if (intervalMs && intervalMs >= this._MIN_INTERVAL_MS) {
-                this._intervalMs = intervalMs;
-            } else {
-                this._intervalMs = this._DEFAULT_INTERVAL_MS;
-            }
-
-            this._startPingInterval();
+        start() {
             this._setupVisibilityHandler();
             this._initScreenAwake();
 
-            log.info('Started with interval:', this._intervalMs + 'ms');
+            log.info('Screen awake system started');
         },
 
         /**
-         * Detiene el sistema de keep-alive y libera la pantalla activa.
+         * Detiene el sistema y libera la pantalla activa.
          */
         stop() {
-            this._stopPingInterval();
-            
             if (this._visibilityHandler) {
                 document.removeEventListener('visibilitychange', this._visibilityHandler);
                 this._visibilityHandler = null;
@@ -74,54 +56,19 @@
             log.info('Stopped');
         },
 
-        // --- LÓGICA DE KEEPALIVE (RED) ---
-
-        _startPingInterval() {
-            if (!this._intervalId) {
-                this._ping();
-                this._intervalId = setInterval(() => this._ping(), this._intervalMs);
-            }
-        },
-
-        _stopPingInterval() {
-            if (this._intervalId) {
-                clearInterval(this._intervalId);
-                this._intervalId = null;
-            }
-        },
-
-        /**
-         * Envía un ping al servidor.
-         * @private
-         */
-        _ping() {
-            fetch('/keepalive?t=' + Date.now(), {
-                method: 'GET',
-                cache: 'no-store',
-                keepalive: true,
-                credentials: 'same-origin'
-            }).catch(function() {
-                // Silenciar errores de red (servidor caído, etc.)
-            });
-        },
-
         _setupVisibilityHandler() {
             if (this._visibilityHandler) return;
 
             this._visibilityHandler = () => {
                 if (document.visibilityState === 'visible') {
-                    // Reanudar keepalive de red
-                    log.debug('Pestaña visible, reanudando keepalive');
-                    this._startPingInterval();
-                    
                     // Reanudar wake lock (el SO suele soltarlo al minimizar/cambiar de app)
                     if (this._isAwakeEnabled) {
                         this._applyAwakeState();
                     }
                 } else {
-                    // Pausar keepalive de red para no gastar batería
-                    log.debug('Pestaña oculta, pausando keepalive');
-                    this._stopPingInterval();
+                    // Pausar pantalla activa para no gastar batería en segundo plano
+                    this._releaseWakeLock();
+                    this._pauseHiddenVideo();
                 }
             };
 

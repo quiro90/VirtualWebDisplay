@@ -517,8 +517,8 @@ public sealed class CaptureService : BackgroundService
 | `MonitorIndex` | int | Índice en Screen.AllScreens (-1 = auto) |
 | `TouchInputEnabled` | bool | Activa/desactiva entrada táctil por pantalla |
 | `TouchPreserveCursor` | bool | Preserva cursor al tocar - false por defecto |
-| `TouchZoomEnabled` | bool | Habilita gesto de zoom (pellizco) - true por defecto |
-| `TouchZoomDelayMs` | int | Delay en ms para activar zoom (50ms por defecto) |
+| `TouchZoomEnabled` | bool | Habilita gesto de zoom (pellizco) - true por defecto (oculto en interfaz) |
+| `TouchZoomDelayMs` | int | Delay en ms para activar zoom (50ms por defecto, oculto en interfaz) |
 | `TouchHoldEnabled` | bool | Habilita mantener toque para arrastrar - true por defecto |
 | `TouchHoldDelayMs` | int | Delay en ms para activar arrastre (250ms por defecto) |
 | `TouchScrollEnabled` | bool | Habilita scroll con dos dedos - true por defecto |
@@ -548,7 +548,7 @@ Cliente (Navegador)
 En vez de modos excluyentes, los gestos se configuran granularmente:
 
 - **TouchPreserveCursor**: Si es `true`, los taps (1/2/3 dedos) no mueven el cursor.
-- **Zoom (Pellizco)**: Toggle `TouchZoomEnabled` y delay `TouchZoomDelayMs`. Escalado visual web (no mueve scroll nativo).
+- **Zoom**: Toggle `TouchZoomEnabled` (control oculto). Escalado visual web (no mueve scroll nativo).
 - **Mantener toque**: Toggle `TouchHoldEnabled` y delay `TouchHoldDelayMs`. 1 dedo hold + drag → arrastrar.
 - **Scroll (Dos dedos)**: Toggle `TouchScrollEnabled` y delay `TouchScrollDelayMs`. 2 dedos hold + drag → scroll vertical/horizontal (inversión natural).
 
@@ -574,7 +574,7 @@ En vez de modos excluyentes, los gestos se configuran granularmente:
 - Scroll invertido naturalmente (drag hacia abajo = scroll hacia abajo).
 
 **4. Configuration/Models/VirtualScreenConfig.cs**:
-- Propiedades: `TouchInputEnabled`, `TouchZoomEnabled`, `TouchZoomDelayMs`, `TouchHoldEnabled`, etc.
+- Propiedades: `TouchInputEnabled`, `TouchZoomEnabled`, `TouchHoldEnabled`, etc.
 - Incluidas en `Clone()` y `CopyTo()` para persistencia.
 
 **5. UI/TrayIcon/ConfigurationFormPresenter.cs**:

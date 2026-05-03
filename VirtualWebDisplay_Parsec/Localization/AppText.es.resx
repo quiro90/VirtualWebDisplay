@@ -70,7 +70,9 @@
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Ajuste:</value></data>
   <data name="Tab_Label_MaxViewers" xml:space="preserve"><value>Número máximo de espectadores:</value></data>
   <data name="Tab_Label_TouchMode" xml:space="preserve"><value>Modo táctil:</value></data>
-  <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Solo toques</value></data>
+	<data name="Label_TouchZone_l1" xml:space="preserve"><value>⚠ Active si solo retrasmite en un monitor. El gesto ZOOM siempre está disponible.</value></data>
+
+	<data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Solo toques</value></data>
   <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestos</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Entrada Táctil</value></data>
   <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pellizco)</value></data>

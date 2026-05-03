@@ -68,7 +68,9 @@
   <data name="Tab_Help_CaptureInterval" xml:space="preserve"><value>Time between image updates. For smoother motion use less than 10 ms; for e-ink displays we recommend more than 100 ms.</value></data>
   <data name="Tab_Label_JpegQuality" xml:space="preserve"><value>Image Quality:</value></data>
   <data name="Tab_Label_BrowserFit" xml:space="preserve"><value>Fit:</value></data>
-  <data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Screen security (require access code)</value></data>
+	<data name="Label_TouchZone_l1" xml:space="preserve"><value>⚠ Active if it only transmits on one monitor. The ZOOM gesture is always available.</value></data>
+
+	<data name="Tab_Label_ScreenSecurity" xml:space="preserve"><value>Screen security (require access code)</value></data>
   <data name="Tab_Help_ScreenSecurity" xml:space="preserve"><value>This option requires entering the generated access code before the screen can be viewed.</value></data>
   <data name="Tab_SecurityCode_Show" xml:space="preserve"><value>Show</value></data>
   <data name="Tab_SecurityCode_Hide" xml:space="preserve"><value>Hide</value></data>
@@ -83,7 +85,6 @@
   <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Tap only</value></data>
   <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestures</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Touch Input</value></data>
-  <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pinch)</value></data>
   <data name="Tab_TouchHold_Checkbox" xml:space="preserve"><value>Hold touch</value></data>
   <data name="Tab_TouchScroll_Checkbox" xml:space="preserve"><value>Scroll (Two fingers)</value></data>
   <data name="Tab_Help_TouchMode" xml:space="preserve"><value>Tap only: clicks without moving cursor, no drag/scroll. Gestures: enables drag/scroll but cursor moves to touch location.</value></data>

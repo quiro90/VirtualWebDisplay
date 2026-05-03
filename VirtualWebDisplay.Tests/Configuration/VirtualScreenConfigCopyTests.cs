@@ -32,7 +32,7 @@ public sealed class VirtualScreenConfigCopyTests
         MaxViewers             = 5,
         TouchInputEnabled      = true,
         TouchZoomEnabled       = false,
-        TouchZoomDelayMs       = 420,
+        TouchZoomDelayMs       = 100,
         TouchHoldEnabled       = false,
         TouchHoldDelayMs       = 420,
         TouchScrollEnabled     = false,
