@@ -73,7 +73,7 @@
   <data name="Tab_TouchMode_TapOnly" xml:space="preserve"><value>Solo toques</value></data>
   <data name="Tab_TouchMode_Gestures" xml:space="preserve"><value>Gestos</value></data>
   <data name="Tab_Section_TouchInput" xml:space="preserve"><value>Entrada Táctil</value></data>
-  <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pellizco) (afecta cursor)</value></data>
+  <data name="Tab_TouchZoom_Checkbox" xml:space="preserve"><value>Zoom (Pellizco)</value></data>
   <data name="Tab_TouchHold_Checkbox" xml:space="preserve"><value>Mantener toque</value></data>
   <data name="Tab_TouchScroll_Checkbox" xml:space="preserve"><value>Scroll (Dos dedos)</value></data>
   <data name="Tab_Help_TouchMode" xml:space="preserve"><value>Solo toques: clicks sin mover cursor, sin arrastrar/scroll. Gestos: habilita arrastrar/scroll pero el cursor se mueve a la posición del toque.</value></data>
