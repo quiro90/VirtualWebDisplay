@@ -51,8 +51,8 @@ El cliente web ha sido reconstruido con un soporte táctil nativo de primer nive
 
 ## 📸 Screenshots
 
-![Captura de Interfaz](.github/img/VirtualWebDisplay.png)
-![Captura de Interfaz](.github/img/localnet_viewer.png)
+![Captura de Interfaz](docs/img/VirtualWebDisplay.png)
+![Captura de Interfaz](docs/img/localnet_viewer.png)
 ---
 
 ## 🚀 Inicio Rápido

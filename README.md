@@ -52,8 +52,8 @@ The web client has been rebuilt with first-class native touch support, allowing 
 
 ## 📸 Screenshots
 
-![Interface Screenshot](.github/img/VirtualWebDisplay.png)
-![Interface Screenshot](.github/img/localnet_viewer.png)
+![Interface Screenshot](docs/img/VirtualWebDisplay.png)
+![Interface Screenshot](docs/img/localnet_viewer.png)
 
 ---
 
