@@ -815,16 +815,9 @@ Para preguntas o sugerencias:
 - **GitHub Issues**: https://github.com/quiro90/VirtualWebDisplay/issues
 - **Pull Requests**: Bienvenidos (seguir convenciones de este documento)
 
-¡Happy Coding! 🚀
 cery WebRTC](https://github.com/sipsorcery-org/sipsorcery)
 - [Parsec VDD](https://github.com/nomi-san/parsec-vdd)
 
 ---
-
-## Contacto y Contribución
-
-Para preguntas o sugerencias:
-- **GitHub Issues**: https://github.com/quiro90/VirtualWebDisplay/issues
-- **Pull Requests**: Bienvenidos (seguir convenciones de este documento)
 
 ¡Happy Coding! 🚀

@@ -430,11 +430,6 @@ sequenceDiagram
 - `ResolutionConfigurationForm` (UI/Forms) - Formulario de configuración
 - `VirtualWebDisplaySettings` (Configuration/Models) - Configuración
 
-**Arquitectura refactorizada (2024)**:
-- ✅ Eliminó 3 variables de estado duplicadas
-- ✅ Delegó gestión de estado a `ServiceStateManager`
-- ✅ Se enfoca solo en UI y coordinación
-
 ---
 
 ### ServiceStateManager ⭐
@@ -502,11 +497,6 @@ void OpenStartupForm(Action onConfirmed, Action onCancelled)
 void ShowConfigurationDialog(IReadOnlyList<ScreenRuntimeContext>)
 void InvokeOnFormSafely(Form?, Action<Form>)  // Thread-safe helper
 ```
-
-**Arquitectura refactorizada (2024)**:
-- ✅ Eliminó 32 líneas de código duplicado
-- ✅ Thread-safety completo
-- ✅ Métodos de notificación privados (mejor encapsulación)
 
 ---
 
@@ -997,5 +987,3 @@ Esta arquitectura prioriza:
 - ✅ **Mantenibilidad** (código organizado, navegable)
 - ✅ **Performance** (optimizaciones en captura/streaming)
 
-Para modificaciones, consultar **AGENT.md** para reglas detalladas y áreas sensibles.
-bles.

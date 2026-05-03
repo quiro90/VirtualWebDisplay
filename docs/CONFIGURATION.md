@@ -31,7 +31,6 @@
     "TouchScrollEnabled": true,
     "TouchScrollDelayMs": 250,
     "ScreenSecurityEnabled": true,
-    "MonitorIndex": -1,
     "VirtualDisplayPlacement": "right",
     "BrowserImageFit": "contain"
   },
@@ -53,7 +52,6 @@
     "TouchScrollEnabled": true,
     "TouchScrollDelayMs": 250,
     "ScreenSecurityEnabled": false,
-    "MonitorIndex": -1,
     "VirtualDisplayPlacement": "left",
     "BrowserImageFit": "cover"
   }
