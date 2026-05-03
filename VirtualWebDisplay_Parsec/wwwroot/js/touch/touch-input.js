@@ -358,19 +358,12 @@
                 return;
             }
 
-            if (this._state.mode === 'scroll') {
+            if (this._state.mode === 'scroll' || this._state.mode === 'zoom') {
                 if (e.touches.length < 2) {
                     this._sendEndAction('scrollend', now);
                     this._resetState();
                 }
                 return;
-            }
-
-            if (this._state.mode === 'zoom') {
-                if (e.touches.length < 2) {
-                    this._sendEndAction('zoomend', now);
-                    this._resetState();
-                }
             }
 
             if (this._state.mode === 'pendingTap') {

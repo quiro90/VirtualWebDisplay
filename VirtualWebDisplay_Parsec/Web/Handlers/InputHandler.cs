@@ -590,13 +590,6 @@ internal static class InputHandler
                     MouseInputHelper.RestoreLastCursorPosition();
                 }
                 break;
-            case "zoomend":
-                EndDragIfActive();
-                if (_runtime.Config.TouchPreserveCursor)
-                {
-                    MouseInputHelper.RestoreLastCursorPosition();
-                }
-                break;
         }
 
         return Results.Ok();
