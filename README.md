@@ -51,11 +51,8 @@ El cliente web ha sido reconstruido con un soporte táctil nativo de primer nive
 
 ## 📸 Screenshots
 
-![Captura de Interfaz](ruta/imagen-placeholder.jpg)
-*Imágenes próximamente...*
+![Captura de Interfaz](.github/img/VirtualWebDisplay.png)
 
-![Cliente Web Táctil](ruta/imagen-placeholder.jpg)
-*Imágenes próximamente...*
 
 ---
 

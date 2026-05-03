@@ -209,7 +209,7 @@
             if (fingerCount >= 2 && this._touchZoomEnabled && (this._state.isZooming || this._state.mode !== 'scroll')) {
                 try {
                     const currentDist = this._getPinchDistance(e.touches);
-                    
+
                     // Evaluamos solo por distancia (30px de tolerancia), el tiempo entorpece un pellizco natural
                     if (!this._state.isZooming && Math.abs(currentDist - this._state.pinchBaseDist) > 30) {
                         this._state.isZooming = true;
@@ -222,16 +222,16 @@
 
                     if (this._state.isZooming) {
                         const scale = Math.max(0.5, currentDist / this._state.pinchBaseDist);
-                        
+
                         const absCenter = this._getAbsoluteCenter(e.touches);
                         const panX = absCenter.x - this._state.initialViewportCenterX;
                         const panY = absCenter.y - this._state.initialViewportCenterY;
-                        
+
                         this._screenElement.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
                         return; // No procesar scroll de servidor mientras se hace zoom
                     }
                 } catch (err) {
-                    // Fallback silencioso si no soporta
+                    log.info('No soportado', err);
                 }
             }
 
