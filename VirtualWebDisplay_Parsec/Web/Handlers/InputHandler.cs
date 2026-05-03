@@ -21,9 +21,7 @@ internal static class InputHandler
     // mouse virtual
     private static int _virtualX;
     private static int _virtualY;
-    private static bool _virtualInitialized;
 
-    // Estad�sticas b�sicas de entrada t�ctil (Sprint 2)
     private static long _totalEvents;
     private static long _totalErrors;
     private static long _rateLimitedEvents;
@@ -136,7 +134,6 @@ internal static class InputHandler
 
             _virtualX = desktopX;
             _virtualY = desktopY;
-            _virtualInitialized = true;
 
             System.Diagnostics.Debug.WriteLine(
                 $"[InputHandler] Bounds({targetBounds.Left},{targetBounds.Top},{targetBounds.Width}x{targetBounds.Height}) " +
