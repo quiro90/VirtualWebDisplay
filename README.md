@@ -77,7 +77,8 @@ The web client has been rebuilt with first-class native touch support, allowing 
 
 #### Option 2: Build from Source
 
-```powershell
+```
+powershell
 # Clone repository
 git clone https://github.com/quiro90/VirtualWebDisplay.git
 cd VirtualWebDisplay
@@ -125,11 +126,13 @@ Click **Apply** to create/update the virtual display.
 ### 3. Access via Browser
 
 **Local Device**:
-```http://localhost:5001
+```
+http://localhost:5001
 ```
 
 **From another device on the network**:
-```http://192.168.1.XXX:5001
+```
+http://192.168.1.XXX:5001
 ```
 
 *(The IP is shown in the app and system tray)*
@@ -235,8 +238,10 @@ See detailed documentation:
 
 ### Build
 
-```powershell
+```
+powershell
 dotnet build VirtualWebDisplay_Parsec.csproj --configuration Release
+```
 ---
 
 ## 🐛 Troubleshooting
