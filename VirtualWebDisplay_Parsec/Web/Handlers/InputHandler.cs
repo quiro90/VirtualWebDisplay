@@ -39,6 +39,8 @@ internal static class InputHandler
     private static long _dragLastActivityUnixMs;
     private const int DRAG_STALE_TIMEOUT_MS = 1200;
 
+    private static ScreenRuntimeContext? _runtime = null;
+
     /// <summary>
     /// POST /input/touch - Recibe eventos t�ctiles y los convierte en clics de mouse.
     /// Soporta tanto WebImage como WebRTC (ambos modos de transmisi�n).
@@ -56,13 +58,13 @@ internal static class InputHandler
             return Results.BadRequest(new { error = "Type field required" });
 
         // Resolver runtime y verificar autorizaci�n
-        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        _runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
 
-        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
-            return RuntimeAccessHelper.UnauthorizedResult(runtime);
+        if (!RuntimeAccessHelper.IsAuthorized(ctx, _runtime))
+            return RuntimeAccessHelper.UnauthorizedResult(_runtime);
 
         // Gate de touch en tiempo real: si la app lo desactiva, ignoramos eventos aunque el cliente los siga enviando.
-        if (!runtime.Config.TouchInputEnabled)
+        if (!_runtime.Config.TouchInputEnabled)
             return Results.NoContent();
 
         // Registrar telemetr�a b�sica por evento
@@ -71,7 +73,7 @@ internal static class InputHandler
         RegisterLatency(nowMs, request.Timestamp);
 
         // Rate limiting por cliente/sesi�n
-        var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, runtime);
+        var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, _runtime);
         if (!CheckRateLimit(viewerKey))
         {
             RegisterRateLimitedEvent();
@@ -100,7 +102,7 @@ internal static class InputHandler
             if (action == "dragend" || action == "scrollend")
             {
                 EndDragIfActive();
-                if (runtime.Config.TouchPreserveCursor)
+                if (_runtime.Config.TouchPreserveCursor)
                 {
                     MouseInputHelper.RestoreLastCursorPosition();
                 }
@@ -116,7 +118,7 @@ internal static class InputHandler
                 return Results.BadRequest(new { error = "Coordinates X and Y are required for this action." });
             }
 
-            var targetBounds = ResolveTargetMonitorBounds(runtime);
+            var targetBounds = ResolveTargetMonitorBounds(_runtime);
 
             // Mapear coordenadas viewport ? pantalla virtual (considerando rotaci�n).
             // Usamos los valores con fallback seguro para ViewportWidth/Height.
@@ -138,7 +140,7 @@ internal static class InputHandler
 
             System.Diagnostics.Debug.WriteLine(
                 $"[InputHandler] Bounds({targetBounds.Left},{targetBounds.Top},{targetBounds.Width}x{targetBounds.Height}) " +
-                $"Config({runtime.Config.Width}x{runtime.Config.Height}) -> desktop({desktopX},{desktopY})");
+                $"Config({_runtime.Config.Width}x{_runtime.Config.Height}) -> desktop({desktopX},{desktopY})");
 
             // Procesar segun accion semantica (decidida por el cliente JS)
             if (string.IsNullOrEmpty(action))
@@ -157,33 +159,33 @@ internal static class InputHandler
             {
                 case "tap":
                     EndDragIfActive();
-                    if (runtime.Config.TouchPreserveCursor)
+                    if (_runtime.Config.TouchPreserveCursor)
                         MouseInputHelper.SaveCurrentCursorPosition();
-                    ExecuteClick(MouseClickType.Left, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
+                    ExecuteClick(MouseClickType.Left, _virtualX, _virtualY, _runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "rightclick":
                     EndDragIfActive();
-                    ExecuteClick(MouseClickType.Right, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
+                    ExecuteClick(MouseClickType.Right, _virtualX, _virtualY, _runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "middleclick":
                     EndDragIfActive();
-                    ExecuteClick(MouseClickType.Middle, _virtualX, _virtualY, runtime.Config.TouchPreserveCursor);
+                    ExecuteClick(MouseClickType.Middle, _virtualX, _virtualY, _runtime.Config.TouchPreserveCursor);
                     break;
 
                 case "dragstart":
                 case "dragmove":
                 case "dragend":
-                    if (!runtime.Config.TouchHoldEnabled)
+                    if (!_runtime.Config.TouchHoldEnabled)
                         return Results.NoContent();
-                    return ExecuteGestureAction(action, nowMs, request, runtime);
+                    return ExecuteGestureAction(action, nowMs, request);
 
                 case "scrollmove":
                 case "scrollend":
-                    if (!runtime.Config.TouchScrollEnabled)
+                    if (!_runtime.Config.TouchScrollEnabled)
                         return Results.NoContent();
-                    return ExecuteGestureAction(action, nowMs, request, runtime);
+                    return ExecuteGestureAction(action, nowMs, request);
 
                 default:
                     RegisterError();
@@ -540,38 +542,39 @@ internal static class InputHandler
     /// <summary>
     /// Ejecuta una acci�n de gesto (drag/scroll). Centraliza la l�gica repetitiva.
     /// </summary>
-    private static IResult ExecuteGestureAction(string action, long nowMs, TouchInputRequest request, ScreenRuntimeContext runtime)
+    private static IResult ExecuteGestureAction(string action, long nowMs, TouchInputRequest request)
     {
+        if (_runtime == null) return Results.Problem();
+
         switch (action)
         {
             case "dragstart":
                 // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
                 EndDragIfActive();
-                if (runtime.Config.TouchPreserveCursor)
+                if (_runtime.Config.TouchPreserveCursor)
                     MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.LeftDownAt(_virtualX, _virtualY);
                 MarkDragStarted(nowMs);
                 break;
 
             case "dragmove":
-                if (runtime.Config.TouchPreserveCursor)
+                if (_runtime.Config.TouchPreserveCursor)
                     MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 MarkDragActivity(nowMs);
                 break;
 
-
             case "dragend":
                 EndDragIfActive();
                 // Restaurar puntero solo si TouchPreserveCursor est� activo
-                if (runtime.Config.TouchPreserveCursor)
+                if (_runtime.Config.TouchPreserveCursor)
                 {
                     MouseInputHelper.RestoreLastCursorPosition();
                 }
                 break;
 
             case "scrollmove":
-                if (runtime.Config.TouchPreserveCursor)
+                if (_runtime.Config.TouchPreserveCursor)
                     MouseInputHelper.SaveCurrentCursorPosition();
                 MouseInputHelper.MoveMouse(_virtualX, _virtualY);
                 int dy = (int)(request.ScrollDeltaY ?? 0.0);
@@ -580,10 +583,9 @@ internal static class InputHandler
                 MouseInputHelper.Scroll(-dy, dx);
                 break;
 
-
             case "scrollend":
                 EndDragIfActive();
-                if (runtime.Config.TouchPreserveCursor)
+                if (_runtime.Config.TouchPreserveCursor)
                 {
                     MouseInputHelper.RestoreLastCursorPosition();
                 }
