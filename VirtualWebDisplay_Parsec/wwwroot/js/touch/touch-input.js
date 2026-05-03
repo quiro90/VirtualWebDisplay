@@ -106,9 +106,6 @@
             // Adjuntar event listeners
             this._attachListeners();
 
-            // Iniciar sincronización en tiempo real (Hot-Reload)
-            this._startConfigPolling();
-
             log.info('Initialized (absolute pointer enabled)', {
                 elementId: config.elementId,
                 throttleMs: this._touchThrottle,
@@ -118,26 +115,6 @@
                 touchScrollEnabled: this._touchScrollEnabled,
                 touchScrollDelayMs: this._touchScrollDelayMs
             });
-        },
-
-        /**
-         * Inicia el polling para actualizar la configuración táctil en tiempo real (Hot-Reload).
-         * @private
-         */
-        _startConfigPolling() {
-            setInterval(() => {
-                fetch('/config')
-                    .then(r => r.ok ? r.json() : null)
-                    .then(data => {
-                        if (!data) return;
-                        const cfg = data.config || data;
-                        if (typeof cfg.touchZoomEnabled !== 'undefined') this._touchZoomEnabled = cfg.touchZoomEnabled;
-                        if (typeof cfg.touchHoldEnabled !== 'undefined') this._touchHoldEnabled = cfg.touchHoldEnabled;
-                        if (typeof cfg.touchHoldDelayMs !== 'undefined') this._touchHoldDelayMs = cfg.touchHoldDelayMs;
-                        if (typeof cfg.touchScrollEnabled !== 'undefined') this._touchScrollEnabled = cfg.touchScrollEnabled;
-                        if (typeof cfg.touchScrollDelayMs !== 'undefined') this._touchScrollDelayMs = cfg.touchScrollDelayMs;
-                    }).catch(() => {});
-            }, 2000);
         },
 
         /**
@@ -632,20 +609,6 @@
             const dy = touches[0].clientY - touches[1].clientY;
             return Math.sqrt(dx * dx + dy * dy);
         },
-
-        /**
-         * Calcula el ángulo entre dos toques (para rotación).
-         * @private
-         */
-        _getPinchAngle(touches) {
-            if (touches.length < 2) {
-                return 0;
-            }
-            const dx = touches[1].clientX - touches[0].clientX;
-            const dy = touches[1].clientY - touches[0].clientY;
-            return Math.atan2(dy, dx) * (180 / Math.PI);
-        },
-
         /**
          * Obtiene el centro absoluto en el viewport entre dos toques.
          * @private
