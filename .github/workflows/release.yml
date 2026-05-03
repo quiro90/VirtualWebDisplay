@@ -1,0 +1,39 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Se ejecutará automáticamente cuando crees un tag que empiece con "v" (ej. v1.0.0)
+
+jobs:
+  build:
+    runs-on: windows-latest # Usamos Windows porque es una app de WinForms
+
+    steps:
+    - name: Checkout del código
+      uses: actions/checkout@v4
+
+    - name: Configurar .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restaurar dependencias
+      run: dotnet restore VirtualWebDisplay_Parsec.csproj
+
+    - name: Compilar y Publicar (Single File)
+      run: |
+        dotnet publish VirtualWebDisplay_Parsec.csproj --configuration Release --runtime win-x64 --self-contained true --output ./publish -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+
+    - name: Crear archivo ZIP
+      run: |
+        # Comprimimos la carpeta publish en un zip
+        Compress-Archive -Path ./publish/* -DestinationPath VirtualWebDisplay_win-x64.zip
+
+    - name: Crear Release en GitHub y subir el ZIP
+      uses: softprops/action-gh-release@v2
+      with:
+        files: VirtualWebDisplay_win-x64.zip
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
