@@ -1,0 +1,32 @@
+stages:
+  - build_and_package
+
+variables:
+  BUILD_CONFIG: "Release"
+
+# Al ser un proyecto "net10.0-windows", necesitamos un entorno Windows para compilarlo correctamente
+default:
+  tags:
+    - saas-windows-medium-amd64 # Etiqueta para usar los runners de Windows de GitLab.com
+
+build_and_package_job:
+  stage: build_and_package
+  script:
+    - Write-Host "Instalando .NET 10 SDK..."
+    - Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-install.ps1"
+    - ./dotnet-install.ps1 -Channel 10.0
+    - $env:PATH = "$env:LocalAppData\Microsoft\dotnet;$env:PATH"
+    - dotnet --info
+    - Write-Host "Buscando el archivo de proyecto (.csproj)..."
+    - $PROJECT_PATH = (Get-ChildItem -Filter *.csproj -Recurse | Select-Object -First 1).FullName
+    - Write-Host "Proyecto encontrado en:" $PROJECT_PATH
+    - Write-Host "Compilando el proyecto..."
+    - dotnet build "$PROJECT_PATH" --configuration $BUILD_CONFIG
+    - Write-Host "Publicando el proyecto para generar el ejecutable..."
+    - dotnet publish "$PROJECT_PATH" --configuration $BUILD_CONFIG --runtime win-x64 --self-contained false --output publish_output
+    - Compress-Archive -Path "publish_output\*" -DestinationPath "VirtualWebDisplay_Release.zip" -Force
+  artifacts:
+    name: "VirtualWebDisplay-v$CI_COMMIT_SHORT_SHA"
+    paths:
+      - VirtualWebDisplay_Release.zip
+    expire_in: 160 days
