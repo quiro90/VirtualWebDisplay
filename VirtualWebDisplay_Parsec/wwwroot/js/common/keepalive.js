@@ -101,10 +101,10 @@
             if (!this._awakeButton) return;
             if (this._isAwakeEnabled) {
                 this._awakeButton.textContent = 'Light:ON';
-                this._awakeButton.style.backgroundColor = 'rgba(28, 84, 28, 0.4)';
+                this._awakeButton.style.backgroundColor = 'rgba(28, 84, 28, 0.8)';
             } else {
                 this._awakeButton.textContent = 'Light:OFF';
-                this._awakeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+                this._awakeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
             }
         },
 
@@ -150,7 +150,7 @@
 
         _resetFadeTimer() {
             if (!this._awakeButton) return;
-            this._awakeButton.style.opacity = '0.7';
+            this._awakeButton.style.opacity = '0.8';
             if (this._fadeTimeoutId) clearTimeout(this._fadeTimeoutId);
             this._fadeTimeoutId = setTimeout(() => {
                 if (this._awakeButton) this._awakeButton.style.opacity = '0.1';
@@ -168,7 +168,7 @@
                 'z-index:2147483647',
                 'max-width:240px',
                 'padding:10px 14px',
-                'background:rgba(0,0,0,0.85)',
+                'background:rgba(0,0,0,0.8)',
                 'color:#fff',
                 'border:1px solid rgba(255,255,255,0.2)',
                 'border-radius:12px',

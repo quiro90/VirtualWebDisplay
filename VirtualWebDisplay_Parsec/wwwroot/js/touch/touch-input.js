@@ -43,7 +43,6 @@
             holdTimer: null,
             // Propiedades de zoom (Pinch-to-zoom temporal)
             pinchBaseDist: 0,
-            pinchBaseAngle: 0,
             isZooming: false,
             initialTransform: '',
             initialViewportCenterX: 0,
@@ -170,7 +169,6 @@
                 }
                 
                 try {
-                    this._state.touchStartTime = now;
                     this._state.pinchBaseDist = this._getPinchDistance(e.touches);
                     this._state.isZooming = false;
                     this._state.initialTransform = this._screenElement.style.transform || '';
@@ -677,12 +675,5 @@
 
     // Exponer al scope global
     global.TouchInput = TouchInput;
-
-    // Compatibilidad con código legacy que usa window.VirtualWebDisplayTouchInput
-    global.VirtualWebDisplayTouchInput = {
-        getStats: function() {
-            return TouchInput.getStats();
-        }
-    };
 
 })(window);
