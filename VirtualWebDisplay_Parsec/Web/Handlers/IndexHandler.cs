@@ -53,6 +53,7 @@ internal static class IndexHandler
             ? webImageTemplate.Generate(parameters)
             : rtcTemplate.Generate(parameters);
 
+        ctx.Response.Headers.CacheControl = "no-store, no-cache";
         return Results.Content(html, "text/html");
     }
 }
