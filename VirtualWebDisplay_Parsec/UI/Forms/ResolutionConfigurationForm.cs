@@ -161,7 +161,7 @@ public sealed class ResolutionConfigurationForm : Form
             TabStop = false,
         };
         _closeButton.FlatAppearance.BorderSize = 1;
-        _closeButton.Click += (_, _) => Close();
+        _closeButton.Click += (_, _) => Hide();
 
         _enableScreen2Check = new CheckBox
         {
@@ -214,10 +214,10 @@ public sealed class ResolutionConfigurationForm : Form
             Top    = 494,
             Width  = 84,
             Height = 30,
-            Text   = isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close"),
+            Text   = AppText.Get("Form_Config_Cancel_Close"),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
         };
-        _cancelButton.Click += (_, _) => Close();
+        _cancelButton.Click += (_, _) => Hide();
 
         // Indicadores de pantallas (inferior izquierdo)
         _screenIndicatorTooltip = new ToolTip
@@ -272,6 +272,7 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _serviceState = ServiceState.Started;
         UpdateAcceptButtonState();
+        UpdateCancelButtonState();
         ApplyRuntimeSecurityCodes(screenRuntimes);
         SetConfigurationControlsLocked(true);
         UpdateScreenIndicatorsVisibility();
@@ -290,6 +291,7 @@ public sealed class ResolutionConfigurationForm : Form
             // Service is running → stop it; form stays open and NotifyServiceStopped() will flip the button.
             _serviceState = ServiceState.Stopping;
             UpdateAcceptButtonState();
+            UpdateCancelButtonState();
             StopRequested?.Invoke();
         }
         else
@@ -297,6 +299,7 @@ public sealed class ResolutionConfigurationForm : Form
             // Service is stopped → start it; form stays open and NotifyServiceStarted() will flip the button.
             _serviceState = ServiceState.Starting;
             UpdateAcceptButtonState();
+            UpdateCancelButtonState();
             StartupConfirmed?.Invoke();
         }
     }
@@ -320,9 +323,19 @@ public sealed class ResolutionConfigurationForm : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        if (_isInitialStartup && _serviceState == ServiceState.Stopped && DialogResult != DialogResult.OK)
+        // Block closing while the service is in transition to avoid leaving the process in a zombie state.
+        if (_serviceState is ServiceState.Starting or ServiceState.Stopping)
         {
-            TrySaveSelection();
+            e.Cancel = true;
+            return;
+        }
+
+        // User-triggered close (X, Alt+F4, Escape) → hide to tray instead of closing.
+        if (e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            Hide();
+            return;
         }
 
         base.OnFormClosing(e);
@@ -354,7 +367,7 @@ public sealed class ResolutionConfigurationForm : Form
         _screen2Controls.ApplyLocalization();
 
         UpdateAcceptButtonState();
-        _cancelButton.Text = _isInitialStartup ? AppText.Get("Form_Config_Cancel_Exit") : AppText.Get("Form_Config_Cancel_Close");
+        _cancelButton.Text = AppText.Get("Form_Config_Cancel_Close");
 
         // Actualizar tooltips de indicadores de pantalla
         UpdateScreenIndicatorTooltip(_screen1Indicator, _screen1Controls.GetAccessUrl());
@@ -446,6 +459,7 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _serviceState = ServiceState.Stopped;
         UpdateAcceptButtonState();
+        UpdateCancelButtonState();
         SetConfigurationControlsLocked(false);
         UpdateScreenIndicatorsVisibility();
     }
@@ -461,6 +475,13 @@ public sealed class ResolutionConfigurationForm : Form
     {
         _acceptButton.Text = AcceptButtonText;
         _acceptButton.Enabled = _serviceState is ServiceState.Started or ServiceState.Stopped;
+    }
+
+    private void UpdateCancelButtonState()
+    {
+        var isTransitioning = _serviceState is ServiceState.Starting or ServiceState.Stopping;
+        _cancelButton.Enabled = !isTransitioning;
+        _closeButton.Enabled  = !isTransitioning;
     }
 
     private void UpdateScreenIndicatorsVisibility()

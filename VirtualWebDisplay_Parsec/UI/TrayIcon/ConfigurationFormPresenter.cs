@@ -49,18 +49,11 @@ internal sealed class ConfigurationFormPresenter
     /// are invoked from the UI thread when the user decides.
     /// Blocking until the decision is the caller's responsibility.
     /// </summary>
-    internal void OpenStartupForm(Action onConfirmed, Action onCancelled)
+    internal void OpenStartupForm(Action onConfirmed)
     {
         _startupForm = CreateForm(isInitialStartup: true, hasStarted: false, screenRuntimes: null);
 
-        _startupForm.FormClosed += (_, _) =>
-        {
-            if (!_startupForm.WasStarted)
-            {
-                _startupForm = null;
-                onCancelled();
-            }
-        };
+        _startupForm.FormClosed += (_, _) => { _startupForm = null; };
 
         _startupForm.StartupConfirmed += onConfirmed;
         _startupForm.StopRequested    += () => { };   // no-op en startup
@@ -89,25 +82,22 @@ internal sealed class ConfigurationFormPresenter
 
         var hasStarted = _serviceState.IsStarted;
         _configForm = CreateForm(isInitialStartup: false, hasStarted, hasStarted ? screenRuntimes : null);
-        try
-        {
-            _configForm.ShowDialog();
-        }
-        finally
+        _configForm.FormClosed += (_, _) =>
         {
             _configForm?.Dispose();
             _configForm = null;
-        }
+        };
+        _configForm.Show();
     }
 
     private void ActivateAndShow(Form form)
     {
         form.InvokeSafely(() =>
         {
+            if (!form.Visible)
+                form.Show();
             if (form.WindowState == FormWindowState.Minimized)
-            {
                 form.WindowState = FormWindowState.Normal;
-            }
             form.BringToFront();
             form.Activate();
         });

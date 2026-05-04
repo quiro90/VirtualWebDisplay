@@ -38,7 +38,6 @@
   <data name="Form_Config_Accept_Starting" xml:space="preserve"><value>Iniciando...</value></data>
   <data name="Form_Config_Accept_Stopping" xml:space="preserve"><value>Deteniendo...</value></data>
   <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Guardar</value></data>
-  <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Salir</value></data>
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Cerrar</value></data>
   <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Pantalla 1</value></data>
   <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Pantalla 2</value></data>
@@ -94,7 +93,7 @@
   <data name="Tab_BrowserFit_Contain" xml:space="preserve"><value>Contener (barras)</value></data>
   <data name="Tab_Button_OpenWindowsDisplay" xml:space="preserve"><value>Configurar pantallas (Windows) ↗</value></data>
 
-  <data name="Tray_Menu_OpenAndView" xml:space="preserve"><value>Mostrar Opciones</value></data>
+  <data name="Tray_Menu_OpenAndView" xml:space="preserve"><value>Abrir...</value></data>
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Abrir {0}</value></data>
   <data name="Tray_Menu_Restart" xml:space="preserve"><value>Reiniciar</value></data>
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Salir</value></data>

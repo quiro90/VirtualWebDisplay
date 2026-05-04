@@ -36,7 +36,11 @@ internal static class TrayMenuBuilder
         else if (screenRuntimes.Count == 0 && !isTransitioning)
             menu.Items.Add(AppText.Get("Tray_Menu_Start"), null, (_, _) => onStartService());
 
-        menu.Items.Add(AppText.Get("Tray_Menu_Exit"), null, (_, _) => onExit());
+        var exitItem = new ToolStripMenuItem(AppText.Get("Tray_Menu_Exit"), null, (_, _) => onExit())
+        {
+            Enabled = !isTransitioning,
+        };
+        menu.Items.Add(exitItem);
         return menu;
     }
 }

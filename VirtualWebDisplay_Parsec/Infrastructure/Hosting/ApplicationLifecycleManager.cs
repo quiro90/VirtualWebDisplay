@@ -80,18 +80,24 @@ internal static class ApplicationLifecycleManager
 
             if (stopRequested)
             {
-                // Notificar que el servicio se detuvo
+                // Notificar que el servicio se detuvo (actualiza estado y notifica formularios).
                 tray.NotifyServiceStopped();
 
-                var startAgain = await tray.WaitForServiceStartAsync();
-                if (startAgain)
+                // Solo esperar señal de reinicio si el usuario no pidió salir.
+                // Si exitRequested = true el tray ya está cerrado y nadie llamará a
+                // SignalNoRestart(); esperar aquí colgaría el proceso indefinidamente.
+                if (!exitRequested)
                 {
-                    var appearance = appearanceStore.Load();
-                    AppText.ApplyCulture(appearance.UiLanguage);
-                    settings.UiLanguage = appearance.UiLanguage;
-                    settings.WindowTheme = appearance.WindowTheme;
-                    await Task.Delay(500);
-                    continue;
+                    var startAgain = await tray.WaitForServiceStartAsync();
+                    if (startAgain)
+                    {
+                        var appearance = appearanceStore.Load();
+                        AppText.ApplyCulture(appearance.UiLanguage);
+                        settings.UiLanguage = appearance.UiLanguage;
+                        settings.WindowTheme = appearance.WindowTheme;
+                        await Task.Delay(500);
+                        continue;
+                    }
                 }
             }
 

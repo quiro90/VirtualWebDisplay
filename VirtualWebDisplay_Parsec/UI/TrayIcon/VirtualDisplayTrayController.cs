@@ -29,6 +29,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private ContextMenuStrip? _contextMenu;
     private Action? _exitRequested;
     private Action? _stopRequested;
+    private Action? _cancelStartupCompletion;
     private bool _disposed;
     private Icon? _appIcon;
 
@@ -69,15 +70,15 @@ public sealed class VirtualDisplayTrayController : IDisposable
     public bool ShowStartupConfiguration()
     {
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _cancelStartupCompletion = () => completion.TrySetResult(false);
 
         _invoker.InvokeSafely(() =>
         {
             _formPresenter.OpenStartupForm(
-                onConfirmed: () => completion.TrySetResult(true),
-                onCancelled: () =>
+                onConfirmed: () =>
                 {
-                    completion.TrySetResult(false);
-                    _context?.ExitThread();
+                    _cancelStartupCompletion = null;
+                    completion.TrySetResult(true);
                 });
         });
 
@@ -180,6 +181,10 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     private void ExitApplication()
     {
+        // Unblock ShowStartupConfiguration if it is still waiting for user input.
+        _cancelStartupCompletion?.Invoke();
+        _cancelStartupCompletion = null;
+
         if (_serviceState.IsStopped)
         {
             // Service is stopped — signal no restart so the wait loop exits.
@@ -187,6 +192,11 @@ public sealed class VirtualDisplayTrayController : IDisposable
         }
         else
         {
+            // Invoke stop first so the lifecycle loop runs the full cleanup sequence
+            // (DisposeRuntimes → WaitForVirtualDisplaysRemoval → CompleteStop).
+            // exitRequested = true makes the loop skip the restart wait and exit cleanly.
+            // Calling StopApplication() twice is idempotent.
+            _stopRequested?.Invoke();
             _exitRequested?.Invoke();
         }
         _context?.ExitThread();

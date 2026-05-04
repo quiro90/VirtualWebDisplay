@@ -38,7 +38,6 @@
   <data name="Form_Config_Accept_Starting" xml:space="preserve"><value>Starting...</value></data>
   <data name="Form_Config_Accept_Stopping" xml:space="preserve"><value>Stopping...</value></data>
   <data name="Form_Config_Accept_Save" xml:space="preserve"><value>Save</value></data>
-  <data name="Form_Config_Cancel_Exit" xml:space="preserve"><value>Exit</value></data>
   <data name="Form_Config_Cancel_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Form_Config_Tab_Screen1" xml:space="preserve"><value>Screen 1</value></data>
   <data name="Form_Config_Tab_Screen2" xml:space="preserve"><value>Screen 2</value></data>
@@ -99,7 +98,7 @@
   <data name="About_Message" xml:space="preserve"><value>Virtual Web Display was created to stream a virtual desktop to any other device connected to the same local network in a simple, direct way.</value></data>
   <data name="About_Footer" xml:space="preserve"><value>Thank you for choosing Virtual Web Display.</value></data>
 
-  <data name="Tray_Menu_OpenAndView" xml:space="preserve"><value>Configuration...</value></data>
+  <data name="Tray_Menu_OpenAndView" xml:space="preserve"><value>Open...</value></data>
   <data name="Tray_Menu_OpenDisplay" xml:space="preserve"><value>Open {0}</value></data>
   <data name="Tray_Menu_Restart" xml:space="preserve"><value>Restart</value></data>
   <data name="Tray_Menu_Exit" xml:space="preserve"><value>Exit</value></data>
