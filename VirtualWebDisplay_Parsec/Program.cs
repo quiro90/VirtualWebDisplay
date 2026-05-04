@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using VirtualWebDisplay.Configuration;
 using VirtualWebDisplay.Infrastructure;
+using VirtualWebDisplay.Infrastructure.Hosting;
 using VirtualWebDisplay.Localization;
 using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.UI.TrayIcon;
@@ -80,6 +81,9 @@ using var tray = new VirtualDisplayTrayController(
     settingsStore,
     appearanceStore,
     localIp);
+
+// Chequear actualizaciones en background apenas inicia la app visual.
+_ = ApplicationBootstrapper.CheckForUpdateInBackgroundAsync(tray, appearanceStore);
 
 var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
 if (!autoStart && !tray.ShowStartupConfiguration())

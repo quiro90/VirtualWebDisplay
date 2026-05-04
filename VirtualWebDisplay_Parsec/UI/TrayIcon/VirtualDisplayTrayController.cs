@@ -271,6 +271,12 @@ public sealed class VirtualDisplayTrayController : IDisposable
     public Task<bool> WaitForServiceStartAsync()
         => _serviceState.WaitForStartRequestAsync();
 
+    /// <summary>
+    /// Marshals <paramref name="action"/> onto the tray UI thread (STA).
+    /// Safe to call from any thread; no-op if the controller is already disposed.
+    /// </summary>
+    public void InvokeOnUiThread(Action action) => _invoker.InvokeSafely(action);
+
     private static string TrimTrayText(string text) =>
         text.Length <= 63 ? text : text[..63];
 

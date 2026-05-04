@@ -11,10 +11,10 @@
     <AssemblyName>VirtualWebDisplay</AssemblyName>
     <RootNamespace>VirtualWebDisplay</RootNamespace>
 
-    <!-- Versión de la aplicación (usado para cache busting de archivos estáticos) -->
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>1.0.0</FileVersion>
+    <!-- VersiÃ³n de la aplicaciÃ³n (usado para cache busting de archivos estÃ¡ticos) -->
+    <Version>1.0.2</Version>
+    <AssemblyVersion>1.0.2</AssemblyVersion>
+    <FileVersion>1.0.2</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

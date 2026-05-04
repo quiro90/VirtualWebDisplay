@@ -187,4 +187,11 @@
 
   <data name="Form_Config_ScreenIndicator_Tooltip" xml:space="preserve"><value>Access at: {0}</value></data>
   <data name="Form_Config_ScreenIndicator_UrlCopied" xml:space="preserve"><value>URL copied to clipboard</value></data>
+
+  <data name="Update_Title" xml:space="preserve"><value>New version available</value></data>
+  <data name="Update_VersionInfo" xml:space="preserve"><value>Current version: {0}   →   New version: {1}</value></data>
+  <data name="Update_ChangelogLabel" xml:space="preserve"><value>What's new:</value></data>
+  <data name="Update_NoChangelog" xml:space="preserve"><value>No changelog provided.</value></data>
+  <data name="Update_DownloadButton" xml:space="preserve"><value>Go to download</value></data>
+  <data name="Update_CloseButton" xml:space="preserve"><value>Close</value></data>
 </root>

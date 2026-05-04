@@ -104,4 +104,7 @@ internal static class ApplicationLifecycleManager
             keepRunning = false;
         }
     }
+
+    /// <summary>
+    /// Runs the update check in the background after a short delay so as not to
 }
