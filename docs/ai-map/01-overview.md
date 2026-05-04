@@ -34,7 +34,7 @@ ScreenRuntimeContext (por pantalla)
 Controllers/Handlers
   -> AuthHandler      (/auth/login)
   -> IndexHandler     (/)
-  -> CaptureHandler   (/cap, /mjpeg)
+  -> CaptureHandler   (/cap/{token}, /mjpeg)
   -> WebRtcHandler    (/webrtc/offer)
   -> InputHandler     (/input/touch, /input/stats)
 ```
@@ -43,7 +43,7 @@ Controllers/Handlers
 
 - `GET /`
 - `POST /auth/login`
-- `GET /cap`
+- `GET /cap/{token}`  ← token = `ScreenRuntimeContext.CapToken` (16 chars hex, generado en boot)
 - `GET /mjpeg`
 - `POST /webrtc/offer`
 - `POST /input/touch`

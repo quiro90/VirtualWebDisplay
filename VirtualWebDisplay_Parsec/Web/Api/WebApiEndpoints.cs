@@ -25,8 +25,8 @@ internal static class WebApiEndpoints
         app.MapGet("/", (HttpContext ctx) =>
             IndexHandler.HandleIndex(ctx, runtimes, _webImageTemplate, _rtcTemplate, _securityPageTemplate, _viewerLimitPageTemplate));
 
-        app.MapGet("/cap", (HttpContext ctx) =>
-            CaptureHandler.HandleCapture(ctx, runtimes));
+        app.MapGet("/cap/{token}", (HttpContext ctx, string token) =>
+            CaptureHandler.HandleCapture(ctx, token, runtimes));
 
         app.MapGet("/mjpeg", (HttpContext ctx) =>
             CaptureHandler.HandleMjpeg(ctx, runtimes));

@@ -29,6 +29,7 @@
         _seq: 0,
         _intervalMs: 250,
         _isRunning: false,
+        _capToken: '',
 
         // Viewport tracking
         _viewport: null,
@@ -57,6 +58,8 @@
             if (config.intervalMs && config.intervalMs >= 3) {
                 this._intervalMs = config.intervalMs;
             }
+
+            this._capToken = config.capToken || '';
 
             // Configurar viewport tracking
             this._viewport = window.visualViewport;
@@ -173,7 +176,7 @@
                 setTimeout(() => this._next(), this._intervalMs * 4);
             };
 
-            pre.src = '/cap?s=' + (++this._seq);
+            pre.src = '/cap/' + this._capToken + '?s=' + (++this._seq);
         }
     };
 

@@ -23,7 +23,7 @@
 11. `tray.ConfigureRuntimeActions(exitRequested, stopRequested, runtimes)`:
    - Llama `ServiceStateManager.CompleteStart(runtimes)` (Starting → Started)
    - Dispara evento `ServiceStarted` → actualiza UI/tray
-12. Publica endpoints HTTP (`/`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/auth/login`, `/input/touch`, `/input/stats`).
+12. Publica endpoints HTTP (`/`, `/cap/{token}`, `/mjpeg`, `/webrtc/offer`, `/auth/login`, `/input/touch`, `/input/stats`).
 13. Actualiza tray con las URLs disponibles + balloon tip.
 14. Ejecuta el servidor hasta salida (`app.RunAsync()`).
 15. En `finally`: `DisposeRuntimesAsync(runtimes)` en orden inverso.
@@ -51,8 +51,8 @@
 ## 4. Modo `WebImage`
 1. El navegador abre `/`.
 2. `IndexHandler` devuelve HTML generado por `WebImagePageTemplate`.
-3. El JS hace polling periódico a `/cap?s=N` (intervalo = `CaptureIntervalSeconds * 1000 ms`).
-4. `/cap` devuelve el último JPEG disponible.
+3. El JS hace polling periódico a `/cap/{token}?s=N` (intervalo = `CaptureIntervalSeconds * 1000 ms`). El `{token}` proviene de `config.capToken` inyectado en el `WebImageClient.init(...)` por el template server-side.
+4. `/cap/{token}` devuelve el último JPEG disponible. Si el token no coincide con `ScreenRuntimeContext.CapToken`, responde `404`.
 5. El cliente actualiza `background-image` de `div#screen`.
 6. `object-fit` aplicado según `BrowserImageFit` (fill/cover/contain).
 

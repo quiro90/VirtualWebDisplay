@@ -80,7 +80,7 @@ Definidos en `VirtualDisplayProfiles.All`. Todos en portrait; se rotan si `Lands
 ## Modos de transmisión
 
 ### `WebImage`
-- HTML con `div#screen` + polling a `/cap`
+- HTML con `div#screen` + polling a `/cap/{token}`
 - simple y compatible con cualquier navegador
 - intervalo configurable (`CaptureIntervalSeconds`)
 - recomendado para Kindle / e-ink
@@ -106,8 +106,12 @@ Devuelve la página HTML cliente para la pantalla correspondiente al puerto loca
 - Si el runtime usa `Rtc`: responde con `RtcPageTemplate`.
 - Ambas páginas aplican `BrowserImageFit` vía CSS `object-fit`.
 
-### `GET /cap`
+### `GET /cap/{token}`
 Devuelve el último frame JPEG capturado. `Cache-Control: no-store, no-cache`.
+
+`{token}` es el `CapToken` de la instancia: 16 caracteres hex generados al construir `ScreenRuntimeContext` con `Guid.NewGuid().ToString("N")[..16]`. Cambia en cada reinicio de la app.
+
+El servidor compara el segment con `runtime.CapToken` mediante `StringComparison.Ordinal` (~50 ns). Si no coincide responde `404`. Acceder a `/cap` sin token o con token incorrecto no revela el frame.
 
 Requiere autenticación previa cuando `ScreenSecurityEnabled=true`.
 
@@ -158,7 +162,7 @@ Devuelve métricas agregadas de touch (`eventsPerSecond`, `avgLatencyMs`, errore
 - `VirtualScreenConfig.MaxViewers` define el máximo simultáneo por pantalla.
 - `0` significa sin límite.
 - si el cupo ya fue alcanzado, `GET /` devuelve una página informativa y no llega a mostrar login aunque `ScreenSecurityEnabled=true`.
-- `GET /cap`, `GET /mjpeg` y `POST /webrtc/offer` responden `429` cuando ya no se puede aceptar otro viewer.
+- `GET /cap/{token}`, `GET /mjpeg` y `POST /webrtc/offer` responden `429` cuando ya no se puede aceptar otro viewer.
 - `ViewerLimiter` contabiliza polling activo de `WebImage`, conexiones `MJPEG` abiertas y peers `WebRTC` activos.
 
 ### `GET /config`

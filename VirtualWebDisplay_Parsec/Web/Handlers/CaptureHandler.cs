@@ -10,9 +10,12 @@ namespace VirtualWebDisplay.Web.Handlers;
 /// </summary>
 internal static class CaptureHandler
 {
-    internal static IResult HandleCapture(HttpContext ctx, IReadOnlyList<ScreenRuntimeContext> runtimes)
+    internal static IResult HandleCapture(HttpContext ctx, string token, IReadOnlyList<ScreenRuntimeContext> runtimes)
     {
         var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+
+        if (!string.Equals(token, runtime.CapToken, StringComparison.Ordinal))
+            return Results.NotFound();
 
         if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
             return RuntimeAccessHelper.UnauthorizedResult(runtime);

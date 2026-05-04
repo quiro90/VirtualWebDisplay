@@ -155,16 +155,16 @@ Cada pantalla tiene:
 **Implementación Técnica**:
 
 ```javascript
-// Cliente (navegador)
+// Cliente (navegador) — el token se embebe en el HTML generado por el servidor
 function updateImage() {
     const img = document.getElementById('screen');
-    img.src = `/cap?rnd=${Date.now()}`;  // Timestamp previene caché
-    setTimeout(updateImage, 100);          // Polling cada 100ms
+    img.src = `/cap/${capToken}?s=${++seq}`;  // token de instancia + seq previene caché
+    setTimeout(updateImage, 100);              // Polling cada 100ms
 }
 ```
 
 **Endpoints**:
-- `GET /cap`: Frame JPEG actual
+- `GET /cap/{token}`: Frame JPEG actual — `{token}` es el `CapToken` de instancia
 - `GET /mjpeg`: Stream MJPEG continuo (multipart/x-mixed-replace)
 
 ---
@@ -588,7 +588,7 @@ if (!createdNew)
 - Cada pantalla (`Screen1`/`Screen2`) tiene check `ScreenSecurityEnabled`.
 - Si está activo, al iniciar runtime se genera una clave alfanumérica aleatoria de 6 caracteres.
 - El host muestra login en `/` hasta que el cliente se autentica.
-- Endpoints protegidos por auth cuando seguridad está activa: `/cap`, `/mjpeg`, `/webrtc/offer`, `/config`.
+- Endpoints protegidos por auth cuando seguridad está activa: `/cap/{token}`, `/mjpeg`, `/webrtc/offer`, `/config`.
 
 **Límite de intentos**:
 - 5 intentos por cliente/IP en ventana de 45 segundos.

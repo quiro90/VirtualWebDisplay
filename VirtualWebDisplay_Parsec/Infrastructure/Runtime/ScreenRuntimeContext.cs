@@ -29,6 +29,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         ViewerLimiter.GetWebRtcCount = () => WebRtcStreamService.ActivePeerCount;
         HostUrl = NetworkAddressHelper.BuildAccessUrl(hostName, config.Port);
         IpUrl = NetworkAddressHelper.BuildAccessUrl(localIp, config.Port);
+        CapToken = Guid.NewGuid().ToString("N")[..16];
     }
 
     public string Id { get; }
@@ -41,6 +42,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
     public ViewerLimiter ViewerLimiter { get; }
     public string HostUrl { get; }
     public string IpUrl { get; }
+    public string CapToken { get; }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {

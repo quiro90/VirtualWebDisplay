@@ -41,7 +41,7 @@ graph TB
     subgraph "Web Layer"
         Program[Program.cs - Entry Point]
         Kestrel[ASP.NET Core / Kestrel]
-        Endpoints[HTTP Endpoints: /, /cap, /webrtc/offer, /mjpeg, /cert, /config]
+        Endpoints[HTTP Endpoints: /, /cap/{token}, /webrtc/offer, /mjpeg, /cert, /config]
     end
 
     subgraph "Configuration Layer"
@@ -152,7 +152,7 @@ graph TB
   - `UI/HtmlTemplates/ViewerLimitPageTemplate.cs`: Genera página HTML cuando límite de viewers alcanzado
 - **Endpoints**:
   - `GET /`: Página principal (template HTML según modo de transmisión)
-  - `GET /cap`: Imagen JPEG actual (captura de pantalla)
+  - `GET /cap/{token}`: Imagen JPEG actual (captura de pantalla). `{token}` es el `CapToken` generado en arranque de `ScreenRuntimeContext`, embebido en el HTML; la comparación es `O(n)` de string y no involucra criptografía.
   - `POST /auth/login`: Autenticación con código de 6 dígitos
   - `POST /webrtc/offer`: Negociación WebRTC (recibe offer, devuelve answer)
     - `POST /input/touch`: Entrada táctil remota
@@ -279,7 +279,7 @@ sequenceDiagram
             end
 
             Program->>Kestrel: ConfigureKestrel(http port, https port)
-            Program->>Kestrel: MapEndpoints(/, /cap, /webrtc/offer, etc.)
+            Program->>Kestrel: MapEndpoints(/, /cap/{token}, /webrtc/offer, etc.)
             Program->>Kestrel: RunAsync()
             Kestrel-->>User: Aplicación lista (tray icon visible)
         end
@@ -310,13 +310,13 @@ sequenceDiagram
         end
     end
 
-    Browser->>Kestrel: GET /cap?rnd=timestamp
+    Browser->>Kestrel: GET /cap/{token}?s=N
     Kestrel->>CaptureService: GetLatestFrame()
     CaptureService-->>Kestrel: byte[] (JPEG)
     Kestrel-->>Browser: image/jpeg
 
     Browser->>Browser: Renderiza imagen
-    Browser->>Kestrel: GET /cap?rnd=nuevo_timestamp (polling)
+    Browser->>Kestrel: GET /cap/{token}?s=N+1 (polling)
 ```
 
 ### Flujo de Streaming (Modo WebRTC)
@@ -632,7 +632,7 @@ MemoryStream → byte[]
 
 ```
 CaptureService (byte[] JPEG) → Almacena en campo compartido →
-Browser (GET /cap) → Kestrel → CaptureService.GetLatestFrame() →
+Browser (GET /cap/{token}) → Kestrel → CaptureService.GetLatestFrame() →
 Response (image/jpeg) → Browser (actualiza capa visual de pantalla)
 ```
 

@@ -19,6 +19,7 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
         var browserImageFit = TemplateParameterHelper.GetBrowserImageFit(parameters);
         var backgroundSize = TemplateParameterHelper.GetBackgroundSize(browserImageFit);
         var intervalMs = TemplateParameterHelper.GetIntervalMs(parameters);
+        var capToken = parameters.GetValueOrDefault("capToken", "") as string ?? "";
         var touchZoomEnabled = TemplateParameterHelper.GetTouchZoomEnabled(parameters).ToString().ToLower();
         var touchZoomDelayMs = TemplateParameterHelper.GetTouchZoomDelayMs(parameters);
         var touchHoldEnabled = TemplateParameterHelper.GetTouchHoldEnabled(parameters).ToString().ToLower();
@@ -98,7 +99,8 @@ public sealed class WebImagePageTemplate : IHtmlTemplate
                         WebImageClient.init({
                             elementId: 'screen',
                             intervalMs: {{intervalMs}},
-                            imageFit: '{{browserImageFit}}'
+                            imageFit: '{{browserImageFit}}',
+                            capToken: '{{capToken}}'
                         });
                     }
 

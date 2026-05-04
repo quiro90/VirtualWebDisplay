@@ -40,6 +40,7 @@ internal static class IndexHandler
             ["title"] = runtime.DisplayName,
             ["browserImageFit"] = browserImageFit,
             ["intervalMs"] = Math.Max(3, (int)Math.Round(runtime.Config.CaptureIntervalSeconds * 1000)),
+            ["capToken"] = runtime.CapToken,
             ["touchZoomEnabled"] = runtime.Config.TouchZoomEnabled,
             ["touchZoomDelayMs"] = runtime.Config.TouchZoomDelayMs,
             ["touchHoldEnabled"] = runtime.Config.TouchHoldEnabled,

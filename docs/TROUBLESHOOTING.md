@@ -570,11 +570,11 @@ Si `onmessage` nunca se dispara:
 
 1. Verificar que `CaptureService` está capturando frames:
    ```
-   GET https://localhost:5001/cap
+   GET https://localhost:5001/cap/{token}
    ```
-   Debe retornar imagen JPEG.
+   Reemplazar `{token}` con el valor de `CapToken` visible en logs al iniciar la app. Debe retornar imagen JPEG.
 
-2. Si `/cap` funciona pero WebRTC no:
+2. Si `/cap/{token}` funciona pero WebRTC no:
    - Problema específico de `WebRtcStreamService`
    - Revisar logs de aplicación para excepciones
 

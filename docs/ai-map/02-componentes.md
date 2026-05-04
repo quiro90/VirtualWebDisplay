@@ -38,7 +38,7 @@ Rol: negociacion WebRTC y envio de frames por DataChannel.
 
 ### `Controllers/WebApiEndpoints.cs`
 Registro central de rutas:
-- `/`, `/auth/login`, `/cap`, `/mjpeg`, `/webrtc/offer`, `/input/touch`, `/input/stats`, `/config`, `/cert`
+- `/`, `/auth/login`, `/cap/{token}`, `/mjpeg`, `/webrtc/offer`, `/input/touch`, `/input/stats`, `/config`, `/cert`
 
 ### `Controllers/Handlers/*.cs`
 - `AuthHandler`: login por codigo
@@ -116,7 +116,7 @@ Rol: controles por pantalla. Emite eventos en caliente para:
 ## HTML templates cliente
 
 ### `Web/HtmlTemplates/WebImagePageTemplate.cs`
-Modo polling `/cap`. Usa `div#screen` con `background-image` para evitar drag/long-press nativo en iPad Safari. Transmite parámetros granulares al script de touch `TouchInput.init`.
+Modo polling `/cap/{token}`. El `capToken` se embebe en el HTML generado (`window` config del `WebImageClient.init`) y se adjunta a cada request. Usa `div#screen` con `background-image` para evitar drag/long-press nativo en iPad Safari. Transmite parámetros granulares al script de touch `TouchInput.init`.
 
 ### `Web/HtmlTemplates/RtcPageTemplate.cs`
 Modo WebRTC (DataChannel + render cliente). Transmite parámetros granulares al script de touch `TouchInput.init`.
