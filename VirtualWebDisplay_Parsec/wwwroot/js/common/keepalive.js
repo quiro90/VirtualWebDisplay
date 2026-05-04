@@ -31,6 +31,16 @@
         _awakeButton: null,
         _fadeTimeoutId: null,
 
+        // RAF loop + watchdog de video
+        _rafId: null,
+        _rafCanvas: null,
+        _rafCtx: null,
+        _videoCheckIntervalId: null,
+
+        // AudioContext silencioso (mecanismo principal para iOS)
+        _audioCtx: null,
+        _audioOscillator: null,
+
         /**
          * Inicia el sistema para mantener la pantalla activa.
          */
@@ -52,6 +62,9 @@
 
             this._releaseWakeLock();
             this._pauseHiddenVideo();
+            this._stopRafLoop();
+            this._stopVideoCheck();
+            this._stopSilentAudio();
 
             log.info('Stopped');
         },
@@ -69,6 +82,9 @@
                     // Pausar pantalla activa para no gastar batería en segundo plano
                     this._releaseWakeLock();
                     this._pauseHiddenVideo();
+                    this._stopRafLoop();
+                    this._stopVideoCheck();
+                    this._stopSilentAudio();
                 }
             };
 
@@ -103,15 +119,15 @@
             this._awakeButton = document.createElement('button');
             this._awakeButton.id = 'vwd-awake-button';
             this._awakeButton.style.position = 'fixed';
-            this._awakeButton.style.top = '10px';
-            this._awakeButton.style.left = '50%';
-            this._awakeButton.style.transform = 'translateX(-50%)';
+            this._awakeButton.style.bottom = '12px';
+            this._awakeButton.style.right = '10%';
+            this._awakeButton.style.transform = 'translateX(-10%)';
             this._awakeButton.style.setProperty('z-index', '2147483647', 'important');
-            this._awakeButton.style.padding = '6px 16px';
-            this._awakeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+            this._awakeButton.style.padding = '2px 16px';
+            this._awakeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
             this._awakeButton.style.color = '#fff';
             this._awakeButton.style.border = '1px solid rgba(255, 255, 255, 0.3)';
-            this._awakeButton.style.borderRadius = '20px';
+            this._awakeButton.style.borderRadius = '16px';
             this._awakeButton.style.cursor = 'pointer';
             this._awakeButton.style.fontFamily = 'sans-serif';
             this._awakeButton.style.fontSize = '12px';
@@ -121,7 +137,7 @@
             this._awakeButton.style.appearance = 'none';
             this._awakeButton.style.WebkitAppearance = 'none'; // Evitar estilo nativo de botón iOS
             this._awakeButton.style.pointerEvents = 'auto'; // Asegurar que reciba touch
-            this._awakeButton.style.opacity = '0.6'; // Transparencia general del botón
+            this._awakeButton.style.opacity = '0.7'; // Transparencia general del botón
 
             this._awakeButton.addEventListener('click', (e) => {
                 e.stopPropagation(); // Evitar propagación a la pantalla virtual (clicks fantasma)
@@ -152,10 +168,10 @@
             if (!this._awakeButton) return;
 
             if (this._isAwakeEnabled) {
-                this._awakeButton.textContent = 'Active: ON';
+                this._awakeButton.textContent = 'Light:ON';
                 this._awakeButton.style.backgroundColor = 'rgba(28, 84, 28, 0.3)'; // Verde
             } else {
-                this._awakeButton.textContent = 'Active: OFF';
+                this._awakeButton.textContent = 'Light:OFF';
                 this._awakeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';   // Gris oscuro
             }
         },
@@ -169,7 +185,7 @@
         _resetFadeTimer() {
             if (!this._awakeButton) return;
 
-            this._awakeButton.style.opacity = '0.6';
+            this._awakeButton.style.opacity = '0.7';
 
             if (this._fadeTimeoutId) {
                 clearTimeout(this._fadeTimeoutId);
@@ -184,16 +200,24 @@
 
         _applyAwakeState() {
             if (this._isAwakeEnabled) {
-                // Priorizar Screen Wake Lock API nativa (Chrome, Edge, etc.)
+                // 1. WakeLock API nativa (Chrome, Edge, Safari 16.4+ con HTTPS)
                 if ('wakeLock' in navigator) {
                     this._requestWakeLock();
-                } else {
-                    // Fallback para iOS Safari
-                    this._playHiddenVideo();
                 }
+                // 2. AudioContext silencioso: mecanismo principal para iOS
+                //    No requiere HTTPS ni soporte de formato de video.
+                this._startSilentAudio();
+                // 3. Video loop como capa adicional (desktop/Android)
+                this._playHiddenVideo();
+                // 4. RAF canvas + watchdog de video
+                this._startRafLoop();
+                this._startVideoCheck();
             } else {
                 this._releaseWakeLock();
+                this._stopSilentAudio();
                 this._pauseHiddenVideo();
+                this._stopRafLoop();
+                this._stopVideoCheck();
             }
         },
 
@@ -225,13 +249,112 @@
 
             this._hiddenVideo = document.createElement('video');
             this._hiddenVideo.setAttribute('playsinline', ''); // Crítico para iOS
-            this._hiddenVideo.setAttribute('muted', '');       // Crítico para Autoplay sin iteracción
+            this._hiddenVideo.setAttribute('muted', '');       // Crítico para Autoplay sin interacción
             this._hiddenVideo.muted = true;
             this._hiddenVideo.loop = true;
-            this._hiddenVideo.style.display = 'none';
+            // IMPORTANTE: display:none impide que iOS Safari mantenga el video activo.
+            // Usar 1x1px fuera de la vista pero renderizado.
+            this._hiddenVideo.style.cssText = 'position:fixed;bottom:-2px;right:-2px;width:1px;height:1px;opacity:0.01;pointer-events:none;';
             this._hiddenVideo.src = BLANK_VIDEO_SRC;
             
             document.body.appendChild(this._hiddenVideo);
+        },
+
+        // --- RAF LOOP (mantiene el pipeline de render del navegador activo) ---
+
+        _startRafLoop() {
+            if (this._rafId) return;
+
+            if (!this._rafCanvas) {
+                this._rafCanvas = document.createElement('canvas');
+                this._rafCanvas.width = 1;
+                this._rafCanvas.height = 1;
+                this._rafCanvas.style.cssText = 'position:fixed;bottom:-2px;left:-2px;width:1px;height:1px;opacity:0.01;pointer-events:none;';
+                document.body.appendChild(this._rafCanvas);
+                this._rafCtx = this._rafCanvas.getContext('2d');
+            }
+
+            let tick = 0;
+            const loop = () => {
+                if (!this._isAwakeEnabled) {
+                    this._rafId = null;
+                    return;
+                }
+                tick = 1 - tick;
+                // Alternar un pixel para forzar repaint real
+                this._rafCtx.fillStyle = tick ? '#000001' : '#000000';
+                this._rafCtx.fillRect(0, 0, 1, 1);
+                this._rafId = requestAnimationFrame(loop);
+            };
+            this._rafId = requestAnimationFrame(loop);
+            log.debug('RAF loop iniciado');
+        },
+
+        _stopRafLoop() {
+            if (this._rafId) {
+                cancelAnimationFrame(this._rafId);
+                this._rafId = null;
+                log.debug('RAF loop detenido');
+            }
+        },
+
+        // --- WATCHDOG de video (reintenta play() si iOS lo pausó silenciosamente) ---
+
+        _startVideoCheck() {
+            if (this._videoCheckIntervalId) return;
+            this._videoCheckIntervalId = setInterval(() => {
+                if (this._isAwakeEnabled && this._hiddenVideo && this._hiddenVideo.paused) {
+                    log.debug('Video fallback pausado inesperadamente, reiniciando...');
+                    this._hiddenVideo.play().catch(() => {});
+                }
+            }, 5000);
+        },
+
+        _stopVideoCheck() {
+            if (this._videoCheckIntervalId) {
+                clearInterval(this._videoCheckIntervalId);
+                this._videoCheckIntervalId = null;
+            }
+        },
+
+        // --- AudioContext SILENCIOSO (previene apagado en iOS sin HTTPS) ---
+
+        _startSilentAudio() {
+            if (this._audioCtx) {
+                // Ya existe: reanudar si fue suspendido al volver de segundo plano
+                if (this._audioCtx.state === 'suspended') {
+                    this._audioCtx.resume().catch(() => {});
+                    log.debug('AudioContext reanudado');
+                }
+                return;
+            }
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                this._audioCtx = new AudioCtx();
+                const gainNode = this._audioCtx.createGain();
+                gainNode.gain.value = 0.000001; // Prácticamente inaudible
+                this._audioOscillator = this._audioCtx.createOscillator();
+                this._audioOscillator.frequency.value = 1; // 1 Hz, sub-sónico
+                this._audioOscillator.connect(gainNode);
+                gainNode.connect(this._audioCtx.destination);
+                this._audioOscillator.start();
+                log.info('AudioContext silencioso activado (previene apagado en iOS)');
+            } catch (err) {
+                log.warn('No se pudo iniciar AudioContext silencioso', err);
+            }
+        },
+
+        _stopSilentAudio() {
+            if (this._audioOscillator) {
+                try { this._audioOscillator.stop(); } catch(e) {}
+                this._audioOscillator = null;
+            }
+            if (this._audioCtx) {
+                try { this._audioCtx.close(); } catch(e) {}
+                this._audioCtx = null;
+            }
+            log.debug('AudioContext detenido');
         },
 
         _playHiddenVideo() {

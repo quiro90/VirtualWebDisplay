@@ -84,7 +84,10 @@ VirtualWebDisplay_Parsec/
 │   ├── NetworkAddressHelper.cs             ← Detección IP local
 │   ├── LocalCertificateProvider.cs         ← Cert SSL autofirmado
 │   ├── SingleInstanceActivator.cs          ← Mutex UI y activación de ventana (Local)
-│   └── Hosting/SingleInstanceManager.cs    ← Mutex ciclo de vida del servicio (Local)
+│   ├── Hosting/SingleInstanceManager.cs    ← Mutex ciclo de vida del servicio (Local)
+│   └── Updates/
+│       ├── UpdateCheckService.cs           ← Consulta GitHub releases API
+│       └── GitHubReleaseInfo.cs            ← DTO de respuesta GitHub API
 │
 └── Program.cs                       ← 🚀 Entry Point (usa ApplicationBootstrapper)
 ```
@@ -108,7 +111,7 @@ VirtualWebDisplay_Parsec/
 | `Parsec/` | `VirtualWebDisplay.Parsec` |
 | `Streaming/` | `VirtualWebDisplay.Streaming` |
 | `Streaming/Models/` | `VirtualWebDisplay.Streaming.Models` |
-| `Infrastructure/*/` | `VirtualWebDisplay.Infrastructure.*` |
+| `Infrastructure/Updates/` | `VirtualWebDisplay.Infrastructure.Updates` |
 
 ---
 
@@ -123,19 +126,20 @@ graph TD
     C -->|No| D[Señalar instancia existente]
     C -->|Sí| E[Cargar VirtualWebDisplaySettings]
     E --> F[Crear VirtualDisplayTrayController]
-    F --> G{Autostart?}
-    G -->|No| H[Mostrar formulario config]
-    G -->|Sí| I[ApplicationBootstrapper.RunAsync]
-    H --> I
-    I --> J[Crear ParsecVddDriverVerifier]
-    J --> K[Verificar driver con IDriverVerifier]
-    K --> L[RuntimeFactory.GetEnabledPorts]
-    L --> M[RuntimeFactory.TryCreate - Inyecta IDriverVerifier]
-    M --> N[ScreenRuntimeContext - Recibe IDriverVerifier]
-    N --> O[VirtualDisplayManager - Constructor DI]
-    O --> P[Configurar Kestrel HTTP/HTTPS]
-    P --> Q[Iniciar WebApplication]
-    Q --> R[App corriendo en tray]
+    F --> G[CheckForUpdateInBackgroundAsync - fire & forget]
+    G --> H{Autostart?}
+    H -->|No| I[Mostrar formulario config]
+    H -->|Sí| J[ApplicationBootstrapper.RunAsync]
+    I --> J
+    J --> K[Crear ParsecVddDriverVerifier]
+    K --> L[Verificar driver con IDriverVerifier]
+    L --> M[RuntimeFactory.GetEnabledPorts]
+    M --> N[RuntimeFactory.TryCreate - Inyecta IDriverVerifier]
+    N --> O[ScreenRuntimeContext - Recibe IDriverVerifier]
+    O --> P[VirtualDisplayManager - Constructor DI]
+    P --> Q[Configurar Kestrel HTTP/HTTPS]
+    Q --> R[Iniciar WebApplication]
+    R --> S[App corriendo en tray]
 ```
 
 ### 2. Creación de Pantalla Virtual
@@ -278,17 +282,37 @@ ApplicationBootstrapper
 - `Update(handle)` → Keep-alive del driver
 - `IsValidHandle(handle)` → Validar handle
 
-### ApplicationBootstrapper 🆕
+### ApplicationBootstrapper
 **Responsabilidades**:
 - Orquestador de inicio de aplicación
 - Crea `IDriverVerifier` (single point of instantiation)
 - Verifica driver antes de crear servidor
 - Delega ciclo de vida a `ApplicationLifecycleManager`
+- Expone `CheckForUpdateInBackgroundAsync` para uso desde `Program.cs`
 
 **Flujo**:
 1. Crear `ParsecVddDriverVerifier`
 2. Verificar driver con `RuntimeFactory.GetEnabledPorts`
 3. Delegar a `ApplicationLifecycleManager.RunServiceLoopAsync`
+
+### UpdateCheckService
+**Responsabilidades**:
+- Consulta la GitHub Releases API para detectar versiones más nuevas
+- Compara versión remota con `TemplateVersionHelper.AppVersion` (del ensamblado)
+- Devuelve `GitHubReleaseInfo` si hay update disponible, `null` en caso contrario
+- Falla silenciosamente (sin internet, timeout, etc. no crashean la app)
+
+**Comportamiento**:
+- Se dispara **una sola vez** al inicio, desde `Program.cs` vía `ApplicationBootstrapper.CheckForUpdateInBackgroundAsync`
+- Ocurre antes de `ShowStartupConfiguration()` — independiente de que el usuario inicie el servicio
+- Delay de 5 segundos para no interferir con el arranque visual
+- Ignora prereleases (`prerelease: true` en la API)
+
+**Archivos**:
+- `Infrastructure/Updates/UpdateCheckService.cs` — lógica de comparación de versiones
+- `Infrastructure/Updates/GitHubReleaseInfo.cs` — DTO con `tag_name`, `html_url`, `body`, `prerelease`
+
+**⚠️ IMPORTANTE**: El check corre en `Program.cs` (antes del bloqueo de `ShowStartupConfiguration`), NO dentro del loop de `ApplicationLifecycleManager`. No moverlo al loop.
 
 ### ApplicationLifecycleManager (Refactorizado) 🆕
 **Responsabilidades**:
@@ -392,6 +416,7 @@ namespace VirtualWebDisplay.[Carpeta].[Subcarpeta];
 | Streaming/Captura | `Streaming/` |
 | Servicio base | `Infrastructure/` |
 | Abstracción de driver | `Infrastructure/Drivers/` |
+| Chequeo de actualizaciones | `Infrastructure/Updates/` |
 | Helper genérico | `Infrastructure/Polling/` o `Infrastructure/Messaging/` |
 | Parsec VDD P/Invoke | `Parsec/` |
 
@@ -834,15 +859,24 @@ MouseInputHelper.Scroll(deltaX, deltaY);
 - SANs (Subject Alternative Names) requeridos
 - Basic Constraints `certificateAuthority: true`
 
-### 7. ApplicationBootstrapper y ApplicationLifecycleManager 🆕
+### 7. ApplicationBootstrapper y ApplicationLifecycleManager
 **Por qué**: Orquestan el inicio completo de la aplicación.
 
 **Crítico**:
 - `ApplicationBootstrapper` es el único que instancia `ParsecVddDriverVerifier`
-- `ApplicationLifecycleManager.RunServiceLoopAsync` recibe `IDriverVerifier` - NO crear nueva instancia
+- `ApplicationLifecycleManager.RunServiceLoopAsync` recibe `IDriverVerifier` — NO crear nueva instancia
 - Orden de llamadas: verificar driver → crear runtimes → iniciar servicios
 
 **Si modificas**: Asegurar que la cadena de DI se mantiene completa.
+
+### 8. UpdateCheckService
+**Por qué**: Consulta red externa en background al inicio.
+
+**Crítico**:
+- Debe dispararse desde `Program.cs` antes de `ShowStartupConfiguration()` (que bloquea el hilo)
+- Usar siempre fire-and-forget (`_ = CheckForUpdateInBackgroundAsync(...)`) — nunca await
+- No mover el call al interior de `ApplicationLifecycleManager` (quedaría atado al inicio del servicio)
+- El `catch` global en `CheckForUpdateInBackgroundAsync` debe mantenerse — errores de red no deben propagar
 
 ---
 
@@ -947,6 +981,6 @@ dotnet run
 
 ---
 
-**Última actualización**: 2025-01-15  
+**Última actualización**: 2026-05-04  
 **Versión del proyecto**: 1.0.0 (Post-Refactorización Táctil)  
 **Cambios recientes**: Arquitectura táctil completa (Tap only vs Gestures, hot-reload, localización)
