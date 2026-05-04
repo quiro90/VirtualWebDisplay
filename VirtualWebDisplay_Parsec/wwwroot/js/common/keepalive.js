@@ -78,14 +78,8 @@
         // --- LÓGICA DE PANTALLA ACTIVA (WAKE LOCK / VIDEO FALLBACK) ---
 
         _initScreenAwake() {
-            // Cargar estado persistido
-            let savedState = 'false';
-            try {
-                savedState = localStorage.getItem('vwd_keep_awake');
-            } catch (e) {
-                log.warn('localStorage no disponible (posible modo incógnito)', e);
-            }
-            this._isAwakeEnabled = savedState === 'true';
+            // Siempre inicia en OFF: el usuario debe activarlo manualmente
+            this._isAwakeEnabled = false;
             log.debug('Estado inicial de pantalla activa:', this._isAwakeEnabled);
 
             this._createAwakeButton();
@@ -168,11 +162,6 @@
 
         _toggleAwake() {
             this._isAwakeEnabled = !this._isAwakeEnabled;
-            try {
-                localStorage.setItem('vwd_keep_awake', this._isAwakeEnabled.toString());
-            } catch (e) {
-                log.warn('No se pudo guardar en localStorage', e);
-            }
             this._updateButtonUI();
             this._applyAwakeState();
         },
