@@ -22,7 +22,7 @@ public static class TemplateVersionHelper
         // Formatear como "Major.Minor.Build" (ej: "1.2.3")
         _version = assemblyVersion != null
             ? $"{assemblyVersion.Major}.{assemblyVersion.Minor}.{assemblyVersion.Build}"
-            : "1.0.2";
+            : "1.0.3";
     }
 
     /// <summary>

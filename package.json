@@ -1,6 +1,6 @@
 {
   "name": "virtualwebdisplay-js",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "JavaScript modules for VirtualWebDisplay",
   "scripts": {
     "lint": "eslint VirtualWebDisplay_Parsec/wwwroot/js/**/*.js",
