@@ -23,8 +23,9 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 - Cada pantalla virtual activa se representa con un `ScreenRuntimeContext`.
 - Cada runtime tiene:
   - `VirtualDisplayManager` para crear/reconfigurar el monitor virtual,
-  - `CaptureService` para capturar JPEGs del monitor,
-  - `WebRtcStreamService` para retransmitir frames por `WebRTC DataChannel`,
+  - `DxgiCaptureService` para capturar en DXGI/GDI y exponer frames raw/JPEG,
+  - `H264EncoderService` para codificar H.264,
+  - `WebRtcStreamService` para retransmitir H.264 por `WebRTC VideoTrack` (RTP),
   - `ScreenSecurityGate` para login/rate-limit por pantalla,
   - `ViewerLimiter` para limitar receptores simultáneos por pantalla.
 - `VirtualDisplayTrayController` expone configuración y control desde el tray (incluye `ResolutionConfigurationForm` embebida).
@@ -44,8 +45,9 @@ Este mapa está pensado para que otra IA o un desarrollador nuevo entienda rápi
 | `ParsecVddDriverVerifier.cs` | Implementación para Parsec VDD |
 | `PollingHelper.cs` | Helper genérico de timeouts/polling |
 | `StartupErrorMessages.cs` | Centralización de mensajes de error |
-| `CaptureService.cs` | Captura periódica + codificación JPEG |
-| `WebRtcStreamService.cs` | Negociación WebRTC + emisión de frames |
+| `DxgiCaptureService.cs` | Captura DXGI/GDI + JPEG bajo demanda |
+| `H264EncoderService.cs` | Codificación H.264 (NVENC/AMF/libx264) |
+| `WebRtcStreamService.cs` | Negociación WebRTC + envío RTP H.264 |
 | `InputHandler.cs` | Endpoints de touch remoto y métricas |
 | `ViewerLimiter.cs` | Control de cupo de viewers por pantalla |
 | `VirtualDisplayTrayController.cs` | Tray icon + formulario de configuración |

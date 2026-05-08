@@ -89,17 +89,19 @@ Nota iPad/Safari:
 - Se usa `div` con `background-image` para evitar drag-and-drop/long-press nativo sobre imágenes.
 
 ### `Rtc`
-- HTML con JS WebRTC + `RTCDataChannel`
+ HTML con JS WebRTC + `VideoTrack` H.264
 - menor latencia percibida
-- mismo `CaptureIntervalSeconds` y `JpegQuality` que WebImage
+ usa `H264Framerate` y `H264BitrateKbps`
 - recomendado para tablets
 
-### Nota sobre el modo Rtc y WebRTC
+ Ambos modos comparten la misma fuente de captura (`DxgiCaptureService`).
+ WebImage usa JPEG (`CaptureIntervalSeconds`, `JpegQuality`) y Rtc usa H.264 (`H264Framerate`, `H264BitrateKbps`).
 Ambos modos usan los mismos parámetros de captura (`CaptureIntervalSeconds`, `JpegQuality`). No hay captura separada por protocolo. La diferencia es solo en el mecanismo de entrega al navegador.
+ Stream multipart MJPEG continuo. Comparte el frame de `DxgiCaptureService`.
+ **captura o cursor** -> `DxgiCaptureService.cs`
+ **codificación H.264** -> `H264EncoderService.cs`
 
-## Endpoints expuestos
-
-### `GET /`
+ **touch remoto y gestos** -> `Controllers/Handlers/InputHandler.cs` y `wwwroot/js/touch/touch-input.js`
 Devuelve la página HTML cliente para la pantalla correspondiente al puerto local donde entró la solicitud.
 - Si `ScreenSecurityEnabled=true` y el cliente no está autenticado: responde una página de login por clave.
 - Si el runtime usa `WebImage`: responde con `WebImagePageTemplate`.

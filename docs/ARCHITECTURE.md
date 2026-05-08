@@ -51,7 +51,8 @@ graph TB
     end
 
     subgraph "Streaming Layer"
-        Capture[CaptureService]
+        Capture[DxgiCaptureService]
+        H264[H264EncoderService]
         WebRTC[WebRtcStreamService]
         StreamModels[WebRtcSessionOffer, WebRtcSessionAnswer]
     end
@@ -139,7 +140,7 @@ graph TB
     - `keepalive.js`: Señal keep-alive para mantener sesión activa
     - `touch-input.js`: Entrada táctil con gestos (tap, hold-to-drag, scroll)
     - `webimage-client.js`: Cliente JPEG polling con viewport tracking
-    - `webrtc-client.js`: Cliente WebRTC con reensamblado de frames chunkeados
+    - `webrtc-client.js`: Cliente WebRTC que reproduce `VideoTrack` H.264 en `<video>`
 - **Patrones**: STA Threading, Observer (eventos de formularios), Template Method (HTML generators), Module Pattern (JavaScript)
 
 #### 2. **Web Layer & Controllers** (Entry Point)
@@ -179,14 +180,15 @@ graph TB
 #### 4. **Streaming Layer** (`Streaming/`)
 - **Propósito**: Captura de pantalla y transmisión de video
 - **Componentes**:
-  - `CaptureService`: Servicio en segundo plano que captura pantalla y codifica a JPEG
-  - `WebRtcStreamService`: Servicio WebRTC que gestiona conexiones de pares y transmite frames
+    - `DxgiCaptureService`: Servicio en segundo plano que captura pantalla (DXGI con fallback GDI), emite raw y expone JPEG
+    - `H264EncoderService`: Servicio en segundo plano que codifica raw BGRA a H.264
+    - `WebRtcStreamService`: Servicio WebRTC que gestiona conexiones de pares y transmite H.264 por RTP
   - `WebRtcSessionOffer`, `WebRtcSessionAnswer`: Modelos para negociación SDP
 - **Optimizaciones**:
-  - Detección de cambios en frames (hash FNV-1a de muestras)
-  - Chunking de frames a 64KB para DataChannel
-  - Caché de codecs JPEG
-  - DataChannel configurado con `ordered: false`, `maxRetransmits: 0` para latencia mínima
+    - Fallback automático DXGI → GDI para adaptadores virtuales/indirectos
+    - Codificación H.264 con selección de encoder (NVENC/AMF/libx264)
+    - JPEG bajo demanda para `/cap` y `/mjpeg`
+    - `VideoTrack` RTP (sin reensamblado manual en cliente)
 - **Patrones**: Background Service, Observer (WebRTC events)
 
 #### 5. **Parsec Layer** (`Parsec/`)
@@ -212,7 +214,7 @@ graph TB
   - `ApplicationLifecycleManager`: Loop principal de arranque/parada del servicio
     - Configura middleware de archivos estáticos (`app.UseStaticFiles()`)
     - Sirve archivos JavaScript desde `/wwwroot/`
-  - `ScreenRuntimeContext`: Contenedor que agrega DisplayManager + CaptureService + WebRtcStreamService
+    - `ScreenRuntimeContext`: Contenedor que agrega DisplayManager + DxgiCaptureService + H264EncoderService + WebRtcStreamService
   - `NetworkAddressHelper`: Obtiene dirección IP local
   - `LocalCertificateProvider`: Genera/obtiene certificado SSL autofirmado
   - `SingleInstanceManager`: Previene múltiples instancias de la aplicación (mutex)
@@ -268,8 +270,9 @@ sequenceDiagram
             Program->>ScreenRuntimeContext: CreateRuntimeAsync(Screen1)
             ScreenRuntimeContext->>VirtualDisplayManager: TryCreate(config)
             VirtualDisplayManager-->>ScreenRuntimeContext: VirtualDisplayManager instance
-            ScreenRuntimeContext->>CaptureService: new(config)
-            ScreenRuntimeContext->>WebRtcStreamService: new(config, captureService)
+            ScreenRuntimeContext->>DxgiCaptureService: new(config)
+            ScreenRuntimeContext->>H264EncoderService: new(dxgiCaptureService, config)
+            ScreenRuntimeContext->>WebRtcStreamService: new(h264EncoderService)
             ScreenRuntimeContext->>ScreenRuntimeContext: StartAsync()
             ScreenRuntimeContext-->>Program: ScreenRuntimeContext
 
@@ -292,53 +295,50 @@ sequenceDiagram
 sequenceDiagram
     participant Browser
     participant Kestrel
-    participant CaptureService
+    participant DxgiCaptureService
     participant VirtualDisplayManager
     participant Windows
 
     loop Cada X ms (intervalo configurado)
-        CaptureService->>VirtualDisplayManager: Obtiene bounds de pantalla virtual
-        VirtualDisplayManager-->>CaptureService: Rectangle(x, y, width, height)
-        CaptureService->>Windows: Graphics.CopyFromScreen(bounds)
-        Windows-->>CaptureService: Bitmap
-        CaptureService->>CaptureService: Dibuja cursor (opcional)
-        CaptureService->>CaptureService: Aplica rotación (opcional)
-        CaptureService->>CaptureService: Calcula hash FNV-1a de muestras
-        alt Frame cambió
-            CaptureService->>CaptureService: Codifica a JPEG (calidad configurable)
-            CaptureService->>CaptureService: Actualiza buffer compartido
+        DxgiCaptureService->>VirtualDisplayManager: Obtiene monitor objetivo
+        DxgiCaptureService->>Windows: Captura DXGI (fallback GDI)
+        Windows-->>DxgiCaptureService: RawFrame BGRA
+        DxgiCaptureService->>DxgiCaptureService: Dibuja cursor (opcional)
+        alt Hay demanda JPEG (/cap o /mjpeg)
+            DxgiCaptureService->>DxgiCaptureService: Codifica a JPEG (calidad configurable)
+            DxgiCaptureService->>DxgiCaptureService: Actualiza buffer compartido
         end
     end
 
     Browser->>Kestrel: GET /cap/{token}?s=N
-    Kestrel->>CaptureService: GetLatestFrame()
-    CaptureService-->>Kestrel: byte[] (JPEG)
+    Kestrel->>DxgiCaptureService: GetCurrentJpegFrame()
+    DxgiCaptureService-->>Kestrel: byte[] (JPEG)
     Kestrel-->>Browser: image/jpeg
 
     Browser->>Browser: Renderiza imagen
     Browser->>Kestrel: GET /cap/{token}?s=N+1 (polling)
 ```
 
-### Flujo de Streaming (Modo WebRTC)
+### Flujo de Streaming (Modo WebRTC H.264)
 
 ```mermaid
 sequenceDiagram
     participant Browser
     participant Kestrel
     participant WebRtcStreamService
-    participant CaptureService
+    participant DxgiCaptureService
+    participant H264EncoderService
     participant SIPSorcery
 
     Browser->>Browser: Crea RTCPeerConnection
-    Browser->>Browser: Crea DataChannel
+    Browser->>Browser: Agrega transceiver video (recvonly)
     Browser->>Browser: Genera SDP Offer
     Browser->>Kestrel: POST /webrtc/offer (SDP offer)
 
     Kestrel->>WebRtcStreamService: CreateAnswerAsync(offer)
     WebRtcStreamService->>SIPSorcery: new RTCPeerConnection()
     SIPSorcery-->>WebRtcStreamService: peerConnection
-    WebRtcStreamService->>SIPSorcery: createDataChannel("frames", ordered:false, maxRetransmits:0)
-    SIPSorcery-->>WebRtcStreamService: dataChannel
+    WebRtcStreamService->>SIPSorcery: addTrack(H264 VideoTrack)
     WebRtcStreamService->>SIPSorcery: setRemoteDescription(offer)
     WebRtcStreamService->>SIPSorcery: createAnswer()
     SIPSorcery-->>WebRtcStreamService: SDP answer
@@ -351,23 +351,15 @@ sequenceDiagram
     SIPSorcery->>Browser: Conexión establecida
 
     loop Cada frame capturado
-        CaptureService->>CaptureService: Captura y codifica JPEG
-        CaptureService->>WebRtcStreamService: Notifica nuevo frame disponible
-
-        WebRtcStreamService->>CaptureService: GetLatestFrame()
-        CaptureService-->>WebRtcStreamService: byte[] (JPEG)
-
-        WebRtcStreamService->>WebRtcStreamService: Divide frame en chunks de 64KB
-        WebRtcStreamService->>WebRtcStreamService: Agrega frameId (little-endian) a cada chunk
-
+        DxgiCaptureService->>H264EncoderService: RawFrameAvailable
+        H264EncoderService->>WebRtcStreamService: NalUnitReady
         loop Para cada peer conectado
-            WebRtcStreamService->>SIPSorcery: dataChannel.send(chunk)
-            SIPSorcery->>Browser: Transmite chunk
+            WebRtcStreamService->>SIPSorcery: SendH264Frame (RTP)
+            SIPSorcery->>Browser: Transmite video RTP
         end
     end
 
-    Browser->>Browser: Recibe chunks, reensambla frame
-    Browser->>Browser: Renderiza imagen
+    Browser->>Browser: Reproduce stream en <video>
 ```
 
 ### Flujo de Configuración
@@ -396,7 +388,8 @@ sequenceDiagram
     ResolutionConfigurationForm->>Program: Dispara evento ApplySelection
     Program->>ScreenRuntimeContext: DisposeRuntimesAsync() (pantallas antiguas)
     ScreenRuntimeContext->>VirtualDisplayManager: Dispose() (destruye pantalla virtual)
-    ScreenRuntimeContext->>CaptureService: StopAsync()
+    ScreenRuntimeContext->>DxgiCaptureService: StopAsync()
+    ScreenRuntimeContext->>H264EncoderService: StopAsync()
     ScreenRuntimeContext->>WebRtcStreamService: StopAsync()
 
     Program->>ScreenRuntimeContext: CreateRuntimeAsync(nuevaConfig Screen1)
@@ -521,27 +514,39 @@ void InvokeOnFormSafely(Form?, Action<Form>)  // Thread-safe helper
 
 ---
 
-### CaptureService
+### DxgiCaptureService
 
 **Namespace**: `VirtualWebDisplay.Streaming`
 
-**Responsabilidad**: Captura de pantalla y codificación JPEG en segundo plano.
+**Responsabilidad**: Captura de pantalla (DXGI con fallback GDI), publicación de frames raw y JPEG bajo demanda.
 
 **Características Clave**:
 - Hereda `BackgroundService` con loop continuo
-- Detección de cambios (hash FNV-1a) para evitar codificaciones innecesarias
-- Soporte para rotación de imagen (90°, 180°, 270°)
+- Captura por DXGI Desktop Duplication
+- Fallback a GDI para adaptadores virtuales/indirectos
 - Dibujo opcional de cursor
-- Caché de `ImageCodecInfo` para performance
+- Publicación de `RawFrameAvailable` para el encoder H.264
 
 **Configuración**:
-- Intervalo de captura: `CaptureIntervalMs` (default: 50ms = 20 FPS)
-- Calidad JPEG: `JpegQuality` (default: 75, rango: 1-100)
+- Intervalo base de captura: `CaptureIntervalSeconds`
+- Calidad JPEG: `JpegQuality` (rango: 1-100)
 
 **Optimizaciones**:
-- Muestreo de píxeles para hash (no procesa imagen completa)
-- Reutilización de buffer JPEG
-- Codec cacheado para evitar búsquedas repetidas
+- Heurística de black frames para fallback temprano
+- JPEG bajo demanda (`/cap` y `/mjpeg`)
+
+---
+
+### H264EncoderService
+
+**Namespace**: `VirtualWebDisplay.Streaming`
+
+**Responsabilidad**: Codificación de frames BGRA a H.264 y emisión de NAL units.
+
+**Características Clave**:
+- Encoder selection: NVENC → AMF → libx264
+- Control de bitrate/framerate (`H264BitrateKbps`, `H264Framerate`)
+- Reinicio automático ante cambio de resolución
 
 ---
 
@@ -549,20 +554,20 @@ void InvokeOnFormSafely(Form?, Action<Form>)  // Thread-safe helper
 
 **Namespace**: `VirtualWebDisplay.Streaming`
 
-**Responsabilidad**: Gestión de conexiones WebRTC y transmisión de frames.
+**Responsabilidad**: Gestión de conexiones WebRTC y transmisión de H.264 por RTP.
 
 **Características Clave**:
 - Maneja múltiples peers concurrentes (diccionario thread-safe)
-- DataChannel configurado para latencia mínima (`ordered: false`, `maxRetransmits: 0`)
-- Chunking de frames a 64KB con prefijo `frameId` little-endian
 - Negociación SDP (offer/answer)
+- Track H.264 send-only
+- Conversión de timestamps a reloj RTP 90kHz
 
 **Flujo de Negociación**:
 1. Browser envía SDP offer → `CreateAnswerAsync`
-2. Servicio crea `RTCPeerConnection` + `DataChannel`
+2. Servicio crea `RTCPeerConnection` + `MediaStreamTrack` H.264
 3. Servicio genera SDP answer → Browser
 4. ICE negotiation automática vía SIPSorcery
-5. Conexión establecida → comienza transmisión de frames
+5. Conexión establecida → comienza transmisión de NAL units H.264
 
 **Gestión de Peers**:
 - Adición automática al recibir offer
@@ -578,7 +583,8 @@ void InvokeOnFormSafely(Form?, Action<Form>)  // Thread-safe helper
 
 **Componentes Gestionados**:
 - `VirtualDisplayManager` (creación de pantalla virtual)
-- `CaptureService` (captura de contenido)
+- `DxgiCaptureService` (captura de contenido)
+- `H264EncoderService` (codificación de video)
 - `WebRtcStreamService` (transmisión WebRTC)
 
 **Ciclo de Vida**:
@@ -631,18 +637,17 @@ MemoryStream → byte[]
 ### 2. Transmisión JPEG (Web Image)
 
 ```
-CaptureService (byte[] JPEG) → Almacena en campo compartido →
-Browser (GET /cap/{token}) → Kestrel → CaptureService.GetLatestFrame() →
+DxgiCaptureService (byte[] JPEG) → Almacena en campo compartido →
+Browser (GET /cap/{token}) → Kestrel → DxgiCaptureService.GetCurrentJpegFrame() →
 Response (image/jpeg) → Browser (actualiza capa visual de pantalla)
 ```
 
 ### 3. Transmisión WebRTC
 
 ```
-CaptureService (byte[] JPEG) → WebRtcStreamService (chunking a 64KB) →
-Agrega frameId little-endian → Itera peers conectados →
-DataChannel.send(chunk) → SIPSorcery → Browser (RTCDataChannel.onmessage) →
-Reensamblado de chunks → Blob → render de frame en cliente
+DxgiCaptureService (RawFrame BGRA) → H264EncoderService (NAL units) →
+WebRtcStreamService (RTP VideoTrack) → SIPSorcery → Browser (ontrack) →
+render de video en `<video>`
 ```
 
 ### 4. Configuración de Usuario
@@ -652,7 +657,7 @@ User (modifica ResolutionConfigurationForm) → Evento ApplySelection →
 VirtualScreenSettingsStore.SaveSettings() → JSON file (~/.virtualwebdisplay/virtualscreen.user.json) →
 ApplicationLifecycleManager (dispose runtimes antiguos + crea nuevos) →
 VirtualDisplayManager.TryCreate() → Parsec VDD (crea pantalla virtual) →
-CaptureService + WebRtcStreamService (inician con nueva config)
+DxgiCaptureService + H264EncoderService + WebRtcStreamService (inician con nueva config)
 ```
 
 ---
@@ -676,9 +681,9 @@ CaptureService + WebRtcStreamService (inician con nueva config)
 
 ---
 
-### 2. **Background Services para Captura/Streaming**
+### 2. **Background Services para Captura/Encoding/Streaming**
 
-**Decisión**: `CaptureService` y `WebRtcStreamService` heredan `BackgroundService`.
+**Decisión**: `DxgiCaptureService`, `H264EncoderService` y `WebRtcStreamService` heredan `BackgroundService`.
 
 **Rationale**:
 - **Operación Continua**: Necesitan ejecutarse en segundo plano sin bloquear UI
@@ -712,14 +717,14 @@ CaptureService + WebRtcStreamService (inician con nueva config)
 
 ---
 
-### 4. **WebRTC DataChannel con `ordered: false`, `maxRetransmits: 0`**
+### 4. **WebRTC con VideoTrack H.264 (RTP)**
 
-**Decisión**: Configurar DataChannel para no ordenar paquetes ni retransmitir.
+**Decisión**: Enviar video H.264 por `MediaStreamTrack` nativo en lugar de DataChannel + chunks JPEG.
 
 **Rationale**:
-- **Latencia Mínima**: Prioridad en aplicaciones de pantalla remota
-- **Frames Independientes**: Cada frame JPEG es completo, no depende de frames anteriores
-- **Tolerancia a Pérdida**: Preferible mostrar frame más reciente con glitches que frame antiguo perfecto
+- **Menor Overhead en Cliente**: el navegador decodifica y renderiza en `<video>` nativo
+- **Eficiencia de Red**: H.264 usa menos ancho de banda que JPEG frame a frame
+- **Simplicidad de Cliente**: elimina reensamblado manual de chunks
 
 **Comportamiento**:
 - Si paquete se pierde → no retransmite (evita retraso)
@@ -732,26 +737,19 @@ CaptureService + WebRtcStreamService (inician con nueva config)
 
 ---
 
-### 5. **Chunking de Frames a 64KB**
+### 5. **JPEG Bajo Demanda**
 
-**Decisión**: Dividir frames JPEG en chunks de 64KB máximo antes de enviar por DataChannel.
+**Decisión**: Codificar JPEG solo cuando hay consumidores (`/cap` reciente o `/mjpeg` activo).
 
 **Rationale**:
-- **Límite de WebRTC**: DataChannel tiene límite de tamaño de mensaje (~256KB según implementación)
-- **Eficiencia de Red**: Chunks más pequeños fluyen mejor en redes con alta latencia
-- **Reensamblado Simple**: Prefijo `frameId` de 4 bytes permite reensamblar correctamente
+- **Reducción de CPU**: evita trabajo de JPEG cuando el runtime está en modo solo WebRTC
+- **Compatibilidad**: mantiene soporte para WebImage y MJPEG sin duplicar captura
+- **Bajo Riesgo**: no altera el pipeline H.264
 
 **Implementación**:
-```
-Frame original: 250KB JPEG
-↓
-Chunk 1: [frameId: 00 00 00 01][primeros 64KB]
-Chunk 2: [frameId: 00 00 00 01][siguientes 64KB]
-Chunk 3: [frameId: 00 00 00 01][siguientes 64KB]
-Chunk 4: [frameId: 00 00 00 01][restantes ~58KB]
-```
-
-Browser reensambla chunks con mismo `frameId` → Blob → `createObjectURL` → `<img>`
+- `NotifyJpegDemand()` se llama en `/cap/{token}`.
+- `EnterMjpegDemand()` / `ExitMjpegDemand()` delimitan la vida de `/mjpeg`.
+- `DxgiCaptureService.ShouldEncodeJpeg()` decide si codificar en cada frame.
 
 ---
 
@@ -872,7 +870,7 @@ C:\Users\<Usuario>\.virtualwebdisplay\
 
 ### 3. **Facade Pattern**
 - **Clase**: `ScreenRuntimeContext`
-- **Propósito**: Simplifica interacción con `VirtualDisplayManager + CaptureService + WebRtcStreamService`
+- **Propósito**: Simplifica interacción con `VirtualDisplayManager + DxgiCaptureService + H264EncoderService + WebRtcStreamService`
 - **Beneficio**: Cliente (`ApplicationLifecycleManager`) no necesita gestionar componentes individuales
 
 ### 4. **Singleton Pattern**
@@ -892,7 +890,7 @@ C:\Users\<Usuario>\.virtualwebdisplay\
 
 ### 7. **Dependency Injection**
 - **Uso**: Servicios hosteados en `Program.cs`
-- **Componentes**: `CaptureService`, `WebRtcStreamService` inyectados en `ScreenRuntimeContext`
+- **Componentes**: `DxgiCaptureService`, `H264EncoderService`, `WebRtcStreamService` inyectados en `ScreenRuntimeContext`
 - **Beneficio**: Facilita testing con mocks
 
 ### 8. **Disposable Pattern**

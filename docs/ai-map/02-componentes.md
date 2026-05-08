@@ -19,7 +19,8 @@ Rol: bind HTTP/HTTPS por pantalla (`Port` y `Port+1`).
 ### `Infrastructure/ScreenRuntimeContext.cs`
 Agrupa runtime por pantalla:
 - `VirtualDisplayManager`
-- `CaptureService`
+- `DxgiCaptureService`
+- `H264EncoderService`
 - `WebRtcStreamService`
 - `ScreenSecurityGate`
 - `ViewerLimiter`
@@ -27,12 +28,16 @@ Agrupa runtime por pantalla:
 ### `Parsec/VirtualDisplayManager.cs`
 Rol: crear/destruir monitor virtual (Parsec VDD), aplicar resolucion y placement.
 
-### `Streaming/CaptureService.cs`
-Rol: captura periodica del monitor y codificacion JPEG.
-**Optimización ("Idle Sleep")**: En modo USB, si ningún cliente solicita frames en 3 segundos (`RecordActivity()`), el servicio entra en reposo reduciendo su tasa de captura a 2 FPS, minimizando el consumo de CPU.
+### `Streaming/DxgiCaptureService.cs`
+Rol: captura periodica del monitor por DXGI Desktop Duplication con fallback GDI.
+Expone `RawFrameAvailable` para el encoder H.264 y `GetCurrentJpegFrame()` para `/cap` y `/mjpeg`.
+Codifica JPEG bajo demanda (polling reciente o consumidores MJPEG activos).
+
+### `Streaming/H264EncoderService.cs`
+Rol: codificacion H.264 de frames BGRA (NVENC/AMF/libx264) y emision de NAL units.
 
 ### `Streaming/WebRtcStreamService.cs`
-Rol: negociacion WebRTC y envio de frames por DataChannel.
+Rol: negociacion WebRTC y envio de H.264 por VideoTrack RTP.
 
 ## Endpoints y handlers
 
@@ -119,7 +124,7 @@ Rol: controles por pantalla. Emite eventos en caliente para:
 Modo polling `/cap/{token}`. El `capToken` se embebe en el HTML generado (`window` config del `WebImageClient.init`) y se adjunta a cada request. Usa `div#screen` con `background-image` para evitar drag/long-press nativo en iPad Safari. Transmite parámetros granulares al script de touch `TouchInput.init`.
 
 ### `Web/HtmlTemplates/RtcPageTemplate.cs`
-Modo WebRTC (DataChannel + render cliente). Transmite parámetros granulares al script de touch `TouchInput.init`.
+Modo WebRTC (VideoTrack H.264 + render en `<video>`). Transmite parámetros granulares al script de touch `TouchInput.init`.
 
 ### `wwwroot/js/touch/touch-input.js`
 Script touch compartido para ambos modos.
@@ -147,11 +152,10 @@ Config por pantalla: puertos, modo, intervalo, calidad, fit, seguridad, viewers 
 
 ## Donde tocar segun el cambio
 
-- Captura o calidad: `CaptureService.cs`
+- Captura o calidad: `DxgiCaptureService.cs` y `H264EncoderService.cs`
 - Monitor virtual / placement: `VirtualDisplayManager.cs`
 - Rutas/API: `WebApiEndpoints.cs` + `Controllers/Handlers/*`
-- Touch: `InputHandler.cs` + `TouchInputScriptHelper.cs`
+- Touch: `InputHandler.cs` + `wwwroot/js/touch/touch-input.js`
 - UI local: `UI/Forms/*` y `UI/TrayIcon/*`
 - UX web: `Web/HtmlTemplates/*`
 - Persistencia/config: `Configuration/Models/*` + `VirtualScreenSettingsStore.cs`
-tore.cs`

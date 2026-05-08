@@ -26,7 +26,8 @@ Program.cs
 
 ScreenRuntimeContext (por pantalla)
   -> VirtualDisplayManager
-  -> CaptureService
+  -> DxgiCaptureService
+  -> H264EncoderService
   -> WebRtcStreamService
   -> ScreenSecurityGate
   -> ViewerLimiter

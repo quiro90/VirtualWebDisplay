@@ -123,7 +123,8 @@ VirtualWebDisplay_Parsec/
 │   ├── Models/
 │   │   ├── WebRtcSessionOffer.cs
 │   │   └── WebRtcSessionAnswer.cs
-│   ├── CaptureService.cs
+│   ├── DxgiCaptureService.cs
+│   ├── H264EncoderService.cs
 │   └── WebRtcStreamService.cs
 ├── Infrastructure/
 │   ├── Drivers/
@@ -311,8 +312,9 @@ Producción (4=DEBUG) → Desarrollo (2=WARN).
 - `Program.cs` línea ~60: Antes de `CreateRuntimeAsync()`
 
 **Para debugging de captura**:
-- `CaptureService.cs` línea ~80: Inicio de loop de captura
-- `CaptureService.cs` línea ~120: Codificación JPEG
+- `DxgiCaptureService.cs` línea ~90: Inicio de loop de captura
+- `DxgiCaptureService.cs` línea ~230: Publicación raw/JPEG
+- `H264EncoderService.cs` línea ~90: Inicio de loop de codificación
 
 **Para debugging de WebRTC**:
 - `WebRtcStreamService.cs` línea ~40: `CreateAnswerAsync()`
@@ -412,7 +414,7 @@ public VirtualScreenConfig GetConfiguration()
 
 **3. Implementar Funcionalidad**:
 
-Crear `Streaming/AudioCaptureService.cs` (similar a `CaptureService.cs`).
+Crear `Streaming/AudioCaptureService.cs` (similar a `DxgiCaptureService.cs` en lifecycle y a `H264EncoderService.cs` en pipeline de codificación).
 
 ### Ejemplo 4: Agregar Modo de Transmisión H.264
 
@@ -428,7 +430,7 @@ Ver sección "Extensibilidad" en **ARCHITECTURE.md**.
 - **Métodos**: PascalCase (`CreateRuntimeAsync`)
 - **Propiedades**: PascalCase (`CaptureIntervalMs`)
 - **Parámetros**: camelCase (`screenConfig`)
-- **Campos privados**: camelCase con `_` prefix (`_captureService`)
+- **Campos privados**: camelCase con `_` prefix (`_dxgiCaptureService`)
 - **Constantes**: PascalCase (`DefaultJpegQuality`)
 
 ### Organización de Archivos
@@ -443,13 +445,13 @@ using VirtualWebDisplay.Configuration;
 namespace VirtualWebDisplay.Streaming;
 
 // 3. Clase principal
-public class CaptureService : BackgroundService
+public class DxgiCaptureService : BackgroundService
 {
     // 4. Campos privados
     private readonly VirtualScreenConfig _config;
 
     // 5. Constructor
-    public CaptureService(VirtualScreenConfig config)
+    public DxgiCaptureService(VirtualScreenConfig config)
     {
         _config = config;
     }
@@ -512,7 +514,7 @@ public class MyResource : IAsyncDisposable
 ### Records vs Classes
 
 - **Records**: Para DTOs inmutables (`VirtualScreenConfig`, `WebRtcSessionOffer`)
-- **Classes**: Para objetos con comportamiento mutable (`CaptureService`, `VirtualDisplayManager`)
+- **Classes**: Para objetos con comportamiento mutable (`DxgiCaptureService`, `VirtualDisplayManager`)
 
 ```csharp
 // ✅ Record para DTO
@@ -523,7 +525,7 @@ public record VirtualScreenConfig
 }
 
 // ✅ Class para servicio con estado
-public class CaptureService : BackgroundService
+public class DxgiCaptureService : BackgroundService
 {
     private byte[] _latestFrame;
     // ...
@@ -544,12 +546,9 @@ public class CaptureService : BackgroundService
 /// <returns>SDP answer para completar negociación</returns>
 public async Task<WebRtcSessionAnswer> CreateAnswerAsync(WebRtcSessionOffer offer)
 {
-    // Configurar DataChannel con baja latencia (sin ordenamiento ni retransmisión)
-    var dataChannel = await peerConnection.createDataChannel("frames", new RTCDataChannelInit
-    {
-        ordered = false,       // No esperar orden de paquetes
-        maxRetransmits = 0     // No retransmitir paquetes perdidos
-    });
+    // Configurar track de video H.264 antes de generar answer.
+    var videoTrack = new MediaStreamTrack(h264Format, MediaStreamStatusEnum.SendOnly);
+    peerConnection.addTrack(videoTrack);
 
     // ...
 }
@@ -616,7 +615,7 @@ public async Task EndToEnd_CreateVirtualDisplay_CaptureFrame_Success()
     // Act
     await context.StartAsync();
     await Task.Delay(200); // Esperar primera captura
-    var frame = context.CaptureService.GetLatestFrame();
+    var frame = context.FrameSource.GetCurrentJpegFrame();
 
     // Assert
     Assert.NotNull(frame);
@@ -694,7 +693,7 @@ public async Task EndToEnd_CreateVirtualDisplay_CaptureFrame_Success()
 **Problema**: Imagen en navegador permanece estática.
 
 **Diagnóstico**:
-- Poner breakpoint en `CaptureService.ExecuteAsync` línea ~120
+- Poner breakpoint en `DxgiCaptureService.ExecuteAsync` (captura) y `H264EncoderService.EncodeLoopAsync` (codificación)
 - Verificar que `_hasFrameChanged` es `true`
 - Revisar configuración `CaptureIntervalMs` no sea extremadamente alta
 
@@ -718,7 +717,7 @@ public async Task EndToEnd_CreateVirtualDisplay_CaptureFrame_Success()
 - Reducir resolución a 1920x1080 o 1280x720
 - Aumentar `CaptureIntervalMs` a 100-200ms (10-5 FPS)
 - Reducir `JpegQuality` a 60-70
-- En modo WebRTC, considerar H.264 hardware encoding (requiere desarrollo adicional)
+- En modo WebRTC, ajustar `H264Framerate` y `H264BitrateKbps` según el dispositivo destino
 
 ---
 

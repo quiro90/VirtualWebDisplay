@@ -141,8 +141,8 @@ Cada pantalla tiene:
 ```json
 {
   "TransmissionMode": "WebImage",
-  "CaptureIntervalMs": 100,    // 10 FPS (adecuado para dashboards)
-  "JpegQuality": 85             // Alta calidad
+  "CaptureIntervalSeconds": 0.10, // 10 FPS (adecuado para dashboards)
+  "JpegQuality": 85                // Alta calidad
 }
 ```
 
@@ -171,7 +171,7 @@ function updateImage() {
 
 ### 2. WebRTC (Real-Time Communication)
 
-**Descripción**: Streaming en tiempo real usando RTCPeerConnection con DataChannel para transmitir frames JPEG.
+**Descripción**: Streaming en tiempo real usando RTCPeerConnection con `VideoTrack` H.264 (RTP).
 
 **Ventajas**:
 - ✅ **Latencia ultra-baja** (~30-50ms)
@@ -190,8 +190,8 @@ function updateImage() {
 ```json
 {
   "TransmissionMode": "RTC",
-  "CaptureIntervalMs": 33,     // 30 FPS (fluido para gaming/presentaciones)
-  "JpegQuality": 75             // Balance calidad/performance
+  "H264Framerate": 30,
+  "H264BitrateKbps": 2000
 }
 ```
 
@@ -207,7 +207,7 @@ function updateImage() {
 ```javascript
 // 1. Cliente crea offer
 const pc = new RTCPeerConnection();
-const dataChannel = pc.createDataChannel("frames");
+pc.addTransceiver('video', { direction: 'recvonly' });
 const offer = await pc.createOffer();
 await pc.setLocalDescription(offer);
 
@@ -222,46 +222,26 @@ const answer = await response.json();
 await pc.setRemoteDescription({ type: 'answer', sdp: answer.sdp });
 ```
 
-**Recepción de Frames**:
+**Recepción de Video**:
 ```javascript
-dataChannel.onmessage = (event) => {
-    const chunk = new Uint8Array(event.data);
-    const frameId = new DataView(chunk.buffer).getUint32(0, true);  // Little-endian
-    const data = chunk.slice(4);
-
-    // Acumula chunks del mismo frameId
-    chunks[frameId] = (chunks[frameId] || []).concat(data);
-
-    // Si frame completo (heurística o marca de fin)
-    if (isFrameComplete(frameId)) {
-        const blob = new Blob(chunks[frameId], { type: 'image/jpeg' });
-        img.src = URL.createObjectURL(blob);
-        delete chunks[frameId];
+pc.ontrack = (event) => {
+   if (event.track.kind === 'video') {
+      const video = document.getElementById('screen');
+      video.srcObject = event.streams[0] ?? new MediaStream([event.track]);
+      video.play().catch(() => {});
     }
 };
 ```
 
 **Optimizaciones**:
 
-1. **DataChannel sin Orden ni Retransmisión**:
-   ```csharp
-   var dataChannelInit = new RTCDataChannelInit
-   {
-       ordered = false,         // No esperar orden de paquetes
-       maxRetransmits = 0       // No retransmitir paquetes perdidos
-   };
-   ```
+1. **Codificación H.264**:
+  - Encoder automático: NVENC → AMF → libx264.
+  - Menor ancho de banda para misma calidad visual.
 
-   **Resultado**: Latencia mínima (~30ms) vs. ~100ms con retransmisión.
-
-2. **Chunking de Frames**:
-   - Frames divididos en chunks de **64KB**
-   - Prefijo de 4 bytes: `frameId` (little-endian)
-   - Navegador reensambla chunks por `frameId`
-
-3. **Peers Concurrentes**:
+2. **Peers Concurrentes**:
    - Servidor gestiona diccionario de peers conectados
-   - Cada frame se transmite a todos los peers activos
+  - Cada NAL unit se transmite a todos los peers activos
    - Limpieza automática de peers desconectados
 
 ---
@@ -270,29 +250,29 @@ dataChannel.onmessage = (event) => {
 
 ### Opciones de Captura
 
-#### 1. **Intervalo de Captura** (`CaptureIntervalMs`)
+#### 1. **Intervalo de Captura** (`CaptureIntervalSeconds`)
 
-Milisegundos entre capturas de pantalla.
+Segundos entre capturas de pantalla.
 
 | Intervalo | FPS Equivalente | Uso Recomendado | CPU Usage |
 |-----------|-----------------|-----------------|-----------|
-| 16ms | ~60 FPS | Gaming, máxima fluidez | Alto |
-| 33ms | ~30 FPS | **Recomendado** - presentaciones, videos | Medio |
-| 50ms | 20 FPS | Uso general, aplicaciones | Bajo |
-| 100ms | 10 FPS | Dashboards, monitoreo | Muy bajo |
-| 200ms | 5 FPS | Contenido estático | Mínimo |
+| 0.016s | ~60 FPS | Gaming, máxima fluidez | Alto |
+| 0.033s | ~30 FPS | **Recomendado** - presentaciones, videos | Medio |
+| 0.050s | 20 FPS | Uso general, aplicaciones | Bajo |
+| 0.100s | 10 FPS | Dashboards, monitoreo | Muy bajo |
+| 0.200s | 5 FPS | Contenido estático | Mínimo |
 
-**Valores Permitidos**: 16-500ms
+**Valores Permitidos**: > 0 (recomendado 0.016 a 0.5)
 
 **Fórmula**:
 ```
-FPS = 1000 / CaptureIntervalMs
+FPS = 1 / CaptureIntervalSeconds
 ```
 
 **Ejemplo**:
 ```json
 {
-  "CaptureIntervalMs": 33  // 30 FPS
+  "CaptureIntervalSeconds": 0.033  // 30 FPS
 }
 ```
 
@@ -330,10 +310,10 @@ Nivel de compresión JPEG (1-100).
 - Solo codifica JPEG si hash difiere del frame anterior
 - **Beneficio**: Ahorra ~80-90% CPU cuando pantalla está estática
 
-**Desactivación** (si es necesario):
+**Nota**:
 ```csharp
-// En CaptureService.cs, comentar línea:
-// if (!_hasFrameChanged) return;
+// La codificación JPEG ahora es bajo demanda en DxgiCaptureService.
+// Se activa cuando hay polling /cap reciente o consumidores /mjpeg.
 ```
 
 ---
@@ -497,34 +477,33 @@ bitmap.Save(memoryStream, _jpegCodec, encoderParameters);
 
 ---
 
-### 3. WebRTC DataChannel Optimizado
+### 3. WebRTC H.264 Optimizado
 
 **Configuración**:
 ```csharp
-new RTCDataChannelInit
-{
-    ordered = false,       // No esperar orden
-    maxRetransmits = 0     // No retransmitir
-}
+new MediaStreamTrack(h264Format, MediaStreamStatusEnum.SendOnly)
 ```
 
 **Comportamiento**:
 
 | Configuración | Latencia | Calidad | Uso |
 |---------------|----------|---------|-----|
-| `ordered: true, maxRetransmits: 3` | ~150-200ms | Perfecta | ❌ No recomendado |
-| `ordered: true, maxRetransmits: 0` | ~80-100ms | Muy buena | Aceptable |
-| `ordered: false, maxRetransmits: 0` | **~30-50ms** | Buena (glitches leves) | ✅ **Recomendado** |
+| `H264Framerate=20, H264BitrateKbps=1200` | ~60-90ms | Buena | Bajo ancho de banda |
+| `H264Framerate=30, H264BitrateKbps=2000` | **~30-60ms** | Muy buena | ✅ Recomendado |
+| `H264Framerate=60, H264BitrateKbps=4000` | ~20-50ms | Alta | Equipos potentes |
 
 **Trade-off**:
 - ⬇️ Latencia mínima
-- ⬆️ Posibles artefactos visuales leves si hay pérdida de paquetes
+- ⬇️ CPU en cliente al usar `<video>` nativo
 
 ---
 
-### 4. Chunking Eficiente
+### 4. JPEG Bajo Demanda
 
-**Tamaño de Chunk**: 64 KB
+**Comportamiento**:
+- `/cap/{token}` marca demanda reciente de JPEG.
+- `/mjpeg` mantiene demanda activa mientras el stream esté abierto.
+- En modo solo WebRTC sin consumidores JPEG, se evita la codificación JPEG continua.
 
 **Razones**:
 - ✅ Menor que límite de DataChannel (~256 KB)
@@ -605,7 +584,7 @@ if (!createdNew)
 
 ### Planificado para v1.1+
 
-- [ ] **H.264 Hardware Encoding**: Menor latencia, menor CPU (usando GPU)
+- [x] **H.264 Hardware/Software Encoding**: NVENC/AMF/libx264 con fallback automático
 - [ ] **Audio Streaming**: Captura y transmisión de audio de pantalla virtual
 - [ ] **Input remoto avanzado**: Arrastre, teclado y gestos extendidos
 - [ ] **3+ Pantallas**: Soporte para más de 2 pantallas simultáneas
@@ -621,7 +600,7 @@ if (!createdNew)
 1. **Solo Windows**: Requiere Windows 10/11 para Parsec VDD driver
 2. **Máximo 2 Pantallas**: Limitación actual de implementación (no del driver)
 3. **Input remoto limitado**: Hoy soporta clicks táctiles (1/2/3+ dedos), no teclado ni drag completo
-4. **Sin codec de video dedicado**: Usa JPEG por frame (futuro: H.264)
+4. **El modo WebImage sigue usando JPEG**: para e-ink y clientes simples
 5. **WebRTC Requiere HTTPS**: Requisito de seguridad de navegadores
 
 ---

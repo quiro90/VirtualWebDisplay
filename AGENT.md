@@ -61,8 +61,12 @@ VirtualWebDisplay_Parsec/
 │   └── VirtualDisplayManager.cs           ← API de Parsec VDD (unsafe code)
 │
 ├── Streaming/                       ← 📡 Captura y Retransmisión
-│   ├── CaptureService.cs                  ← Captura pantalla + JPEG encode
-│   ├── WebRtcStreamService.cs             ← WebRTC streaming
+│   ├── DxgiCaptureService.cs              ← Captura DXGI/GDI + JPEG bajo demanda
+│   ├── H264EncoderService.cs              ← Encoder H.264
+│   ├── IFrameSource.cs                    ← Contrato raw/JPEG
+│   ├── JpegFallbackEncoder.cs             ← Encoder JPEG reutilizable
+│   ├── RawFrame.cs                        ← Frame BGRA + timestamp
+│   ├── WebRtcStreamService.cs             ← WebRTC VideoTrack (RTP H.264)
 │   └── Models/
 │       ├── WebRtcSessionOffer.cs
 │       └── WebRtcSessionAnswer.cs
@@ -160,11 +164,11 @@ VirtualDisplayManager.TryCreate()
 ```
 Browser GET / → WebImagePageTemplate
 Browser polling GET /cap cada X ms
-  ├─ CaptureService.GetCurrentFrame()
-  │   ├─ Graphics.CopyFromScreen()
-  │   ├─ Rotar si es necesario
-  │   ├─ Encode JPEG (EncoderParameter Quality)
-  │   └─ Cache en memoria
+   ├─ DxgiCaptureService.GetCurrentJpegFrame()
+   │   ├─ Captura DXGI Desktop Duplication (fallback GDI)
+   │   ├─ Overlay de cursor
+   │   ├─ Encode JPEG bajo demanda (/cap y /mjpeg)
+   │   └─ Cache en memoria
   └─ Return JPEG bytes
 ```
 
@@ -174,15 +178,13 @@ Browser GET / → RtcPageTemplate
 Browser POST /webrtc/offer con SDP
   ├─ WebRtcStreamService.CreateAnswerAsync()
   │   ├─ Crear RTCPeerConnection
-  │   ├─ Crear DataChannel "frames"
+   │   ├─ Agregar VideoTrack H.264 (send-only)
   │   ├─ ICE gathering
   │   └─ Return SDP answer
-  ├─ Background loop:
-  │   ├─ CaptureService.GetCurrentFrame()
-  │   ├─ Split en chunks de 64KB
-  │   ├─ DataChannel.send(metadata + chunks)
-  │   └─ Browser ensambla frame
-  └─ Canvas renderiza JPEG
+   ├─ DxgiCaptureService emite RawFrameAvailable
+   ├─ H264EncoderService codifica NAL units
+   ├─ WebRtcStreamService envía NAL units por RTP
+   └─ Browser reproduce stream en <video>
 ```
 
 ---
@@ -197,13 +199,13 @@ Browser POST /webrtc/offer con SDP
 - Verificar Parsec VDD si es necesario
 - Crear runtimes por pantalla (`ScreenRuntimeContext`)
 - Configurar Kestrel (HTTP + HTTPS con cert autofirmado)
-- Mapear endpoints: `/`, `/auth/login`, `/cap`, `/webrtc/offer`, `/mjpeg`, `/cert`, `/config`
+- Mapear endpoints: `/`, `/auth/login`, `/cap/{token}`, `/webrtc/offer`, `/mjpeg`, `/cert`, `/config`
 - Cleanup al cerrar
 
 **Endpoints HTTP**:
 - `GET /` → Template HTML (WebImage o RTC según config); si seguridad activa y no autenticado, devuelve login por clave
 - `POST /auth/login` → Login por clave de pantalla (cookie HTTP-only)
-- `GET /cap` → JPEG frame actual (requiere auth si seguridad activa)
+- `GET /cap/{token}` → JPEG frame actual (requiere auth si seguridad activa)
 - `POST /webrtc/offer` → Negociación WebRTC (requiere auth si seguridad activa)
 - `GET /mjpeg` → MJPEG stream (legacy, requiere auth si seguridad activa)
 - `GET /cert` → Descargar certificado SSL (.crt)
@@ -352,36 +354,36 @@ ApplicationBootstrapper
 - `TryReconfigure(config)` → Cambiar resolución/posición
 - `Dispose()` → Eliminar monitor virtual
 
-### CaptureService
+### DxgiCaptureService
 **Responsabilidades**:
 - Background service (`BackgroundService`)
-- Capturar pantalla usando `Graphics.CopyFromScreen()`
+- Capturar pantalla vía DXGI Desktop Duplication
+- Fallback automático a GDI cuando DXGI no está disponible
 - Dibujar cursor si está visible
-- Rotar imagen si es necesario
-- Encode a JPEG con calidad configurable
+- Emitir `RawFrameAvailable` para pipeline H.264
+- Encode a JPEG con calidad configurable bajo demanda
 - Cache último frame en memoria
-- Change detection (hash sampling) para evitar encodes innecesarios
 
-**Optimizaciones**:
-- Usa `ImageCodecInfo` cached
-- Sampling hash (cada 8vo pixel) para detectar cambios
-- Skip encode si frame idéntico
+### H264EncoderService
+**Responsabilidades**:
+- Consumir `RawFrameAvailable` y codificar H.264
+- Seleccionar encoder disponible (NVENC/AMF/libx264)
+- Publicar NAL units por evento `NalUnitReady`
 
 ### WebRtcStreamService
 **Responsabilidades**:
 - Background service para WebRTC
 - Gestionar múltiples peers (Dictionary concurrente)
 - Crear offers/answers SDP
-- DataChannel "frames" con `ordered: false, maxRetransmits: 0`
-- Chunking de frames JPEG (64KB chunks)
-- Metadata JSON + binary chunks
+- Streaming H.264 por VideoTrack RTP
+- Conversión de timestamps de captura a reloj RTP (90kHz)
 
 **⚠️ DELICADO**: WebRTC es sensible. Usa SIPSorcery. Modificar con cuidado.
 
 ### ScreenRuntimeContext
 **Responsabilidades**:
 - Contenedor de servicios por pantalla
-- Agrupa: Config, DisplayManager, CaptureService, WebRtcStreamService
+- Agrupa: Config, DisplayManager, DxgiCaptureService, H264EncoderService, WebRtcStreamService
 - Gestiona lifecycle (Start/Stop/Dispose)
 
 **Patrón**: Un runtime por pantalla virtual
@@ -463,7 +465,7 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 
 **BackgroundService para workers**:
 ```csharp
-public sealed class CaptureService : BackgroundService
+public sealed class DxgiCaptureService : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 }
@@ -487,9 +489,9 @@ public sealed class CaptureService : BackgroundService
 
 ```csharp
 /// <summary>
-/// Captures the screen and encodes to JPEG in background.
+/// Captures the screen and publishes raw/JPEG frames in background.
 /// </summary>
-public sealed class CaptureService : BackgroundService
+public sealed class DxgiCaptureService : BackgroundService
 ```
 
 ---
@@ -657,7 +659,7 @@ En vez de modos excluyentes, los gestos se configuran granularmente:
 
 **Implementación**:
 ```javascript
-// Cliente (TouchInputScriptHelper.cs)
+// Cliente (wwwroot/js/touch/touch-input.js)
 const deltaX = -(currentX - lastX);  // Invertido
 const deltaY = -(currentY - lastY);  // Invertido
 
@@ -844,9 +846,9 @@ MouseInputHelper.Scroll(deltaX, deltaY);
 
 **Crítico**:
 - ICE gathering
-- DataChannel `ordered: false, maxRetransmits: 0`
-- Chunking (64KB límite)
-- Frame assembly en cliente
+- VideoTrack H.264 y payload type negociado
+- Timestamp RTP estable por peer
+- Manejo robusto de desconexión de peers
 
 ### 4. LocalCertificateProvider.cs
 **Por qué**: Genera certificado SSL autofirmado. iOS/Safari son exigentes.
@@ -894,7 +896,7 @@ MouseInputHelper.Scroll(deltaX, deltaY);
 
 ### SIPSorcery
 - **NuGet**: `SIPSorcery`
-- **Uso**: WebRTC (RTCPeerConnection, RTCDataChannel)
+- **Uso**: WebRTC (RTCPeerConnection, MediaStreamTrack, VideoTrack RTP)
 - **Docs**: https://github.com/sipsorcery/sipsorcery
 
 ### Kestrel

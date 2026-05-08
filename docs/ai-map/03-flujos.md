@@ -18,7 +18,8 @@
    - crea monitor virtual (`DisplayManager.TryCreate`),
    - detecta el índice de monitor Windows (`WindowsMonitorIndex`),
    - `VirtualResolutionWatcher` restaura la resolución y posición (X/Y) previas desde `virtualscreen.display.json`,
-   - arranca `CaptureService`,
+   - arranca `DxgiCaptureService`,
+   - arranca `H264EncoderService`,
    - arranca `WebRtcStreamService`.
 11. `tray.ConfigureRuntimeActions(exitRequested, stopRequested, runtimes)`:
    - Llama `ServiceStateManager.CompleteStart(runtimes)` (Starting → Started)
@@ -40,12 +41,13 @@
    - actualiza `MonitorIndex`, `Width`, `Height` y posición (`SavedPositionX`, `SavedPositionY`) leyendo directamente la API de Windows.
 
 ## 3. Captura de frame
-1. `CaptureService.ExecuteAsync()` corre en loop.
+1. `DxgiCaptureService.ExecuteAsync()` corre en loop.
 2. Resuelve región con `GetCaptureRegion()` según `MonitorIndex`.
 3. Copia pantalla a `Bitmap`.
 4. Si corresponde, dibuja cursor.
-5. Codifica JPEG con `JpegQuality` configurado.
-6. Guarda bytes en `_currentFrame`.
+5. Publica `RawFrameAvailable` para H.264.
+6. Codifica JPEG solo si hay demanda de `/cap` o consumidores MJPEG.
+7. Guarda bytes en `_currentJpeg`.
 7. Espera `CaptureIntervalSeconds` antes del próximo frame.
 
 ## 4. Modo `WebImage`
@@ -69,11 +71,12 @@ En WebImage se bloquea drag/long-press nativo con:
 ## 5. Modo `Rtc`
 1. El navegador abre `/`.
 2. `IndexHandler` devuelve HTML generado por `RtcPageTemplate`.
-3. El JS crea `RTCPeerConnection` y `DataChannel` `frames`.
+3. El JS crea `RTCPeerConnection` y agrega transceiver `video` (recvonly).
 4. El cliente publica oferta SDP en `/webrtc/offer`.
 5. `WebRtcStreamService.CreateAnswerAsync(...)` devuelve la respuesta SDP.
-6. Cuando hay nuevos frames, el servicio los envía a peers conectados como metadata JSON + chunks binarios.
-7. El cliente rearma chunks y muestra el JPEG recibido.
+6. `H264EncoderService` codifica frames raw y publica NAL units.
+7. `WebRtcStreamService` envía H.264 por RTP VideoTrack.
+8. El cliente reproduce el stream en `<video>`.
 8. `object-fit` aplicado según `BrowserImageFit` (fill/cover/contain).
 
 ### Perfil de uso ideal
@@ -147,8 +150,8 @@ Todos los runtimes escuchan en el mismo proceso. Cada request HTTP:
 5. Se libera mutex/evento de instancia única.
 
 ## Decisiones de arquitectura visibles en los flujos
-- El frame base siempre sale de `CaptureService`; no hay captura separada por protocolo.
-- `WebImage` y `Rtc` comparten los mismos controles de intervalo (`CaptureIntervalSeconds`) y calidad JPEG (`JpegQuality`).
+- El frame base siempre sale de `DxgiCaptureService`; no hay captura separada por protocolo.
+- `WebImage` y `Rtc` comparten la misma captura base; H.264 usa `H264Framerate`/`H264BitrateKbps` y JPEG mantiene `CaptureIntervalSeconds`/`JpegQuality`.
 - Cada pantalla tiene puerto propio y runtime propio; el pattern se escala agregando más `ScreenRuntimeContext`.
 - El tray es la única interfaz de operación; el servidor web no expone panel administrativo.
 - `BrowserImageFit` se aplica en el CSS del HTML servido, no en el JPEG generado.
