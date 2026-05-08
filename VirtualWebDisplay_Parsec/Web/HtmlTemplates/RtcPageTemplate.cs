@@ -62,6 +62,7 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                         height: 100vh;
                         display: block;
                         background: #000;
+                        object-fit: {{browserImageFit}};
                     }
 
                     #mode {
@@ -92,8 +93,8 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                 </style>
             </head>
             <body>
-                <canvas id="screen"></canvas>
-                <div id="mode">WebRTC</div>
+                <video id="screen" autoplay playsinline muted></video>
+                <div id="mode">WebRTC H.264</div>
                 <div id="status">{{statusConnecting}}</div>
 
                 <!-- External JavaScript modules -->
@@ -115,9 +116,8 @@ public sealed class RtcPageTemplate : IHtmlTemplate
                     // Initialize WebRTC client
                     if (typeof WebRtcClient !== 'undefined') {
                         WebRtcClient.init({
-                            canvasId: 'screen',
+                            videoId: 'screen',
                             statusElementId: 'status',
-                            imageFit: '{{browserImageFit}}',
                             texts: {
                                 connecting: '{{statusConnecting}}',
                                 negotiating: '{{statusNegotiating}}',

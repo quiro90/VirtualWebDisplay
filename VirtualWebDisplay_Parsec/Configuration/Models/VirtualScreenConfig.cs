@@ -139,6 +139,18 @@ public sealed class VirtualScreenConfig
     /// </summary>
     public string BrowserImageFit { get; set; } = "contain";
 
+    /// <summary>
+    /// Target bitrate in kbps for the H.264 video stream (WebRTC VideoTrack mode).
+    /// Higher = better quality, more bandwidth. 0 = use default (2000 kbps).
+    /// </summary>
+    public int H264BitrateKbps { get; set; } = 2000;
+
+    /// <summary>
+    /// Target frame rate for the H.264 video stream (WebRTC VideoTrack mode).
+    /// 0 = use default (30 fps).
+    /// </summary>
+    public int H264Framerate { get; set; } = 30;
+
     public VirtualScreenConfig Clone() => new()
     {
         Enabled = Enabled,
@@ -166,7 +178,9 @@ public sealed class VirtualScreenConfig
         VirtualDisplayPlacement = VirtualDisplayPlacement,
         SavedPositionX = SavedPositionX,
         SavedPositionY = SavedPositionY,
-        BrowserImageFit = BrowserImageFit
+        BrowserImageFit = BrowserImageFit,
+        H264BitrateKbps = H264BitrateKbps,
+        H264Framerate = H264Framerate
     };
 
     public void CopyTo(VirtualScreenConfig target)
@@ -197,5 +211,7 @@ public sealed class VirtualScreenConfig
         target.SavedPositionX = SavedPositionX;
         target.SavedPositionY = SavedPositionY;
         target.BrowserImageFit = BrowserImageFit;
+        target.H264BitrateKbps = H264BitrateKbps;
+        target.H264Framerate = H264Framerate;
     }
 }

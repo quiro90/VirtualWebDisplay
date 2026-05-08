@@ -1,250 +1,149 @@
-/**
+﻿/**
  * Cliente WebRTC para VirtualWebDisplay.
- * Maneja la conexión peer-to-peer, recepción de frames chunkeados
- * y renderizado en canvas con modos de ajuste (fill/cover/contain).
- * 
+ * Recibe el stream H.264 del servidor a través de un VideoTrack RTP
+ * y lo muestra en un elemento <video> nativo.
+ *
  * @namespace WebRtcClient
  */
 (function(global) {
     'use strict';
 
-    // Logger especializado
     const log = global.Logger ? global.Logger.create('[WebRtcClient]') : {
-        info: console.log.bind(console, '[WebRtcClient]'),
-        warn: console.warn.bind(console, '[WebRtcClient]'),
+        info:  console.log.bind(console,   '[WebRtcClient]'),
+        warn:  console.warn.bind(console,  '[WebRtcClient]'),
         error: console.error.bind(console, '[WebRtcClient]'),
         debug: console.debug.bind(console, '[WebRtcClient]')
     };
 
-    /**
-     * Cliente WebRTC para streaming de frames JPEG.
-     */
     const WebRtcClient = {
-        // Configuración
         _config: null,
-        _canvas: null,
-        _ctx: null,
+        _videoElement: null,
         _statusElement: null,
-
-        // Estado de conexión
         _peerConnection: null,
-        _dataChannel: null,
+        _statsTimerId: null,
+        _reconnectTimerId: null,
+        _lastBytesReceived: 0,
+        _stalledIntervals: 0,
 
-        // Reensamblado de frames
-        _currentFrameId: -1,
-        _frameInfo: null,
-        _frameBuffers: [],
-        _receivedBytes: 0,
-
-        // Textos localizados
         _texts: {
-            connecting: 'Connecting...',
-            negotiating: 'Negotiating...',
-            connected: 'Connected',
+            connecting:           'Connecting...',
+            negotiating:          'Negotiating...',
+            connected:            'Connected',
             disconnectedRetrying: 'Disconnected, retrying...',
-            errorRetrying: 'Error, retrying...',
-            negotiationFailed: 'Negotiation failed',
-            viewerLimitFull: 'Viewer limit reached',
-            startFailed: 'Start failed'
+            errorRetrying:        'Error, retrying...',
+            negotiationFailed:    'Negotiation failed',
+            viewerLimitFull:      'Viewer limit reached',
+            startFailed:          'Start failed'
         },
 
         /**
-         * Inicializa el cliente WebRTC.
-         * @param {Object} config - Configuración del cliente
-         * @param {string} config.canvasId - ID del elemento canvas
-         * @param {string} [config.statusElementId] - ID del elemento de estado
-         * @param {string} [config.imageFit='cover'] - Modo de ajuste (fill/cover/contain)
-         * @param {Object} [config.texts] - Textos localizados para estados
+         * Initializes the WebRTC client.
+         * @param {Object} config
+         * @param {string} config.videoId           - ID of the <video> element
+         * @param {string} [config.statusElementId] - ID of the status label
+         * @param {Object} [config.texts]           - Localized status strings
          */
         init(config) {
-            if (!config || !config.canvasId) {
-                log.error('Configuration error: canvasId is required');
+            if (!config || !config.videoId) {
+                log.error('Configuration error: videoId is required');
                 return;
             }
 
             this._config = config;
-            this._canvas = document.getElementById(config.canvasId);
+            this._videoElement = document.getElementById(config.videoId);
 
-            if (!this._canvas) {
-                log.error('Canvas element not found:', config.canvasId);
+            if (!this._videoElement) {
+                log.error('Video element not found:', config.videoId);
                 return;
             }
-
-            this._ctx = this._canvas.getContext('2d');
 
             if (config.statusElementId) {
                 this._statusElement = document.getElementById(config.statusElementId);
             }
 
-            // Aplicar textos localizados si existen
             if (config.texts) {
                 Object.assign(this._texts, config.texts);
             }
 
-            // Configurar listeners de resize
-            window.addEventListener('resize', () => this._syncCanvasSize());
-            this._syncCanvasSize();
+            this._videoElement.addEventListener('loadedmetadata', () => {
+                log.info('Video metadata loaded', {
+                    width: this._videoElement.videoWidth,
+                    height: this._videoElement.videoHeight
+                });
+            });
 
-            // Iniciar conexión
             this._connect();
 
-            log.info('Initialized', {
-                canvasId: config.canvasId,
-                imageFit: config.imageFit || 'cover'
-            });
+            log.info('Initialized', { videoId: config.videoId });
         },
 
-        /**
-         * Establece el texto de estado.
-         * @private
-         */
         _setStatus(text) {
-            if (this._statusElement) {
-                this._statusElement.textContent = text;
-            }
+            if (this._statusElement) this._statusElement.textContent = text;
         },
 
-        /**
-         * Sincroniza el tamaño del canvas con la ventana.
-         * @private
-         */
-        _syncCanvasSize() {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            if (this._canvas.width !== w || this._canvas.height !== h) {
-                this._canvas.width = w;
-                this._canvas.height = h;
-            }
-        },
-
-        /**
-         * Espera a que la recolección ICE esté completa.
-         * @private
-         */
         _waitForIceGatheringComplete(pc) {
-            if (pc.iceGatheringState === 'complete') {
-                return Promise.resolve();
-            }
-
+            if (pc.iceGatheringState === 'complete') return Promise.resolve();
             return new Promise((resolve) => {
-                const checkState = () => {
+                const check = () => {
                     if (pc.iceGatheringState === 'complete') {
-                        pc.removeEventListener('icegatheringstatechange', checkState);
+                        pc.removeEventListener('icegatheringstatechange', check);
                         resolve();
                     }
                 };
-
-                pc.addEventListener('icegatheringstatechange', checkState);
+                pc.addEventListener('icegatheringstatechange', check);
             });
         },
 
-        /**
-         * Resetea el ensamblado de frames.
-         * @private
-         */
-        _resetFrameAssembly(meta) {
-            this._currentFrameId = meta.id;
-            this._frameInfo = meta;
-            this._frameBuffers = [];
-            this._receivedBytes = 0;
-        },
-
-        /**
-         * Dibuja una imagen en el canvas con el modo de ajuste configurado.
-         * @private
-         */
-        _drawFit(bitmap) {
-            const cw = this._canvas.width;
-            const ch = this._canvas.height;
-            const bw = bitmap.width;
-            const bh = bitmap.height;
-            const fit = this._config.imageFit || 'cover';
-
-            this._ctx.clearRect(0, 0, cw, ch);
-
-            if (fit === 'fill') {
-                this._ctx.drawImage(bitmap, 0, 0, cw, ch);
-            } else if (fit === 'cover') {
-                const scale = Math.max(cw / bw, ch / bh);
-                const sw = bw * scale;
-                const sh = bh * scale;
-                this._ctx.drawImage(bitmap, (cw - sw) / 2, (ch - sh) / 2, sw, sh);
-            } else {
-                // contain
-                const scale = Math.min(cw / bw, ch / bh);
-                const sw = bw * scale;
-                const sh = bh * scale;
-                this._ctx.drawImage(bitmap, (cw - sw) / 2, (ch - sh) / 2, sw, sh);
-            }
-        },
-
-        /**
-         * Aplica un frame completo al canvas.
-         * @private
-         */
-        _applyFrame(bytes) {
-            createImageBitmap(new Blob([bytes], { type: 'image/jpeg' }))
-                .then((bitmap) => {
-                    this._syncCanvasSize();
-                    this._drawFit(bitmap);
-                    bitmap.close();
-                });
-        },
-
-        /**
-         * Conecta al servidor WebRTC.
-         * @private
-         */
         async _connect() {
             try {
-                this._setStatus(this._texts.negotiating);
+                this._cleanupPeerConnection();
+                this._setStatus(this._texts.connecting);
 
                 const pc = new RTCPeerConnection({ iceServers: [] });
                 this._peerConnection = pc;
+                this._lastBytesReceived = 0;
+                this._stalledIntervals = 0;
 
-                const channel = pc.createDataChannel('frames', { 
-                    ordered: false, 
-                    maxRetransmits: 0 
-                });
-                channel.binaryType = 'arraybuffer';
-                this._dataChannel = channel;
+                pc.addTransceiver('video', { direction: 'recvonly' });
 
-                // Configurar handlers del canal
-                channel.onopen = () => {
-                    this._setStatus(this._texts.connected);
-                };
+                pc.ontrack = (event) => {
+                    if (event.track.kind === 'video') {
+                        event.track.onunmute = () => log.info('Video track unmuted');
+                        event.track.onmute = () => log.warn('Video track muted');
 
-                channel.onclose = () => {
-                    this._setStatus(this._texts.disconnectedRetrying);
-                    setTimeout(() => this._connect(), 1500);
-                };
-
-                channel.onerror = () => {
-                    this._setStatus(this._texts.errorRetrying);
-                };
-
-                channel.onmessage = (event) => this._handleMessage(event);
-
-                pc.onconnectionstatechange = () => {
-                    if (pc.connectionState === 'failed' || 
-                        pc.connectionState === 'disconnected' || 
-                        pc.connectionState === 'closed') {
-                        this._setStatus(this._texts.disconnectedRetrying);
+                        this._videoElement.srcObject = event.streams[0] ?? new MediaStream([event.track]);
+                        this._videoElement.play().catch(() => {});
+                        this._setStatus(this._texts.connected);
+                        log.info('Video track attached');
                     }
                 };
 
-                // Crear offer
+                pc.onconnectionstatechange = () => {
+                    log.debug('Connection state:', pc.connectionState);
+                    if (pc.connectionState === 'failed' ||
+                        pc.connectionState === 'disconnected' ||
+                        pc.connectionState === 'closed') {
+                        this._setStatus(this._texts.disconnectedRetrying);
+                        this._scheduleReconnect(1500);
+                    }
+                };
+
+                pc.oniceconnectionstatechange = () => {
+                    log.debug('ICE state:', pc.iceConnectionState);
+                };
+
+                this._setStatus(this._texts.negotiating);
+
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 await this._waitForIceGatheringComplete(pc);
 
-                // Enviar offer al servidor
                 const response = await fetch('/webrtc/offer', {
-                    method: 'POST',
+                    method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        sdp: pc.localDescription.sdp, 
-                        type: pc.localDescription.type 
+                    body:    JSON.stringify({
+                        sdp:  pc.localDescription.sdp,
+                        type: pc.localDescription.type
                     })
                 });
 
@@ -262,73 +161,93 @@
                 const answer = await response.json();
                 await pc.setRemoteDescription(answer);
 
+                this._startStatsLoop(pc);
+
             } catch (error) {
                 log.error('Connection error:', error);
                 this._setStatus(this._texts.startFailed);
-                setTimeout(() => this._connect(), 2000);
+                this._scheduleReconnect(2000);
             }
         },
 
-        /**
-         * Maneja mensajes del DataChannel.
-         * @private
-         */
-        _handleMessage(event) {
-            // Metadatos JSON
-            if (typeof event.data === 'string') {
+        _scheduleReconnect(delayMs) {
+            if (this._reconnectTimerId) {
+                clearTimeout(this._reconnectTimerId);
+            }
+            this._reconnectTimerId = setTimeout(() => {
+                this._reconnectTimerId = null;
+                this._connect();
+            }, delayMs);
+        },
+
+        _cleanupPeerConnection() {
+            if (this._statsTimerId) {
+                clearInterval(this._statsTimerId);
+                this._statsTimerId = null;
+            }
+
+            if (this._peerConnection) {
+                try { this._peerConnection.close(); } catch (_) {}
+                this._peerConnection = null;
+            }
+        },
+
+        _startStatsLoop(pc) {
+            if (this._statsTimerId) {
+                clearInterval(this._statsTimerId);
+            }
+
+            this._statsTimerId = setInterval(async () => {
+                if (this._peerConnection !== pc) return;
+
                 try {
-                    const meta = JSON.parse(event.data);
-                    if (meta.type === 'frame' && meta.size > 0) {
-                        this._resetFrameAssembly(meta);
+                    const stats = await pc.getStats();
+                    let inboundVideo = null;
+
+                    stats.forEach((report) => {
+                        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                            inboundVideo = report;
+                        }
+                    });
+
+                    if (!inboundVideo) {
+                        log.warn('No inbound-rtp video stats yet');
+                        return;
                     }
-                } catch (e) {
-                    // Ignorar JSON inválido
+
+                    const bytes = inboundVideo.bytesReceived || 0;
+                    const framesDecoded = inboundVideo.framesDecoded || 0;
+                    const packetsLost = inboundVideo.packetsLost || 0;
+                    const framesPerSecond = inboundVideo.framesPerSecond || 0;
+
+                    if (bytes <= this._lastBytesReceived) {
+                        this._stalledIntervals++;
+                    } else {
+                        this._stalledIntervals = 0;
+                    }
+
+                    this._lastBytesReceived = bytes;
+
+                    log.info('RTC stats', {
+                        bytesReceived: bytes,
+                        framesDecoded,
+                        framesPerSecond,
+                        packetsLost,
+                        stalledIntervals: this._stalledIntervals
+                    });
+
+                    if (this._stalledIntervals >= 4 && pc.connectionState === 'connected') {
+                        log.warn('RTC appears stalled while connected; reconnecting');
+                        this._setStatus(this._texts.errorRetrying);
+                        this._scheduleReconnect(800);
+                    }
+                } catch (error) {
+                    log.warn('Error reading RTC stats', error);
                 }
-                return;
-            }
-
-            // Chunks binarios
-            if (!this._frameInfo) {
-                return;
-            }
-
-            const data = new Uint8Array(event.data);
-            if (data.length < 4) {
-                return;
-            }
-
-            // Leer frameId (little-endian)
-            const chunkFrameId = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-            if (chunkFrameId !== this._currentFrameId) {
-                return;
-            }
-
-            const chunk = data.subarray(4);
-            this._frameBuffers.push(chunk);
-            this._receivedBytes += chunk.byteLength;
-
-            if (this._receivedBytes < this._frameInfo.size) {
-                return;
-            }
-
-            // Frame completo, reensamblar
-            const completedFrame = new Uint8Array(this._frameInfo.size);
-            let offset = 0;
-            for (let i = 0; i < this._frameBuffers.length; i++) {
-                completedFrame.set(this._frameBuffers[i], offset);
-                offset += this._frameBuffers[i].byteLength;
-            }
-
-            this._applyFrame(completedFrame);
-
-            // Limpiar estado
-            this._frameInfo = null;
-            this._frameBuffers = [];
-            this._receivedBytes = 0;
+            }, 2000);
         }
     };
 
-    // Exponer al scope global
     global.WebRtcClient = WebRtcClient;
 
 })(window);

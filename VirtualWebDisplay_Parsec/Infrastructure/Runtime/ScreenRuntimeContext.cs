@@ -22,8 +22,12 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         DisplayName = displayName;
         Config = config;
         DisplayManager = new VirtualDisplayManager(driverVerifier);
-        CaptureService = new CaptureService(config, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<CaptureService>());
-        WebRtcStreamService = new WebRtcStreamService(CaptureService, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<WebRtcStreamService>());
+        _dxgiCaptureService = new DxgiCaptureService(
+            config,
+            (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<DxgiCaptureService>(),
+            () => DisplayManager.WindowsDeviceName);
+        _h264Encoder = new H264EncoderService(_dxgiCaptureService, config, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<H264EncoderService>());
+        WebRtcStreamService = new WebRtcStreamService(_h264Encoder, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<WebRtcStreamService>());
         SecurityGate = new ScreenSecurityGate(config.ScreenSecurityEnabled);
         ViewerLimiter = new ViewerLimiter(config.MaxViewers);
         ViewerLimiter.GetWebRtcCount = () => WebRtcStreamService.ActivePeerCount;
@@ -36,7 +40,9 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
     public string DisplayName { get; }
     public VirtualScreenConfig Config { get; }
     public VirtualDisplayManager DisplayManager { get; }
-    public CaptureService CaptureService { get; }
+    internal IFrameSource FrameSource => _dxgiCaptureService;
+    private readonly DxgiCaptureService _dxgiCaptureService;
+    private readonly H264EncoderService _h264Encoder;
     public WebRtcStreamService WebRtcStreamService { get; }
     public ScreenSecurityGate SecurityGate { get; }
     public ViewerLimiter ViewerLimiter { get; }
@@ -46,7 +52,8 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await CaptureService.StartAsync(cancellationToken);
+        await _dxgiCaptureService.StartAsync(cancellationToken);
+        await _h264Encoder.StartAsync(cancellationToken);
         await WebRtcStreamService.StartAsync(cancellationToken);
     }
 
@@ -59,7 +66,8 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
     public void Dispose()
     {
         WebRtcStreamService.Dispose();
-        CaptureService.Dispose();
+        _h264Encoder.Dispose();
+        _dxgiCaptureService.Dispose();
         DisplayManager.Dispose();
     }
 
@@ -75,7 +83,15 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
 
         try
         {
-            await CaptureService.StopAsync(CancellationToken.None);
+            await _h264Encoder.StopAsync(CancellationToken.None);
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            await _dxgiCaptureService.StopAsync(CancellationToken.None);
         }
         catch
         {

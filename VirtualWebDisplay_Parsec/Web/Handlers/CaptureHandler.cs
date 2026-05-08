@@ -29,7 +29,7 @@ internal static class CaptureHandler
                     statusCode: StatusCodes.Status429TooManyRequests);
         }
 
-        var frame = runtime.CaptureService.GetCurrentFrame();
+        var frame = runtime.FrameSource.GetCurrentJpegFrame();
         if (frame.Length == 0)
             return Results.StatusCode((int)HttpStatusCode.ServiceUnavailable);
 
@@ -68,7 +68,7 @@ internal static class CaptureHandler
 
             while (!token.IsCancellationRequested)
             {
-                var frame = runtime.CaptureService.GetCurrentFrame();
+                var frame = runtime.FrameSource.GetCurrentJpegFrame();
                 if (frame.Length == 0 || ReferenceEquals(frame, lastFrame))
                 {
                     await Task.Delay(10, token);

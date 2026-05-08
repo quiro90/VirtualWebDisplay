@@ -1,75 +1,107 @@
-﻿﻿﻿﻿using Microsoft.Extensions.Hosting;
+﻿﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SIPSorcery.Net;
-using System.Buffers;
+using SIPSorceryMedia.Abstractions;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Threading;
 using VirtualWebDisplay.Streaming.Models;
 
 namespace VirtualWebDisplay.Streaming;
 
+/// <summary>
+/// Manages WebRTC peer connections and streams encoded H.264 video to each peer
+/// using a native VideoTrack (RTP). Replaces the previous DataChannel-JPEG approach.
+///
+/// Each browser peer receives the same NAL units produced by <see cref="H264EncoderService"/>.
+/// The pipeline is: DxgiCaptureService → H264EncoderService → WebRtcStreamService → browser.
+/// </summary>
 public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 {
-    private const int MaxChunkSize = 64 * 1024;
-    private const int MaxBufferedAmount = 512 * 1024;
-    private static readonly RTCConfiguration PeerConfiguration = new();
+    // H.264 clock rate is always 90 000 Hz per RFC 6184.
+    private const int H264ClockRate = 90_000;
 
-    private readonly CaptureService _captureService;
+    // Dynamic payload type in range 96–127 for H.264 (common convention).
+    private const int H264PayloadTypeId = 96;
+
+    private static readonly RTCConfiguration PeerConfiguration = new();
+    private static readonly VideoFormat H264Format =
+        new(VideoCodecsEnum.H264, H264PayloadTypeId, H264ClockRate,
+            "level-asymmetry-allowed=1;packetization-mode=1");
+
+    private readonly H264EncoderService _encoder;
     private readonly ILogger<WebRtcStreamService> _logger;
     private readonly ConcurrentDictionary<Guid, PeerState> _peers = new();
-    private uint _frameId;
 
-    public WebRtcStreamService(CaptureService captureService, ILogger<WebRtcStreamService> logger)
+    // Temporary diagnostics (periodic logs to avoid per-frame noise).
+    private const double StatsLogIntervalSeconds = 5.0;
+    private long _statsWindowStartTicks = Stopwatch.GetTimestamp();
+    private long _statsNalCount;
+    private long _statsNalBytes;
+    private long _statsSendOps;
+    private long _statsSendFailures;
+
+    internal WebRtcStreamService(H264EncoderService encoder, ILogger<WebRtcStreamService> logger)
     {
-        _captureService = captureService;
-        _logger = logger;
+        _encoder = encoder;
+        _logger  = logger;
     }
 
     public int ActivePeerCount => _peers.Count;
 
+    /// <summary>
+    /// Processes a WebRTC offer from the browser and returns the SDP answer.
+    /// A local H.264 video track is added before the answer is generated so that
+    /// the SDP negotiation includes the video m-line.
+    /// </summary>
     public async Task<WebRtcSessionAnswer> CreateAnswerAsync(WebRtcSessionOffer offer, CancellationToken cancellationToken)
     {
-        var peerId = Guid.NewGuid();
-        var peerConnection = new RTCPeerConnection(PeerConfiguration);
-        var iceGatheringComplete = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        RTCDataChannel? framesChannel = null;
+        var peerId           = Guid.NewGuid();
+        var peerConnection   = new RTCPeerConnection(PeerConfiguration);
+        var iceGatheringDone = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        _logger.LogInformation(
+            "WebRTC offer received for peer {PeerId}. SDP length={SdpLength}, active peers={PeerCount}.",
+            peerId,
+            offer.Sdp?.Length ?? 0,
+            _peers.Count);
+
+        // Add a send-only H.264 video track before the answer is created.
+        var videoTrack = new MediaStreamTrack(H264Format, MediaStreamStatusEnum.SendOnly);
+        peerConnection.addTrack(videoTrack);
 
         peerConnection.onicecandidate += candidate =>
         {
             if (candidate is null || string.IsNullOrWhiteSpace(candidate.candidate))
-                iceGatheringComplete.TrySetResult(true);
-        };
-
-        peerConnection.ondatachannel += channel =>
-        {
-            if (!string.Equals(channel.label, "frames", StringComparison.OrdinalIgnoreCase) || framesChannel is not null)
-                return;
-
-            framesChannel = channel;
-            channel.onclose += () => RemovePeer(peerId);
+                iceGatheringDone.TrySetResult(true);
         };
 
         peerConnection.onconnectionstatechange += state =>
         {
+            _logger.LogDebug("Peer {PeerId} connection state: {State}.", peerId, state);
             if (state is RTCPeerConnectionState.closed or RTCPeerConnectionState.failed or RTCPeerConnectionState.disconnected)
                 RemovePeer(peerId);
         };
 
         peerConnection.oniceconnectionstatechange += state =>
         {
+            _logger.LogDebug("Peer {PeerId} ICE state: {State}.", peerId, state);
             if (state is RTCIceConnectionState.closed or RTCIceConnectionState.failed or RTCIceConnectionState.disconnected)
                 RemovePeer(peerId);
         };
 
-        var setRemoteDescriptionResult = peerConnection.setRemoteDescription(new RTCSessionDescriptionInit
+        var setResult = peerConnection.setRemoteDescription(new RTCSessionDescriptionInit
         {
             type = RTCSdpType.offer,
-            sdp = offer.Sdp,
+            sdp  = offer.Sdp,
         });
 
-        if (!string.Equals(setRemoteDescriptionResult.ToString(), "OK", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(setResult.ToString(), "OK", StringComparison.OrdinalIgnoreCase))
         {
+            _logger.LogWarning("Failed to apply WebRTC offer for peer {PeerId}: {Result}.", peerId, setResult);
             peerConnection.close();
-            throw new InvalidOperationException($"Failed to apply the WebRTC offer ({setRemoteDescriptionResult}).");
+            throw new InvalidOperationException($"Failed to apply the WebRTC offer ({setResult}).");
         }
 
         var answer = peerConnection.createAnswer(null);
@@ -77,63 +109,108 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 
         try
         {
-            await iceGatheringComplete.Task.WaitAsync(TimeSpan.FromSeconds(2), cancellationToken);
+            await iceGatheringDone.Task.WaitAsync(TimeSpan.FromSeconds(2), cancellationToken);
         }
         catch (TimeoutException)
         {
+            // Continue with whatever candidates were gathered.
         }
 
-        _peers[peerId] = new PeerState(peerConnection, () => framesChannel);
+        string localSdp = peerConnection.localDescription?.sdp?.ToString() ?? answer.sdp ?? string.Empty;
+        int negotiatedPayloadType = ResolveH264PayloadType(localSdp, H264PayloadTypeId);
+        _peers[peerId] = new PeerState(peerConnection, negotiatedPayloadType);
 
-        var localSdp = peerConnection.localDescription?.sdp?.ToString() ?? answer.sdp;
+        _logger.LogInformation(
+            "WebRTC answer created for peer {PeerId}. Local SDP length={SdpLength}, H264 payloadType={PayloadType}, active peers={PeerCount}.",
+            peerId,
+            localSdp.Length,
+            negotiatedPayloadType,
+            _peers.Count);
         return new WebRtcSessionAnswer(localSdp, "answer", peerId.ToString("N"));
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    private static int ResolveH264PayloadType(string sdp, int fallbackPayloadType)
     {
-        byte[]? lastFrame = null;
+        if (string.IsNullOrWhiteSpace(sdp))
+            return fallbackPayloadType;
 
-        while (!stoppingToken.IsCancellationRequested)
+        // Prefer explicit H264 rtpmap in the negotiated local SDP.
+        var h264Map = Regex.Match(sdp, @"a=rtpmap:(\d+)\s+H264/90000", RegexOptions.IgnoreCase);
+        if (h264Map.Success && int.TryParse(h264Map.Groups[1].Value, out var payloadType))
+            return payloadType;
+
+        return fallbackPayloadType;
+    }
+
+    /// <summary>
+    /// Subscribes to <see cref="H264EncoderService.NalUnitReady"/> and forwards each
+    /// NAL unit to all connected peers via RTP.
+    /// </summary>
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _encoder.NalUnitReady += OnNalUnitReady;
+        stoppingToken.Register(() => _encoder.NalUnitReady -= OnNalUnitReady);
+        return Task.CompletedTask;
+    }
+
+    private void OnNalUnitReady(byte[] nalBytes, long timestampUs)
+    {
+        if (_peers.IsEmpty) return;
+
+        Interlocked.Increment(ref _statsNalCount);
+        Interlocked.Add(ref _statsNalBytes, nalBytes.Length);
+
+        foreach (var entry in _peers)
         {
-            try
-            {
-                // Poll at a short interval so new frames are dispatched within ~10 ms
-                // of being produced by CaptureService, regardless of the configured
-                // capture interval. The actual frame-rate cap is enforced by CaptureService.
-                if (_peers.Count > 0)
-                {
-                    var frame = _captureService.GetCurrentFrame();
-                    if (frame.Length > 0 && !ReferenceEquals(frame, lastFrame))
-                    {
-                        lastFrame = frame;
-                        var frameId = ++_frameId;
-                        foreach (var peerEntry in _peers.ToArray())
-                            peerEntry.Value.TrySendFrame(frame, frameId);
-                    }
-                }
-
-                await Task.Delay(10, stoppingToken);
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error dispatching WebRTC frame.");
-                await Task.Delay(100, stoppingToken);
-            }
+            if (entry.Value.TrySendNal(nalBytes, timestampUs))
+                Interlocked.Increment(ref _statsSendOps);
+            else
+                Interlocked.Increment(ref _statsSendFailures);
         }
+
+        LogForwardingStatsIfNeeded();
+    }
+
+    private void LogForwardingStatsIfNeeded()
+    {
+        var nowTicks = Stopwatch.GetTimestamp();
+        var startTicks = Volatile.Read(ref _statsWindowStartTicks);
+        double elapsedSeconds = (nowTicks - startTicks) / (double)Stopwatch.Frequency;
+        if (elapsedSeconds < StatsLogIntervalSeconds)
+            return;
+
+        if (Interlocked.CompareExchange(ref _statsWindowStartTicks, nowTicks, startTicks) != startTicks)
+            return;
+
+        long nalCount = Interlocked.Exchange(ref _statsNalCount, 0);
+        long nalBytes = Interlocked.Exchange(ref _statsNalBytes, 0);
+        long sendOps = Interlocked.Exchange(ref _statsSendOps, 0);
+        long sendFailures = Interlocked.Exchange(ref _statsSendFailures, 0);
+
+        double kbps = elapsedSeconds > 0 ? (nalBytes * 8.0 / 1000.0) / elapsedSeconds : 0;
+        long avgNal = nalCount > 0 ? nalBytes / nalCount : 0;
+
+        _logger.LogInformation(
+            "WebRTC forwarding stats ({Seconds:F1}s): peers={Peers}, nals={Nals}, avgNalBytes={AvgNal}, bitrateKbps={Kbps:F1}, sendOps={SendOps}, sendFailures={SendFailures}.",
+            elapsedSeconds,
+            _peers.Count,
+            nalCount,
+            avgNal,
+            kbps,
+            sendOps,
+            sendFailures);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        _encoder.NalUnitReady -= OnNalUnitReady;
         CloseAllPeers();
         await base.StopAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
     {
+        _encoder.NalUnitReady -= OnNalUnitReady;
         CloseAllPeers();
         await base.StopAsync(CancellationToken.None);
         base.Dispose();
@@ -150,68 +227,59 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         if (!_peers.TryRemove(peerId, out var peerState))
             return;
 
-        try
-        {
-            peerState.Dispose();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Error closing WebRTC peer {PeerId}.", peerId);
-        }
+        try { peerState.Dispose(); }
+        catch (Exception ex) { _logger.LogWarning(ex, "Error closing WebRTC peer {PeerId}.", peerId); }
+
+        _logger.LogInformation("WebRTC peer removed {PeerId}. Active peers={PeerCount}.", peerId, _peers.Count);
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
     private sealed class PeerState : IDisposable
     {
         private readonly RTCPeerConnection _peerConnection;
-        private readonly Func<RTCDataChannel?> _channelAccessor;
+        private readonly int _payloadTypeId;
+        private bool _hasBaseTimestamp;
+        private long _baseCaptureTimestampUs;
+        private uint _baseRtpTimestamp;
 
-        public PeerState(RTCPeerConnection peerConnection, Func<RTCDataChannel?> channelAccessor)
+        public PeerState(RTCPeerConnection peerConnection, int payloadTypeId)
         {
             _peerConnection = peerConnection;
-            _channelAccessor = channelAccessor;
+            _payloadTypeId  = payloadTypeId;
         }
 
-        public bool TrySendFrame(byte[] frame, uint frameId)
+        /// <summary>
+        /// Sends one H.264 Access Unit (one or more NALs) via the RTP VideoStream.
+        /// The VideoStream packetises into FU-A / STAP-A automatically.
+        /// </summary>
+        public bool TrySendNal(byte[] accessUnit, long captureTimestampUs)
         {
-            var channel = _channelAccessor();
-            if (channel is null || channel.readyState != RTCDataChannelState.open)
-                return false;
-
-            // Skip frame if send buffer is growing to avoid queuing stale frames.
-            if (channel.bufferedAmount > MaxBufferedAmount)
-                return false;
-
-            channel.send($"{{\"type\":\"frame\",\"id\":{frameId},\"size\":{frame.Length}}}");
-
-            // Prepend 4-byte little-endian frameId to each binary chunk so the
-            // client can discard chunks that belong to a superseded frame.
-            // Rent buffers from ArrayPool to avoid per-chunk heap allocations at ~30fps.
-            var idBytes = BitConverter.GetBytes(frameId);
-            for (var offset = 0; offset < frame.Length; offset += MaxChunkSize)
+            try
             {
-                var chunkLength = Math.Min(MaxChunkSize, frame.Length - offset);
-                var chunkSize   = 4 + chunkLength;
-                var chunk       = ArrayPool<byte>.Shared.Rent(chunkSize);
-                try
+                var videoStream = _peerConnection.VideoStream;
+                if (videoStream is null) return false;
+
+                if (!_hasBaseTimestamp)
                 {
-                    Buffer.BlockCopy(idBytes, 0, chunk, 0, 4);
-                    Buffer.BlockCopy(frame, offset, chunk, 4, chunkLength);
-                    // send(byte[]) serializes the payload immediately — safe to return the buffer after the call.
-                    // Slice only when the rented buffer is larger than needed (e.g. last partial chunk).
-                    channel.send(chunkSize == chunk.Length ? chunk : chunk[..chunkSize]);
+                    _baseCaptureTimestampUs = captureTimestampUs;
+                    _baseRtpTimestamp = (uint)Random.Shared.Next(0, int.MaxValue);
+                    _hasBaseTimestamp = true;
                 }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(chunk);
-                }
+
+                long elapsedUs = Math.Max(0, captureTimestampUs - _baseCaptureTimestampUs);
+                uint rtpTimestamp = _baseRtpTimestamp + (uint)((elapsedUs * H264ClockRate) / 1_000_000L);
+
+                videoStream.SendH264Frame(rtpTimestamp, _payloadTypeId, accessUnit);
+                return true;
             }
-
-            return true;
+            catch
+            {
+                // Peer may have disconnected mid-send; the state-change event will clean up.
+                return false;
+            }
         }
 
-        public void Dispose()
-        {
-            _peerConnection.close();
-        }
+        public void Dispose() => _peerConnection.close();
     }
 }
+
