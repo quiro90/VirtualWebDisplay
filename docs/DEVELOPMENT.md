@@ -428,7 +428,7 @@ Ver sección "Extensibilidad" en **ARCHITECTURE.md**.
 
 - **Clases**: PascalCase (`VirtualDisplayManager`)
 - **Métodos**: PascalCase (`CreateRuntimeAsync`)
-- **Propiedades**: PascalCase (`CaptureIntervalMs`)
+- **Propiedades**: PascalCase (`CaptureIntervalSeconds`)
 - **Parámetros**: camelCase (`screenConfig`)
 - **Campos privados**: camelCase con `_` prefix (`_dxgiCaptureService`)
 - **Constantes**: PascalCase (`DefaultJpegQuality`)
@@ -695,10 +695,10 @@ public async Task EndToEnd_CreateVirtualDisplay_CaptureFrame_Success()
 **Diagnóstico**:
 - Poner breakpoint en `DxgiCaptureService.ExecuteAsync` (captura) y `H264EncoderService.EncodeLoopAsync` (codificación)
 - Verificar que `_hasFrameChanged` es `true`
-- Revisar configuración `CaptureIntervalMs` no sea extremadamente alta
+- Revisar configuración `CaptureIntervalSeconds` no sea extremadamente bajo (ej: 0.01 = 100ms = 10 FPS mínimo)
 
 **Solución**:
-- Reducir `CaptureIntervalMs` a 50ms (default)
+- Reducir `CaptureIntervalSeconds` a 0.033 (~30 FPS, default)
 - Verificar que pantalla virtual tiene contenido visible (no pantalla negra)
 - Probar deshabilitar "Detect Changes" temporalmente (forzar codificación siempre)
 
@@ -715,7 +715,7 @@ public async Task EndToEnd_CreateVirtualDisplay_CaptureFrame_Success()
 
 **Solución**:
 - Reducir resolución a 1920x1080 o 1280x720
-- Aumentar `CaptureIntervalMs` a 100-200ms (10-5 FPS)
+- Aumentar `CaptureIntervalSeconds` a 0.1-0.2 (~10-5 FPS)
 - Reducir `JpegQuality` a 60-70
 - En modo WebRTC, ajustar `H264Framerate` y `H264BitrateKbps` según el dispositivo destino
 

@@ -311,7 +311,7 @@ Si el loop se está interrumpiendo, puede deberse a:
 
 **Síntoma**: La captura muestra escritorio principal u otro contenido en lugar de la pantalla virtual.
 
-**Causa**: `CaptureService` está usando bounds incorrectos.
+**Causa**: `DxgiCaptureService` está usando bounds incorrectos.
 
 **Diagnóstico**:
 
@@ -542,33 +542,42 @@ Si retorna error 500:
 
 **Síntoma**: Conexión WebRTC se establece (console muestra "Connected"), pero imagen no aparece.
 
-**Diagnóstico 1 - Verificar DataChannel**:
+**Diagnóstico 1 - Verificar VideoTrack**:
 
-En DevTools Console:
+En DevTools Console, verificar que el video element está recibiendo stream:
 ```javascript
-dataChannel.readyState
-// Debe ser: "open"
+videoElement.srcObject.getTracks().forEach(track => {
+   console.log(`Track: ${track.kind}, State: ${track.readyState}`);
+});
+// Debe mostrar: "video", "live"
 ```
 
-Si es "connecting" o "closed":
-- Problema de negociación de DataChannel
+Si track está "ended" o no aparece:
+- Problema de negociación de VideoTrack
 - Firewall bloqueando protocolo
+- Servidor no envía H.264 frames correctamente
 
-**Diagnóstico 2 - Verificar Eventos de DataChannel**:
+**Diagnóstico 2 - Verificar Eventos de VideoTrack**:
 
 ```javascript
-dataChannel.onopen = () => console.log("DataChannel opened!");
-dataChannel.onerror = (error) => console.error("DataChannel error:", error);
-dataChannel.onmessage = (event) => console.log("Message received:", event.data);
+peerConnection.ontrack = (event) => {
+   console.log("Track recibido:", event.track.kind);
+   videoElement.srcObject = event.streams[0];
+};
+
+peerConnection.onconnectionstatechange = () => {
+   console.log("Conexión:", peerConnection.connectionState);
+};
 ```
 
-Si `onmessage` nunca se dispara:
-- Servidor no está enviando frames
-- Problema en `WebRtcStreamService`
+Si `ontrack` nunca se dispara:
+- Servidor no está enviando VideoTrack con H.264
+- Problema en `WebRtcStreamService` con transmisión de H.264
+- Problema en `H264EncoderService` (no genera frames)
 
 **Solución**:
 
-1. Verificar que `CaptureService` está capturando frames:
+1. Verificar que `DxgiCaptureService` está capturando frames:
    ```
    GET https://localhost:5001/cap/{token}
    ```
@@ -669,18 +678,20 @@ Latencia >100ms es anómala para WebRTC.
 }
 ```
 
-**Causa Posible 3**: DataChannel configurado con retransmisión.
+**Causa Posible 3**: Encoder H.264 no está generando frames.
 
 **Solución**:
 
-Verificar en `WebRtcStreamService.cs`:
-```csharp
-new RTCDataChannelInit
-{
-    ordered = false,       // ✅ Debe ser false
-    maxRetransmits = 0     // ✅ Debe ser 0
-}
+Verificar en logs de aplicación que `H264EncoderService` está activo:
 ```
+[INFO] H264EncoderService: Iniciando encoder...
+[INFO] H264EncoderService: Encoder seleccionado: NVENC (NVIDIA)
+[INFO] WebRtcStreamService: VideoTrack enviando NAL units...
+```
+
+Si no ves estos logs:
+- `H264EncoderService` no inicializó correctamente
+- GPU no soporta NVENC/AMF (verificar que fallback a libx264 funciona)
 
 ---
 

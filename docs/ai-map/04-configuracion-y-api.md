@@ -118,7 +118,7 @@ El servidor compara el segment con `runtime.CapToken` mediante `StringComparison
 Requiere autenticación previa cuando `ScreenSecurityEnabled=true`.
 
 ### `GET /mjpeg`
-Stream multipart MJPEG continuo. Comparte el frame de `CaptureService`.
+Stream multipart MJPEG continuo. Comparte el frame de `DxgiCaptureService`.
 
 Requiere autenticación previa cuando `ScreenSecurityEnabled=true`.
 
@@ -263,7 +263,7 @@ Las siguientes claves fueron eliminadas de los archivos `.resx` por no tener uso
 - **captura o cursor** -> `CaptureService.cs`
 - **negociación WebRTC** -> `WebRtcStreamService.cs` y `UI/HtmlTemplates/RtcPageTemplate.cs`
 - **HTML servido al navegador / ajuste visual** -> `UI/HtmlTemplates/WebImagePageTemplate.cs` y `UI/HtmlTemplates/RtcPageTemplate.cs`
-- **touch remoto y gestos** -> `Controllers/Handlers/InputHandler.cs` y `UI/HtmlTemplates/TouchInputScriptHelper.cs`
+- **touch remoto y gestos** -> `Controllers/Handlers/InputHandler.cs` y `wwwroot/js/touch/touch-input.js`
 - **seguridad por clave o cupo de viewers** -> `Controllers/Handlers/*`, `ScreenSecurityGate.cs`, `ViewerLimiter.cs`
 - **UI/configuración del tray** -> `VirtualDisplayTrayController.cs`
 - **defaults, JSON o migración** -> `VirtualScreenSettingsStore.cs` y `VirtualWebDisplaySettings.cs`

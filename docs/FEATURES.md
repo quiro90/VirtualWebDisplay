@@ -140,7 +140,7 @@ Cada pantalla tiene:
 
 ```json
 {
-  "TransmissionMode": "WebImage",
+  "TransmissionMethod": "WebImage",
   "CaptureIntervalSeconds": 0.10, // 10 FPS (adecuado para dashboards)
   "JpegQuality": 85                // Alta calidad
 }
@@ -189,7 +189,7 @@ function updateImage() {
 
 ```json
 {
-  "TransmissionMode": "RTC",
+  "TransmissionMethod": "Rtc",
   "H264Framerate": 30,
   "H264BitrateKbps": 2000
 }
@@ -320,12 +320,12 @@ Nivel de compresión JPEG (1-100).
 
 ### Opciones de Red
 
-#### 1. **Puerto HTTP** (`HttpPort`)
+#### 1. **Puerto HTTP** (`Port`)
 
 Puerto para servidor web HTTP/HTTPS.
 
-- **HTTP**: `HttpPort` (ejemplo: 5000)
-- **HTTPS**: `HttpPort + 1` (ejemplo: 5001)
+- **HTTP**: `Port` (ejemplo: 5000)
+- **HTTPS**: `Port + 1` (ejemplo: 5001)
 
 **Valores Permitidos**: 1024-65535
 
@@ -336,7 +336,7 @@ Puerto para servidor web HTTP/HTTPS.
 **Ejemplo**:
 ```json
 {
-  "HttpPort": 5000  // HTTP: 5000, HTTPS: 5001
+  "Port": 5000  // HTTP: 5000, HTTPS: 5001
 }
 ```
 
@@ -511,13 +511,9 @@ new MediaStreamTrack(h264Format, MediaStreamStatusEnum.SendOnly)
 - ✅ Evita codificación JPEG innecesaria cuando no hay consumidores
 
 **Señales de activación**:
-```
-/cap/{token}  -> NotifyJpegDemand()
-/mjpeg open   -> EnterMjpegDemand()
-/mjpeg close  -> ExitMjpegDemand()
-...
-[4 bytes: frameId][restantes: datos JPEG]
-```
+- `/cap/{token}` → `NotifyJpegDemand()` (retorna JPEG PNG)
+- `/mjpeg open` → `EnterMjpegDemand()` (inicia stream MJPEG)
+- `/mjpeg close` → `ExitMjpegDemand()` (finaliza stream MJPEG)
 
 ---
 
