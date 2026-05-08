@@ -29,11 +29,13 @@ internal sealed class H264EncoderService : BackgroundService
     private readonly ILogger<H264EncoderService> _logger;
 
     // Temporary diagnostics for encoder throughput.
+#if DEBUG
     private const double EncoderStatsLogIntervalSeconds = 5.0;
     private long _statsWindowStartTicks = Stopwatch.GetTimestamp();
     private long _statsEncodedPackets;
     private long _statsEncodedBytes;
     private int _loggedPacketFormat;
+#endif
 
     // Bounded channel: if the encoder falls behind, drop the oldest frame rather than
     // accumulating unbounded memory. Capacity 3 = ~100 ms at 30 fps.
@@ -74,7 +76,11 @@ internal sealed class H264EncoderService : BackgroundService
         }
         catch (Exception ex)
         {
+#if DEBUG
             _logger.LogError(ex, "H.264 encoder loop failed.");
+    #else
+            _ = ex;
+#endif
         }
         finally
         {
@@ -91,7 +97,9 @@ internal sealed class H264EncoderService : BackgroundService
     private async Task EncodeLoopAsync(CancellationToken ct)
     {
         var codec = FindBestH264Encoder(out string encoderName);
+    #if DEBUG
         _logger.LogInformation("H.264 encoder selected: {Name}", encoderName);
+    #endif
 
         int  framerate   = _config.H264Framerate   > 0 ? _config.H264Framerate   : 30;
         long bitrateKbps = _config.H264BitrateKbps > 0 ? _config.H264BitrateKbps : 2000;
@@ -107,7 +115,9 @@ internal sealed class H264EncoderService : BackgroundService
 
             int width = firstFrame.Width;
             int height = firstFrame.Height;
+#if DEBUG
             _logger.LogInformation("H.264 encoder frame size: {Width}x{Height}", width, height);
+#endif
 
             // Each encoder family requires a specific input pixel format.
             // QSV only accepts nv12/qsv; everything else works with yuv420p.
@@ -146,9 +156,11 @@ internal sealed class H264EncoderService : BackgroundService
                 {
                     if (rawFrame.Width != width || rawFrame.Height != height)
                     {
+#if DEBUG
                         _logger.LogInformation(
                             "H.264 encoder resolution changed from {OldW}x{OldH} to {NewW}x{NewH}; restarting encoder session.",
                             width, height, rawFrame.Width, rawFrame.Height);
+#endif
                         pendingFirstFrame = rawFrame;
                         restartForResolutionChange = true;
                         break;
@@ -238,9 +250,11 @@ internal sealed class H264EncoderService : BackgroundService
         if (bytes.Length == 0)
             return;
 
+#if DEBUG
         Interlocked.Increment(ref _statsEncodedPackets);
         Interlocked.Add(ref _statsEncodedBytes, bytes.Length);
         LogEncoderStatsIfNeeded();
+#endif
 
         NalUnitReady?.Invoke(bytes, timestampUs);
     }
@@ -333,12 +347,15 @@ internal sealed class H264EncoderService : BackgroundService
 
     private void LogPacketFormatOnce(string format)
     {
+#if DEBUG
         if (Interlocked.Exchange(ref _loggedPacketFormat, 1) == 0)
             _logger.LogInformation("H.264 packet format detected: {Format}.", format);
+#endif
     }
 
     private void LogEncoderStatsIfNeeded()
     {
+#if DEBUG
         var nowTicks = Stopwatch.GetTimestamp();
         var startTicks = Volatile.Read(ref _statsWindowStartTicks);
         double elapsedSeconds = (nowTicks - startTicks) / (double)Stopwatch.Frequency;
@@ -359,6 +376,7 @@ internal sealed class H264EncoderService : BackgroundService
             packets,
             avgPacket,
             kbps);
+        #endif
     }
 
     private void ApplyEncoderPreset(string encoderName, MediaDictionary opts)
@@ -401,7 +419,9 @@ internal sealed class H264EncoderService : BackgroundService
             // a native AV (0xC0000005) if their SDK DLL is missing — not catchable.
             if (!HasRequiredRuntime(candidate))
             {
+#if DEBUG
                 _logger.LogDebug("H.264 encoder {Name} skipped (runtime DLL not available).", candidate);
+#endif
                 continue;
             }
 
@@ -413,7 +433,9 @@ internal sealed class H264EncoderService : BackgroundService
             }
             catch
             {
+#if DEBUG
                 _logger.LogDebug("H.264 encoder {Name} not available.", candidate);
+#endif
             }
         }
         throw new InvalidOperationException(

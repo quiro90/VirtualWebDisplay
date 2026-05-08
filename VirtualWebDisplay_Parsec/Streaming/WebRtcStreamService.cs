@@ -35,12 +35,14 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     private readonly ConcurrentDictionary<Guid, PeerState> _peers = new();
 
     // Temporary diagnostics (periodic logs to avoid per-frame noise).
+#if DEBUG
     private const double StatsLogIntervalSeconds = 5.0;
     private long _statsWindowStartTicks = Stopwatch.GetTimestamp();
     private long _statsNalCount;
     private long _statsNalBytes;
     private long _statsSendOps;
     private long _statsSendFailures;
+#endif
 
     internal WebRtcStreamService(H264EncoderService encoder, ILogger<WebRtcStreamService> logger)
     {
@@ -61,11 +63,13 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         var peerConnection   = new RTCPeerConnection(PeerConfiguration);
         var iceGatheringDone = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
+#if DEBUG
         _logger.LogInformation(
             "WebRTC offer received for peer {PeerId}. SDP length={SdpLength}, active peers={PeerCount}.",
             peerId,
             offer.Sdp?.Length ?? 0,
             _peers.Count);
+#endif
 
         // Add a send-only H.264 video track before the answer is created.
         var videoTrack = new MediaStreamTrack(H264Format, MediaStreamStatusEnum.SendOnly);
@@ -79,14 +83,18 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 
         peerConnection.onconnectionstatechange += state =>
         {
+#if DEBUG
             _logger.LogDebug("Peer {PeerId} connection state: {State}.", peerId, state);
+#endif
             if (state is RTCPeerConnectionState.closed or RTCPeerConnectionState.failed or RTCPeerConnectionState.disconnected)
                 RemovePeer(peerId);
         };
 
         peerConnection.oniceconnectionstatechange += state =>
         {
+#if DEBUG
             _logger.LogDebug("Peer {PeerId} ICE state: {State}.", peerId, state);
+#endif
             if (state is RTCIceConnectionState.closed or RTCIceConnectionState.failed or RTCIceConnectionState.disconnected)
                 RemovePeer(peerId);
         };
@@ -99,7 +107,9 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
 
         if (!string.Equals(setResult.ToString(), "OK", StringComparison.OrdinalIgnoreCase))
         {
+#if DEBUG
             _logger.LogWarning("Failed to apply WebRTC offer for peer {PeerId}: {Result}.", peerId, setResult);
+#endif
             peerConnection.close();
             throw new InvalidOperationException($"Failed to apply the WebRTC offer ({setResult}).");
         }
@@ -120,12 +130,14 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         int negotiatedPayloadType = ResolveH264PayloadType(localSdp, H264PayloadTypeId);
         _peers[peerId] = new PeerState(peerConnection, negotiatedPayloadType);
 
+#if DEBUG
         _logger.LogInformation(
             "WebRTC answer created for peer {PeerId}. Local SDP length={SdpLength}, H264 payloadType={PayloadType}, active peers={PeerCount}.",
             peerId,
             localSdp.Length,
             negotiatedPayloadType,
             _peers.Count);
+#endif
         return new WebRtcSessionAnswer(localSdp, "answer", peerId.ToString("N"));
     }
 
@@ -167,22 +179,30 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     {
         if (_peers.IsEmpty) return;
 
+#if DEBUG
         Interlocked.Increment(ref _statsNalCount);
         Interlocked.Add(ref _statsNalBytes, nalBytes.Length);
+#endif
 
         foreach (var entry in _peers)
         {
-            if (entry.Value.TrySendNal(nalBytes, timestampUs))
+            bool sent = entry.Value.TrySendNal(nalBytes, timestampUs);
+#if DEBUG
+            if (sent)
                 Interlocked.Increment(ref _statsSendOps);
             else
                 Interlocked.Increment(ref _statsSendFailures);
+#endif
         }
 
+#if DEBUG
         LogForwardingStatsIfNeeded();
+#endif
     }
 
     private void LogForwardingStatsIfNeeded()
     {
+#if DEBUG
         var nowTicks = Stopwatch.GetTimestamp();
         var startTicks = Volatile.Read(ref _statsWindowStartTicks);
         double elapsedSeconds = (nowTicks - startTicks) / (double)Stopwatch.Frequency;
@@ -209,6 +229,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
             kbps,
             sendOps,
             sendFailures);
+        #endif
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
@@ -238,9 +259,18 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
             return;
 
         try { peerState.Dispose(); }
-        catch (Exception ex) { _logger.LogWarning(ex, "Error closing WebRTC peer {PeerId}.", peerId); }
+        catch (Exception ex)
+        {
+    #if DEBUG
+            _logger.LogWarning(ex, "Error closing WebRTC peer {PeerId}.", peerId);
+    #else
+            _ = ex;
+    #endif
+        }
 
+    #if DEBUG
         _logger.LogInformation("WebRTC peer removed {PeerId}. Active peers={PeerCount}.", peerId, _peers.Count);
+    #endif
     }
 
     // ─────────────────────────────────────────────────────────────────────────

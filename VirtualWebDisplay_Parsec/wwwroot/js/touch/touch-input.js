@@ -8,12 +8,19 @@
 (function(global) {
     'use strict';
 
+    const noopLogger = global.NoopLogger || {
+        error() {},
+        warn() {},
+        info() {},
+        debug() {}
+    };
+
     // Logger especializado
     const log = global.Logger ? global.Logger.create('[TouchInput]') : {
-        info: console.log.bind(console, '[TouchInput]'),
-        warn: console.warn.bind(console, '[TouchInput]'),
-        error: console.error.bind(console, '[TouchInput]'),
-        debug: console.debug.bind(console, '[TouchInput]')
+        info: noopLogger.info,
+        warn: noopLogger.warn,
+        error: noopLogger.error,
+        debug: noopLogger.debug
     };
 
     /**

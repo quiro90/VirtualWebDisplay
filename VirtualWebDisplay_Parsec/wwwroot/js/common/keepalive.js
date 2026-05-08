@@ -8,11 +8,18 @@
 (function(global) {
     'use strict';
 
+    const noopLogger = global.NoopLogger || {
+        error() {},
+        warn() {},
+        info() {},
+        debug() {}
+    };
+
     const log = global.Logger ? global.Logger.create('[Keepalive]') : {
-        info: console.log.bind(console, '[Keepalive]'),
-        warn: console.warn.bind(console, '[Keepalive]'),
-        error: console.error.bind(console, '[Keepalive]'),
-        debug: console.debug.bind(console, '[Keepalive]')
+        info: noopLogger.info,
+        warn: noopLogger.warn,
+        error: noopLogger.error,
+        debug: noopLogger.debug
     };
 
     const Keepalive = {

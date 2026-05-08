@@ -8,12 +8,19 @@
 (function(global) {
     'use strict';
 
+    const noopLogger = global.NoopLogger || {
+        error() {},
+        warn() {},
+        info() {},
+        debug() {}
+    };
+
     // Logger especializado
     const log = global.Logger ? global.Logger.create('[WebImageClient]') : {
-        info: console.log.bind(console, '[WebImageClient]'),
-        warn: console.warn.bind(console, '[WebImageClient]'),
-        error: console.error.bind(console, '[WebImageClient]'),
-        debug: console.debug.bind(console, '[WebImageClient]')
+        info: noopLogger.info,
+        warn: noopLogger.warn,
+        error: noopLogger.error,
+        debug: noopLogger.debug
     };
 
     /**

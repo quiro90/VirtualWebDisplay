@@ -8,11 +8,18 @@
 (function(global) {
     'use strict';
 
+    const noopLogger = global.NoopLogger || {
+        error() {},
+        warn() {},
+        info() {},
+        debug() {}
+    };
+
     const log = global.Logger ? global.Logger.create('[WebRtcClient]') : {
-        info:  console.log.bind(console,   '[WebRtcClient]'),
-        warn:  console.warn.bind(console,  '[WebRtcClient]'),
-        error: console.error.bind(console, '[WebRtcClient]'),
-        debug: console.debug.bind(console, '[WebRtcClient]')
+        info:  noopLogger.info,
+        warn:  noopLogger.warn,
+        error: noopLogger.error,
+        debug: noopLogger.debug
     };
 
     const WebRtcClient = {

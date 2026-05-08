@@ -92,6 +92,10 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var desiredBounds = ResolveCaptureBounds();
+        var preferredDeviceName = GetPreferredDeviceName();
+
+#if DEBUG
         // Diagnostic: log all screens visible at capture startup so we can verify
         // the correct monitor index is being targeted.
         var allScreens = Screen.AllScreens;
@@ -104,7 +108,6 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
                 s.Bounds.Left, s.Bounds.Top,
                 s.Primary ? " [PRIMARY]" : "");
         }
-        var desiredBounds = ResolveCaptureBounds();
         _logger.LogInformation(
             "Capture targeting monitor index {Index} with bounds ({X},{Y}) {W}x{H}.",
             _config.MonitorIndex,
@@ -112,9 +115,9 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
             desiredBounds.Top,
             desiredBounds.Width,
             desiredBounds.Height);
-        var preferredDeviceName = GetPreferredDeviceName();
         if (!string.IsNullOrWhiteSpace(preferredDeviceName))
             _logger.LogInformation("Capture preferred runtime device: {DeviceName}.", preferredDeviceName);
+#endif
 
         int noFrameAttempts = 0;
 
@@ -122,10 +125,12 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
         {
             if (noFrameAttempts >= MaxNoFrameAttempts)
             {
+#if DEBUG
                 _logger.LogWarning(
                     "DXGI Desktop Duplication unavailable on monitor {MonitorIndex} after {N} attempts " +
                     "(indirect/virtual display adapter). Falling back to GDI capture.",
                     _config.MonitorIndex, noFrameAttempts);
+#endif
                 await RunGdiCaptureLoopAsync(stoppingToken);
                 return;
             }
@@ -147,10 +152,14 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
             catch (Exception ex)
             {
                 noFrameAttempts++;
+#if DEBUG
                 _logger.LogWarning(ex,
                     "DXGI capture session failed on monitor {MonitorIndex}, reinitializing " +
                     "(attempt {Attempt}/{Max}).",
                     _config.MonitorIndex, noFrameAttempts, MaxNoFrameAttempts);
+#else
+                _ = ex;
+#endif
                 try { await Task.Delay(500, stoppingToken); }
                 catch (OperationCanceledException) { break; }
             }
@@ -193,10 +202,12 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
                 var latestBounds = ResolveCaptureBounds();
                 if (!SameBounds(latestBounds, captureBounds))
                 {
+#if DEBUG
                     _logger.LogInformation(
                         "Capture target moved from ({OldX},{OldY}) {OldW}x{OldH} to ({NewX},{NewY}) {NewW}x{NewH}; reinitializing DXGI session.",
                         captureBounds.Left, captureBounds.Top, captureBounds.Width, captureBounds.Height,
                         latestBounds.Left, latestBounds.Top, latestBounds.Width, latestBounds.Height);
+#endif
                     return false;
                 }
             }
@@ -218,11 +229,13 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
                 consecutiveBlackFrames++;
                 if (consecutiveBlackFrames >= MaxInitialBlackFrames)
                 {
+#if DEBUG
                     _logger.LogWarning(
                         "DXGI delivered {Count} consecutive black frames on monitor {MonitorIndex}; " +
                         "falling back to GDI capture.",
                         consecutiveBlackFrames,
                         _config.MonitorIndex);
+#endif
                     return false;
                 }
             }
@@ -360,9 +373,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
         int intervalMs  = (int)Math.Max(1, _config.CaptureIntervalSeconds * 1000);
         var jpegQuality = TransmissionModeOptions.GetEffectiveJpegQuality(_config);
 
+#if DEBUG
         _logger.LogInformation(
             "GDI capture started: monitor {Index} '{Device}' at ({X},{Y}) {W}x{H}, interval {Ms}ms.",
             screenIndex, screen.DeviceName, srcX, srcY, width, height, intervalMs);
+#endif
 
         var topologyCheckSw = Stopwatch.StartNew();
 
@@ -381,9 +396,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
                         srcY = latestBounds.Top;
                         width = latestBounds.Width;
                         height = latestBounds.Height;
+#if DEBUG
                         _logger.LogInformation(
                             "GDI capture target moved; updating capture region to ({X},{Y}) {W}x{H}.",
                             srcX, srcY, width, height);
+#endif
                     }
                 }
 
@@ -402,7 +419,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
             }
             catch (Exception ex)
             {
+#if DEBUG
                 _logger.LogWarning(ex, "GDI capture error on monitor {Index}, continuing.", screenIndex);
+#else
+                _ = ex;
+#endif
             }
 
             try { await Task.Delay(intervalMs, ct); }
@@ -700,9 +721,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
                     if (!string.IsNullOrWhiteSpace(preferredDeviceName)
                         && string.Equals(desc.DeviceName, preferredDeviceName, StringComparison.OrdinalIgnoreCase))
                     {
+#if DEBUG
                         logger.LogInformation(
                             "DXGI output matched by runtime device name: {DeviceName}.",
                             preferredDeviceName);
+#endif
                         foundAdapter = adapter;
                         foundOutput = output.QueryInterface<IDXGIOutput1>();
                         output.Dispose();
@@ -744,6 +767,7 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
 
             if (bestAdapter is not null && bestOutput is not null)
             {
+#if DEBUG
                 logger.LogWarning(
                     "Monitor index {Index} could not be matched exactly in DXGI; using nearest output with bounds ({X},{Y}) {W}x{H}.",
                     monitorIndex,
@@ -751,6 +775,7 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
                     targetBounds.Top,
                     targetBounds.Width,
                     targetBounds.Height);
+#endif
 
                 foundAdapter = bestAdapter;
                 foundOutput = bestOutput;
@@ -758,9 +783,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
             }
 
             // Fallback: use first adapter, first output.
+#if DEBUG
             logger.LogWarning(
                 "Monitor index {Index} could not be matched in DXGI output enumeration; using primary display.",
                 monitorIndex);
+#endif
 
             factory.EnumAdapters1(0, out var fallbackAdapter).CheckError();
             fallbackAdapter.EnumOutputs(0, out var fallbackOutput).CheckError();

@@ -7,6 +7,13 @@
 (function(global) {
     'use strict';
 
+    const NoopLogger = Object.freeze({
+        error() {},
+        warn() {},
+        info() {},
+        debug() {}
+    });
+
     /**
      * Niveles de logging disponibles.
      * @enum {number}
@@ -23,7 +30,7 @@
      * Sistema de logging centralizado.
      */
     const Logger = {
-        _level: LogLevel.INFO, // Nivel por defecto
+        _level: LogLevel.SILENT, // Nivel por defecto
         _prefix: '',
 
         /**
@@ -90,6 +97,10 @@
          * @returns {Object} Nuevo logger con prefijo
          */
         create(prefix) {
+            if (Logger._level <= LogLevel.SILENT) {
+                return NoopLogger;
+            }
+
             return {
                 error: (...args) => {
                     if (Logger._level >= LogLevel.ERROR) {
@@ -115,12 +126,52 @@
         }
     };
 
-    // Detectar entorno automáticamente
-    const isProduction = global.location && global.location.hostname !== 'localhost';
-    Logger.setLevel(isProduction ? LogLevel.WARN : LogLevel.INFO);
+    function tryGetConfiguredLevel() {
+        if (!global.location) {
+            return null;
+        }
+
+        const search = new URLSearchParams(global.location.search || '');
+        const value = (search.get('log') || '').trim().toLowerCase();
+        switch (value) {
+        case 'silent':
+        case 'off':
+            return LogLevel.SILENT;
+        case 'error':
+            return LogLevel.ERROR;
+        case 'warn':
+        case 'warning':
+            return LogLevel.WARN;
+        case 'info':
+            return LogLevel.INFO;
+        case 'debug':
+            return LogLevel.DEBUG;
+        default:
+            return null;
+        }
+    }
+
+    function isDevelopmentHost(hostname) {
+        if (!hostname) {
+            return false;
+        }
+
+        return hostname === 'localhost'
+            || hostname === '127.0.0.1'
+            || hostname === '::1';
+    }
+
+    const configuredLevel = tryGetConfiguredLevel();
+    if (configuredLevel !== null) {
+        Logger.setLevel(configuredLevel);
+    } else {
+        const hostname = global.location ? global.location.hostname : '';
+        Logger.setLevel(isDevelopmentHost(hostname) ? LogLevel.DEBUG : LogLevel.SILENT);
+    }
 
     // Exponer al scope global
     global.Logger = Logger;
     global.LogLevel = LogLevel;
+    global.NoopLogger = NoopLogger;
 
 })(window);
