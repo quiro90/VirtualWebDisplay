@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows.Forms;
 using Vortice.Direct3D;
 using Vortice.Direct3D11;
@@ -39,6 +40,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
     private readonly Func<string?> _preferredDeviceNameProvider;
     private byte[] _currentJpeg = [];
     private readonly Lock _jpegLock = new();
+    private long _lastJpegDemandTicks;
+    private int _activeMjpegConsumers;
+
+    // Keep JPEG generation enabled briefly after a /cap request to smooth polling.
+    private const double JpegDemandWindowSeconds = 2.0;
 
     public DxgiCaptureService(
         VirtualScreenConfig config,
@@ -54,6 +60,26 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
     public byte[] GetCurrentJpegFrame()
     {
         lock (_jpegLock) return _currentJpeg;
+    }
+
+    /// <inheritdoc/>
+    public void NotifyJpegDemand()
+    {
+        Volatile.Write(ref _lastJpegDemandTicks, Stopwatch.GetTimestamp());
+    }
+
+    /// <inheritdoc/>
+    public void EnterMjpegDemand()
+    {
+        Interlocked.Increment(ref _activeMjpegConsumers);
+        NotifyJpegDemand();
+    }
+
+    /// <inheritdoc/>
+    public void ExitMjpegDemand()
+    {
+        if (Interlocked.Decrement(ref _activeMjpegConsumers) < 0)
+            Interlocked.Exchange(ref _activeMjpegConsumers, 0);
     }
 
     /// <inheritdoc/>
@@ -209,8 +235,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
 
             RawFrameAvailable?.Invoke(rawFrame);
 
-            var jpeg = JpegFallbackEncoder.Encode(rawFrame.Data, rawFrame.Width, rawFrame.Height, jpegQuality);
-            lock (_jpegLock) _currentJpeg = jpeg;
+            if (ShouldEncodeJpeg())
+            {
+                var jpeg = JpegFallbackEncoder.Encode(rawFrame.Data, rawFrame.Width, rawFrame.Height, jpegQuality);
+                lock (_jpegLock) _currentJpeg = jpeg;
+            }
         }
 
         return anyFrame;
@@ -365,8 +394,11 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
 
                 RawFrameAvailable?.Invoke(rawFrame);
 
-                var jpeg = JpegFallbackEncoder.Encode(bytes, width, height, jpegQuality);
-                lock (_jpegLock) _currentJpeg = jpeg;
+                if (ShouldEncodeJpeg())
+                {
+                    var jpeg = JpegFallbackEncoder.Encode(bytes, width, height, jpegQuality);
+                    lock (_jpegLock) _currentJpeg = jpeg;
+                }
             }
             catch (Exception ex)
             {
@@ -468,6 +500,19 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
         {
             bitmap.UnlockBits(bmpData);
         }
+    }
+
+    private bool ShouldEncodeJpeg()
+    {
+        if (Volatile.Read(ref _activeMjpegConsumers) > 0)
+            return true;
+
+        var lastDemandTicks = Volatile.Read(ref _lastJpegDemandTicks);
+        if (lastDemandTicks <= 0)
+            return false;
+
+        var elapsedSeconds = (Stopwatch.GetTimestamp() - lastDemandTicks) / (double)Stopwatch.Frequency;
+        return elapsedSeconds <= JpegDemandWindowSeconds;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

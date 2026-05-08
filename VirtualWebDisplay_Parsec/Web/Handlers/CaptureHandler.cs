@@ -29,6 +29,7 @@ internal static class CaptureHandler
                     statusCode: StatusCodes.Status429TooManyRequests);
         }
 
+        runtime.FrameSource.NotifyJpegDemand();
         var frame = runtime.FrameSource.GetCurrentJpegFrame();
         if (frame.Length == 0)
             return Results.StatusCode((int)HttpStatusCode.ServiceUnavailable);
@@ -54,6 +55,8 @@ internal static class CaptureHandler
             await ctx.Response.WriteAsJsonAsync(new { error = AppText.Get("Program_ViewerLimit_Full_Error") });
             return;
         }
+
+        runtime.FrameSource.EnterMjpegDemand();
 
         try
         {
@@ -86,6 +89,7 @@ internal static class CaptureHandler
         }
         finally
         {
+            runtime.FrameSource.ExitMjpegDemand();
             runtime.ViewerLimiter.ExitMjpeg();
         }
     }

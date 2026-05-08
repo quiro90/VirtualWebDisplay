@@ -14,6 +14,22 @@ internal interface IFrameSource
     byte[] GetCurrentJpegFrame();
 
     /// <summary>
+    /// Marks recent JPEG demand from polling clients (e.g. /cap).
+    /// Capture backends can use this signal to enable on-demand JPEG encoding.
+    /// </summary>
+    void NotifyJpegDemand();
+
+    /// <summary>
+    /// Marks that an MJPEG stream consumer started.
+    /// </summary>
+    void EnterMjpegDemand();
+
+    /// <summary>
+    /// Marks that an MJPEG stream consumer stopped.
+    /// </summary>
+    void ExitMjpegDemand();
+
+    /// <summary>
     /// Raised on the capture thread each time a new raw pixel frame is available.
     /// Subscribers must return quickly; offload heavy work to a background queue.
     /// </summary>
