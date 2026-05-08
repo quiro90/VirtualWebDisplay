@@ -506,14 +506,15 @@ new MediaStreamTrack(h264Format, MediaStreamStatusEnum.SendOnly)
 - En modo solo WebRTC sin consumidores JPEG, se evita la codificación JPEG continua.
 
 **Razones**:
-- ✅ Menor que límite de DataChannel (~256 KB)
-- ✅ Tamaño óptimo para redes con alta latencia
-- ✅ Balance entre overhead de chunks y eficiencia de transmisión
+- ✅ Reduce CPU cuando el runtime está en modo solo WebRTC
+- ✅ Mantiene compatibilidad con `/cap/{token}` y `/mjpeg`
+- ✅ Evita codificación JPEG innecesaria cuando no hay consumidores
 
-**Estructura**:
+**Señales de activación**:
 ```
-[4 bytes: frameId][64 KB: datos JPEG]
-[4 bytes: frameId][64 KB: datos JPEG]
+/cap/{token}  -> NotifyJpegDemand()
+/mjpeg open   -> EnterMjpegDemand()
+/mjpeg close  -> ExitMjpegDemand()
 ...
 [4 bytes: frameId][restantes: datos JPEG]
 ```
