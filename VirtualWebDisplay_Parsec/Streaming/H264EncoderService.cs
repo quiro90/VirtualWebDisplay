@@ -439,8 +439,17 @@ internal sealed class H264EncoderService : BackgroundService
     /// </summary>
     private static bool HasRequiredRuntime(string encoderName) => encoderName switch
     {
-        "h264_nvenc" => NativeLibrary.TryLoad("nvcuda.dll",  out _),
-        "h264_amf"   => NativeLibrary.TryLoad("amfrt64.dll", out _),
+        "h264_nvenc" => TryLoadAndFree("nvcuda.dll"),
+        "h264_amf"   => TryLoadAndFree("amfrt64.dll"),
         _            => true,  // libx264 is bundled with Sdcb.FFmpeg.runtime
     };
+
+    private static bool TryLoadAndFree(string libraryName)
+    {
+        if (!NativeLibrary.TryLoad(libraryName, out var handle))
+            return false;
+
+        NativeLibrary.Free(handle);
+        return true;
+    }
 }

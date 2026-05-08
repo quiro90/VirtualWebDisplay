@@ -146,11 +146,21 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     /// Subscribes to <see cref="H264EncoderService.NalUnitReady"/> and forwards each
     /// NAL unit to all connected peers via RTP.
     /// </summary>
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _encoder.NalUnitReady += OnNalUnitReady;
-        stoppingToken.Register(() => _encoder.NalUnitReady -= OnNalUnitReady);
-        return Task.CompletedTask;
+        try
+        {
+            await Task.Delay(Timeout.Infinite, stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // Normal shutdown.
+        }
+        finally
+        {
+            _encoder.NalUnitReady -= OnNalUnitReady;
+        }
     }
 
     private void OnNalUnitReady(byte[] nalBytes, long timestampUs)

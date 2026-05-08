@@ -200,9 +200,8 @@ WebImageClient.init({
 **Configuración**:
 ```javascript
 WebRtcClient.init({
-    canvasId: 'screen',              // ID del canvas
+    videoId: 'screen',               // ID del elemento <video>
     statusElementId: 'status',       // ID del elemento de estado (opcional)
-    imageFit: 'cover',               // 'cover', 'contain', o 'fill'
     texts: {                         // Textos localizados (opcional)
         connecting: 'Conectando...',
         negotiating: 'Negociando...',
@@ -217,10 +216,10 @@ WebRtcClient.init({
 ```
 
 **Características**:
-- DataChannel con `ordered: false`, `maxRetransmits: 0` (latencia mínima)
-- Reensamblado de frames chunkeados (64KB)
-- Retry automático con backoff progresivo
-- Rendering eficiente con `createImageBitmap` + canvas
+- Recepción de stream H.264 por `VideoTrack` RTP nativo
+- Render directo en `<video>` (sin reensamblado manual en JavaScript)
+- Retry automático y reconexión ante stalls detectados por `getStats()`
+- Menor overhead de CPU en cliente respecto al modo anterior por DataChannel
 
 ---
 

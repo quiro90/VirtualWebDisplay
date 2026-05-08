@@ -21,6 +21,7 @@
         _statusElement: null,
         _peerConnection: null,
         _statsTimerId: null,
+        _statsInFlight: false,
         _reconnectTimerId: null,
         _lastBytesReceived: 0,
         _stalledIntervals: 0,
@@ -185,10 +186,26 @@
                 clearInterval(this._statsTimerId);
                 this._statsTimerId = null;
             }
+            this._statsInFlight = false;
+
+            if (this._reconnectTimerId) {
+                clearTimeout(this._reconnectTimerId);
+                this._reconnectTimerId = null;
+            }
 
             if (this._peerConnection) {
                 try { this._peerConnection.close(); } catch (_) {}
                 this._peerConnection = null;
+            }
+
+            if (this._videoElement && this._videoElement.srcObject) {
+                const stream = this._videoElement.srcObject;
+                if (stream && stream.getTracks) {
+                    stream.getTracks().forEach((track) => {
+                        try { track.stop(); } catch (_) {}
+                    });
+                }
+                this._videoElement.srcObject = null;
             }
         },
 
@@ -199,6 +216,9 @@
 
             this._statsTimerId = setInterval(async () => {
                 if (this._peerConnection !== pc) return;
+                if (this._statsInFlight) return;
+
+                this._statsInFlight = true;
 
                 try {
                     const stats = await pc.getStats();
@@ -243,6 +263,8 @@
                     }
                 } catch (error) {
                     log.warn('Error reading RTC stats', error);
+                } finally {
+                    this._statsInFlight = false;
                 }
             }, 2000);
         }
