@@ -25,7 +25,7 @@ namespace VirtualWebDisplay.Streaming;
 /// polling and MJPEG endpoints).
 /// </para>
 /// </summary>
-internal sealed class DxgiCaptureService : BackgroundService, IFrameSource
+internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureService
 {
     // How long AcquireNextFrame blocks before returning DXGI_ERROR_WAIT_TIMEOUT.
     // Governs the "no-change" spin rate — 100 ms means at most one no-op per 100 ms.

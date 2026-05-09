@@ -3,17 +3,17 @@ using System.Runtime.InteropServices;
 namespace VirtualWebDisplay.Infrastructure.Input;
 
 /// <summary>
-/// Inyecta eventos de mouse sintéticos en Windows usando SendInput API.
+/// Inyecta eventos de mouse sintï¿½ticos en Windows usando SendInput API.
 /// Compatible con Parsec VDD (pantallas virtuales).
 /// NO requiere permisos de Admin.
 /// </summary>
 internal static class MouseInputHelper
 {
-    // Última posición conocida del cursor para restaurar tras gestos/tap
+    // ï¿½ltima posiciï¿½n conocida del cursor para restaurar tras gestos/tap
     private static POINT? _lastCursorPosition = null;
 
     /// <summary>
-    /// Guarda la posición actual del cursor para restaurar luego.
+    /// Guarda la posiciï¿½n actual del cursor para restaurar luego.
     /// </summary>
     public static void SaveCurrentCursorPosition()
     {
@@ -22,7 +22,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Restaura la última posición guardada del cursor, si existe.
+    /// Restaura la ï¿½ltima posiciï¿½n guardada del cursor, si existe.
     /// </summary>
     public static void RestoreLastCursorPosition()
     {
@@ -129,7 +129,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Click izquierdo en coordenadas objetivo y luego restaura la posición original del cursor.
+    /// Click izquierdo en coordenadas objetivo y luego restaura la posiciï¿½n original del cursor.
     /// </summary>
     public static void LeftClickPreservingCursor(int screenX, int screenY)
     {
@@ -139,7 +139,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Posiciona el cursor y envía LEFTDOWN (inicio de arrastre).
+    /// Posiciona el cursor y envï¿½a LEFTDOWN (inicio de arrastre).
     /// </summary>
     public static void LeftDownAt(int screenX, int screenY)
     {
@@ -164,7 +164,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Envía LEFTUP (fin de arrastre).
+    /// Envï¿½a LEFTUP (fin de arrastre).
     /// </summary>
     public static void LeftUp()
     {
@@ -177,7 +177,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Doble-click izquierdo (dos clicks consecutivos con pequeña pausa).
+    /// Doble-click izquierdo (dos clicks consecutivos con pequeï¿½a pausa).
     /// </summary>
     public static void DoubleClick(int screenX, int screenY)
     {
@@ -220,7 +220,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Click derecho en coordenadas objetivo y luego restaura la posición original del cursor.
+    /// Click derecho en coordenadas objetivo y luego restaura la posiciï¿½n original del cursor.
     /// </summary>
     public static void RightClickPreservingCursor(int screenX, int screenY)
     {
@@ -255,7 +255,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Click central en coordenadas objetivo y luego restaura la posición original del cursor.
+    /// Click central en coordenadas objetivo y luego restaura la posiciï¿½n original del cursor.
     /// </summary>
     public static void MiddleClickPreservingCursor(int screenX, int screenY)
     {
@@ -265,11 +265,7 @@ internal static class MouseInputHelper
     }
 
     /// <summary>
-    /// Envia un evento de rueda de scroll a partir de delta tactil vertical.
-    /// Esta configurado en modo "natural invertido" segun preferencia: arrastre hacia abajo => scroll arriba.
-    /// </summary>
-    /// <summary>
-    /// Envía eventos de scroll vertical y/u horizontal (ambos opcionales, pueden ser 0).
+    /// Envï¿½a eventos de scroll vertical y/u horizontal (ambos opcionales, pueden ser 0).
     /// </summary>
     public static void Scroll(int deltaY, int deltaX)
     {

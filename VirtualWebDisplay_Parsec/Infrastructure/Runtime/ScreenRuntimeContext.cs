@@ -16,18 +16,22 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         string hostName, 
         string localIp, 
         IDriverVerifier driverVerifier,
-        ILoggerFactory? loggerFactory = null)
+        ILoggerFactory? loggerFactory = null,
+        IScreenRuntimeServicesFactory? servicesFactory = null)
     {
+        servicesFactory ??= DefaultScreenRuntimeServicesFactory.Instance;
+        var effectiveLoggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+
         Id = id;
         DisplayName = displayName;
         Config = config;
-        DisplayManager = new VirtualDisplayManager(driverVerifier);
-        _dxgiCaptureService = new DxgiCaptureService(
+        DisplayManager = servicesFactory.CreateDisplayManager(driverVerifier);
+        _dxgiCaptureService = servicesFactory.CreateCaptureService(
             config,
-            (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<DxgiCaptureService>(),
+            effectiveLoggerFactory,
             () => DisplayManager.WindowsDeviceName);
-        _h264Encoder = new H264EncoderService(_dxgiCaptureService, config, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<H264EncoderService>());
-        WebRtcStreamService = new WebRtcStreamService(_h264Encoder, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<WebRtcStreamService>());
+        _h264Encoder = servicesFactory.CreateH264EncoderService(_dxgiCaptureService, config, effectiveLoggerFactory);
+        WebRtcStreamService = servicesFactory.CreateWebRtcStreamService(_h264Encoder, effectiveLoggerFactory);
         SecurityGate = new ScreenSecurityGate(config.ScreenSecurityEnabled);
         ViewerLimiter = new ViewerLimiter(config.MaxViewers);
         ViewerLimiter.GetWebRtcCount = () => WebRtcStreamService.ActivePeerCount;
@@ -41,9 +45,9 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
     public VirtualScreenConfig Config { get; }
     public VirtualDisplayManager DisplayManager { get; }
     internal IFrameSource FrameSource => _dxgiCaptureService;
-    private readonly DxgiCaptureService _dxgiCaptureService;
-    private readonly H264EncoderService _h264Encoder;
-    public WebRtcStreamService WebRtcStreamService { get; }
+    private readonly IFrameCaptureService _dxgiCaptureService;
+    private readonly IH264EncoderService _h264Encoder;
+    public IWebRtcStreamService WebRtcStreamService { get; }
     public ScreenSecurityGate SecurityGate { get; }
     public ViewerLimiter ViewerLimiter { get; }
     public string HostUrl { get; }
@@ -77,24 +81,33 @@ public sealed class ScreenRuntimeContext : IAsyncDisposable, IDisposable
         {
             await WebRtcStreamService.StopAsync(CancellationToken.None);
         }
-        catch
+        catch (Exception ex)
         {
+    #if DEBUG
+            System.Diagnostics.Debug.WriteLine($"[ScreenRuntimeContext:{Id}] WebRtcStreamService stop failed: {ex.Message}");
+    #endif
         }
 
         try
         {
             await _h264Encoder.StopAsync(CancellationToken.None);
         }
-        catch
+        catch (Exception ex)
         {
+    #if DEBUG
+            System.Diagnostics.Debug.WriteLine($"[ScreenRuntimeContext:{Id}] H264EncoderService stop failed: {ex.Message}");
+    #endif
         }
 
         try
         {
             await _dxgiCaptureService.StopAsync(CancellationToken.None);
         }
-        catch
+        catch (Exception ex)
         {
+    #if DEBUG
+            System.Diagnostics.Debug.WriteLine($"[ScreenRuntimeContext:{Id}] DxgiCaptureService stop failed: {ex.Message}");
+    #endif
         }
     }
 }

@@ -185,8 +185,11 @@ public sealed class VirtualDisplayManager : IDisposable
                 {
                     break;
                 }
-                catch
+                catch (Exception ex)
                 {
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine($"[VirtualDisplayManager] KeepAlive update failed: {ex.Message}");
+#endif
                     await Task.Delay(250, token);
                 }
             }
@@ -204,8 +207,11 @@ public sealed class VirtualDisplayManager : IDisposable
         {
             _keepAliveTask?.Wait(500);
         }
-        catch
+        catch (Exception ex)
         {
+    #if DEBUG
+            System.Diagnostics.Debug.WriteLine($"[VirtualDisplayManager] KeepAlive wait failed during stop: {ex.Message}");
+    #endif
         }
 
         _keepAliveTask = null;
@@ -420,8 +426,11 @@ public sealed class VirtualDisplayManager : IDisposable
             {
                 ParsecVddDriverApi.RemoveDisplay(_handle, _displayIdx);
             }
-            catch
+            catch (Exception ex)
             {
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"[VirtualDisplayManager] RemoveDisplay failed during dispose: {ex.Message}");
+#endif
             }
         }
 

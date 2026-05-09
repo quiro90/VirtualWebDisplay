@@ -22,7 +22,7 @@ namespace VirtualWebDisplay.Streaming;
 /// Encoded NAL units are raised via <see cref="NalUnitReady"/>, consumed by
 /// <see cref="WebRtcStreamService"/> to feed the WebRTC VideoTrack.
 /// </summary>
-internal sealed class H264EncoderService : BackgroundService
+internal sealed class H264EncoderService : BackgroundService, IH264EncoderService
 {
     private readonly IFrameSource _frameSource;
     private readonly VirtualScreenConfig _config;

@@ -4,10 +4,6 @@ using System.Text;
 
 namespace VirtualWebDisplay.Infrastructure.Hosting;
 
-using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text;
-
 public sealed class SingleInstanceManager : IDisposable
 {
     private readonly Mutex _mutex;
@@ -131,8 +127,11 @@ public sealed class SingleInstanceManager : IDisposable
                 process.Kill(true);
                 process.WaitForExit(5000);
             }
-            catch
+            catch (Exception ex)
             {
+#if DEBUG
+                Debug.WriteLine($"[SingleInstanceManager] Failed to close/kill process {process.Id}: {ex.Message}");
+#endif
             }
             finally
             {
@@ -153,8 +152,11 @@ public sealed class SingleInstanceManager : IDisposable
         {
             _listenerTask?.Wait(1000);
         }
-        catch
+        catch (Exception ex)
         {
+    #if DEBUG
+            Debug.WriteLine($"[SingleInstanceManager] Listener task wait failed during dispose: {ex.Message}");
+    #endif
         }
 
         _listenerCancellation?.Dispose();
@@ -163,7 +165,12 @@ public sealed class SingleInstanceManager : IDisposable
         if (_ownsMutex)
         {
             try { _mutex.ReleaseMutex(); }
-            catch (ApplicationException) { }
+            catch (ApplicationException ex)
+            {
+#if DEBUG
+                Debug.WriteLine($"[SingleInstanceManager] Mutex release failed during dispose: {ex.Message}");
+#endif
+            }
             _ownsMutex = false;
         }
 

@@ -17,7 +17,7 @@ namespace VirtualWebDisplay.Streaming;
 /// Each browser peer receives the same NAL units produced by <see cref="H264EncoderService"/>.
 /// The pipeline is: DxgiCaptureService → H264EncoderService → WebRtcStreamService → browser.
 /// </summary>
-public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
+public sealed class WebRtcStreamService : BackgroundService, IWebRtcStreamService
 {
     // H.264 clock rate is always 90 000 Hz per RFC 6184.
     private const int H264ClockRate = 90_000;
@@ -30,7 +30,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
         new(VideoCodecsEnum.H264, H264PayloadTypeId, H264ClockRate,
             "level-asymmetry-allowed=1;packetization-mode=1");
 
-    private readonly H264EncoderService _encoder;
+    private readonly IH264EncoderService _encoder;
     private readonly ILogger<WebRtcStreamService> _logger;
     private readonly ConcurrentDictionary<Guid, PeerState> _peers = new();
 
@@ -44,7 +44,7 @@ public sealed class WebRtcStreamService : BackgroundService, IAsyncDisposable
     private long _statsSendFailures;
 #endif
 
-    internal WebRtcStreamService(H264EncoderService encoder, ILogger<WebRtcStreamService> logger)
+    internal WebRtcStreamService(IH264EncoderService encoder, ILogger<WebRtcStreamService> logger)
     {
         _encoder = encoder;
         _logger  = logger;

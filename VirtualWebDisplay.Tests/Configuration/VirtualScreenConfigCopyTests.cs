@@ -41,7 +41,11 @@ public sealed class VirtualScreenConfigCopyTests
         Port                   = 9999,
         MonitorIndex           = 2,
         VirtualDisplayPlacement = "left",
+        SavedPositionX         = 123,
+        SavedPositionY         = 456,
         BrowserImageFit        = "cover",
+        H264BitrateKbps        = 3500,
+        H264Framerate          = 24,
     };
 
     // ── Tests ───────────────────────────────────────────────────────────────────
@@ -95,6 +99,44 @@ public sealed class VirtualScreenConfigCopyTests
         Assert.True(
             notOverridden.Count == 0,
             $"BuildNonDefaultConfig does not override these properties — tests would pass vacuously: {string.Join(", ", notOverridden)}");
+    }
+
+    [Fact]
+    public void Clone_CopiesSavedPositionFields()
+    {
+        var source = BuildNonDefaultConfig();
+
+        var clone = source.Clone();
+
+        Assert.Equal(source.SavedPositionX, clone.SavedPositionX);
+        Assert.Equal(source.SavedPositionY, clone.SavedPositionY);
+    }
+
+    [Fact]
+    public void CopyTo_CopiesSavedPositionFields()
+    {
+        var source = BuildNonDefaultConfig();
+        var target = new VirtualScreenConfig();
+
+        source.CopyTo(target);
+
+        Assert.Equal(source.SavedPositionX, target.SavedPositionX);
+        Assert.Equal(source.SavedPositionY, target.SavedPositionY);
+    }
+
+    [Fact]
+    public void Clone_And_CopyTo_CopyH264Settings()
+    {
+        var source = BuildNonDefaultConfig();
+
+        var clone = source.Clone();
+        var target = new VirtualScreenConfig();
+        source.CopyTo(target);
+
+        Assert.Equal(source.H264BitrateKbps, clone.H264BitrateKbps);
+        Assert.Equal(source.H264Framerate, clone.H264Framerate);
+        Assert.Equal(source.H264BitrateKbps, target.H264BitrateKbps);
+        Assert.Equal(source.H264Framerate, target.H264Framerate);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────────

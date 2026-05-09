@@ -28,14 +28,22 @@ internal static class IndexHandler
                 : runtime.ViewerLimiter.CanAcceptViewer();
 
             if (!canContinue)
-                return Results.Content(viewerLimitPageTemplate.Generate(runtime), "text/html");
+                return RuntimeAccessHelper.HtmlContent(viewerLimitPageTemplate.Generate(runtime));
         }
 
         if (!isAuthorized)
-            return Results.Content(securityPageTemplate.Generate(runtime, ctx), "text/html");
+            return RuntimeAccessHelper.HtmlContent(securityPageTemplate.Generate(runtime, ctx));
 
+        var parameters = BuildTemplateParameters(runtime);
+        var html = GenerateDisplayPage(runtime, parameters, webImageTemplate, rtcTemplate);
+
+        return RuntimeAccessHelper.HtmlContent(html);
+    }
+
+    private static Dictionary<string, object> BuildTemplateParameters(ScreenRuntimeContext runtime)
+    {
         var browserImageFit = RuntimeAccessHelper.NormalizeBrowserImageFit(runtime.Config.BrowserImageFit);
-        var parameters = new Dictionary<string, object>
+        return new Dictionary<string, object>
         {
             ["title"] = runtime.DisplayName,
             ["browserImageFit"] = browserImageFit,
@@ -48,11 +56,14 @@ internal static class IndexHandler
             ["touchScrollEnabled"] = runtime.Config.TouchScrollEnabled,
             ["touchScrollDelayMs"] = runtime.Config.TouchScrollDelayMs,
         };
+    }
 
-        var html = TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod)
+    private static string GenerateDisplayPage(
+        ScreenRuntimeContext runtime,
+        Dictionary<string, object> parameters,
+        WebImagePageTemplate webImageTemplate,
+        RtcPageTemplate rtcTemplate) =>
+        TransmissionModeOptions.IsWebImage(runtime.Config.TransmissionMethod)
             ? webImageTemplate.Generate(parameters)
             : rtcTemplate.Generate(parameters);
-
-        return Results.Content(html, "text/html");
-    }
 }

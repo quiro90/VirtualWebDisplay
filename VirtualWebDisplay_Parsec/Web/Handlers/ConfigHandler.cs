@@ -6,9 +6,8 @@ internal static class ConfigHandler
 {
     internal static IResult HandleConfig(HttpContext ctx, IReadOnlyList<ScreenRuntimeContext> runtimes)
     {
-        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
-        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
-            return RuntimeAccessHelper.UnauthorizedResult(runtime);
+        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out var runtime, out var runtimeError))
+            return runtimeError!;
 
         return Results.Json(new
         {

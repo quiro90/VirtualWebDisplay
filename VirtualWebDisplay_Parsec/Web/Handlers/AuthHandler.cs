@@ -16,12 +16,12 @@ internal static class AuthHandler
         var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
 
         if (!runtime.SecurityGate.Enabled)
-            return Results.Ok(new { authorized = true });
+            return RuntimeAccessHelper.AuthorizedResult();
 
         var result = runtime.SecurityGate.TryAuthorize(ctx, RuntimeAccessHelper.SecurityCookieName(runtime), request.Code);
 
         if (result.Authorized)
-            return Results.Ok(new { authorized = true });
+            return RuntimeAccessHelper.AuthorizedResult();
 
         if (result.TooManyAttempts)
         {

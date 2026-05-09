@@ -1,6 +1,4 @@
-using System.Net;
 using VirtualWebDisplay.Infrastructure;
-using VirtualWebDisplay.Localization;
 
 namespace VirtualWebDisplay.Web.Handlers;
 
@@ -15,24 +13,22 @@ internal static class CaptureHandler
         var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
 
         if (!string.Equals(token, runtime.CapToken, StringComparison.Ordinal))
-            return Results.NotFound();
+            return RuntimeAccessHelper.NotFoundResult();
 
-        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
-            return RuntimeAccessHelper.UnauthorizedResult(runtime);
+        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out runtime, out var runtimeError))
+            return runtimeError!;
 
         if (!runtime.ViewerLimiter.IsUnlimited)
         {
             var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, runtime);
             if (!runtime.ViewerLimiter.TryRegisterPolling(viewerKey))
-                return Results.Json(
-                    new { error = AppText.Get("Program_ViewerLimit_Full_Error") },
-                    statusCode: StatusCodes.Status429TooManyRequests);
+                return RuntimeAccessHelper.ViewerLimitExceededResult();
         }
 
         runtime.FrameSource.NotifyJpegDemand();
         var frame = runtime.FrameSource.GetCurrentJpegFrame();
         if (frame.Length == 0)
-            return Results.StatusCode((int)HttpStatusCode.ServiceUnavailable);
+            return RuntimeAccessHelper.ServiceUnavailableResult();
 
         ctx.Response.Headers.CacheControl = "no-store, no-cache";
         return Results.Bytes(frame, "image/jpeg");
@@ -40,19 +36,15 @@ internal static class CaptureHandler
 
     internal static async Task HandleMjpeg(HttpContext ctx, IReadOnlyList<ScreenRuntimeContext> runtimes)
     {
-        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
-
-        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
+        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out var runtime, out var runtimeError))
         {
-            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await ctx.Response.WriteAsJsonAsync(new { error = AppText.Get("Program_Security_MissingCode_Error") });
+            await runtimeError!.ExecuteAsync(ctx);
             return;
         }
 
         if (!runtime.ViewerLimiter.TryEnterMjpeg())
         {
-            ctx.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            await ctx.Response.WriteAsJsonAsync(new { error = AppText.Get("Program_ViewerLimit_Full_Error") });
+            await RuntimeAccessHelper.WriteViewerLimitExceededAsync(ctx);
             return;
         }
 
@@ -60,7 +52,7 @@ internal static class CaptureHandler
 
         try
         {
-            ctx.Response.StatusCode  = (int)HttpStatusCode.OK;
+            ctx.Response.StatusCode  = StatusCodes.Status200OK;
             ctx.Response.ContentType = "multipart/x-mixed-replace; boundary=frame";
             ctx.Response.Headers.CacheControl = "no-store, no-cache";
             ctx.Response.Headers.Pragma       = "no-cache";

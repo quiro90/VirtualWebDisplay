@@ -9,4 +9,4 @@ namespace VirtualWebDisplay.Streaming;
 /// <param name="Width">Frame width in pixels.</param>
 /// <param name="Height">Frame height in pixels.</param>
 /// <param name="TimestampUs">Capture timestamp in microseconds (monotonic clock).</param>
-internal readonly record struct RawFrame(byte[] Data, int Width, int Height, long TimestampUs);
+public readonly record struct RawFrame(byte[] Data, int Width, int Height, long TimestampUs);

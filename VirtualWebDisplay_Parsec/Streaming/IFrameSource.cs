@@ -4,7 +4,7 @@ namespace VirtualWebDisplay.Streaming;
 /// Abstraction over a screen capture source that provides both JPEG frames
 /// (for WebImage / MJPEG modes) and raw pixel frames (for H.264 encoding).
 /// </summary>
-internal interface IFrameSource
+public interface IFrameSource
 {
     /// <summary>
     /// Returns the latest captured frame encoded as JPEG.

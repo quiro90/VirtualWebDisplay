@@ -16,21 +16,17 @@ internal static class WebRtcHandler
         IReadOnlyList<ScreenRuntimeContext> runtimes,
         CancellationToken cancellationToken)
     {
-        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
-
-        if (!RuntimeAccessHelper.IsAuthorized(ctx, runtime))
-            return RuntimeAccessHelper.UnauthorizedResult(runtime);
+        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out var runtime, out var runtimeError))
+            return runtimeError!;
 
         if (!TransmissionModeOptions.IsRtc(runtime.Config.TransmissionMethod))
-            return Results.BadRequest(new { error = AppText.Get("Program_WebRtcDisabled_Error") });
+            return RuntimeAccessHelper.BadRequestError(AppText.Get("Program_WebRtcDisabled_Error"));
 
         if (!runtime.ViewerLimiter.CanAcceptWebRtc())
-            return Results.Json(
-                new { error = AppText.Get("Program_ViewerLimit_Full_Error") },
-                statusCode: StatusCodes.Status429TooManyRequests);
+            return RuntimeAccessHelper.ViewerLimitExceededResult();
 
         if (!string.Equals(offer.Type, "offer", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(offer.Sdp))
-            return Results.BadRequest(new { error = AppText.Get("Program_WebRtcInvalidOffer_Error") });
+            return RuntimeAccessHelper.BadRequestError(AppText.Get("Program_WebRtcInvalidOffer_Error"));
 
         var answer = await runtime.WebRtcStreamService.CreateAnswerAsync(offer, cancellationToken);
         return Results.Json(answer);

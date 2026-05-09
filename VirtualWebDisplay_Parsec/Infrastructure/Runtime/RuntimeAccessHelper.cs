@@ -5,12 +5,21 @@ namespace VirtualWebDisplay.Infrastructure.Runtime;
 
 public static class RuntimeAccessHelper
 {
+    private const int TooManyRequestsStatusCode = StatusCodes.Status429TooManyRequests;
+    private const int ViewerLimitExceededStatusCode = StatusCodes.Status429TooManyRequests;
+    private const int InternalServerErrorStatusCode = StatusCodes.Status500InternalServerError;
+    private const int ServiceUnavailableStatusCode = StatusCodes.Status503ServiceUnavailable;
+
+    private const string BrowserFitContain = "contain";
+    private const string BrowserFitFill = "fill";
+    private const string BrowserFitCover = "cover";
+
     public static string NormalizeBrowserImageFit(string? fit) =>
         fit?.Trim().ToLowerInvariant() switch
         {
-            "contain" => "contain",
-            "fill" => "fill",
-            _ => "cover",
+            BrowserFitContain => BrowserFitContain,
+            BrowserFitFill => BrowserFitFill,
+            _ => BrowserFitCover,
         };
 
     public static string SecurityCookieName(ScreenRuntimeContext runtime) => $"vwd_auth_{runtime.Id}";
@@ -19,22 +28,51 @@ public static class RuntimeAccessHelper
     {
         var localPort = context.Connection.LocalPort;
 
-        // Intentar match directo con puerto HTTP
-        var runtime = runtimes.FirstOrDefault(r => r.Config.Port == localPort);
-        if (runtime != null)
-            return runtime;
-
-        // Intentar match con puerto HTTPS (Config.Port + 1)
-        runtime = runtimes.FirstOrDefault(r => r.Config.Port + 1 == localPort);
-        if (runtime != null)
+        if (TryResolveRuntimeByPort(localPort, runtimes, out var runtime))
             return runtime;
 
         // Fallback a primera pantalla
         return runtimes[0];
     }
 
+    private static bool TryResolveRuntimeByPort(
+        int localPort,
+        IReadOnlyList<ScreenRuntimeContext> runtimes,
+        out ScreenRuntimeContext runtime)
+    {
+        var matchedRuntime = runtimes.FirstOrDefault(r => MatchesRuntimePort(localPort, r));
+        if (matchedRuntime is null)
+        {
+            runtime = runtimes[0];
+            return false;
+        }
+
+        runtime = matchedRuntime;
+        return true;
+    }
+
+    private static bool MatchesRuntimePort(int localPort, ScreenRuntimeContext runtime) =>
+        runtime.Config.Port == localPort || runtime.Config.Port + 1 == localPort;
+
     public static bool IsAuthorized(HttpContext context, ScreenRuntimeContext runtime) =>
         !runtime.SecurityGate.Enabled || runtime.SecurityGate.IsAuthorized(context, SecurityCookieName(runtime));
+
+    public static bool TryResolveAuthorizedRuntime(
+        HttpContext context,
+        IReadOnlyList<ScreenRuntimeContext> runtimes,
+        out ScreenRuntimeContext runtime,
+        out IResult? unauthorizedResult)
+    {
+        runtime = ResolveRuntime(context, runtimes);
+        if (IsAuthorized(context, runtime))
+        {
+            unauthorizedResult = null;
+            return true;
+        }
+
+        unauthorizedResult = UnauthorizedResult(runtime);
+        return false;
+    }
 
     public static string ResolveViewerKey(HttpContext context, ScreenRuntimeContext runtime)
     {
@@ -58,4 +96,33 @@ public static class RuntimeAccessHelper
 
         return Results.Unauthorized();
     }
+
+    public static IResult BadRequestError(string message) =>
+        Results.BadRequest(new { error = message });
+
+    public static IResult AuthorizedResult() =>
+        Results.Ok(new { authorized = true });
+
+    public static IResult NotFoundResult() =>
+        Results.NotFound();
+
+    public static IResult TooManyRequestsResult() =>
+        Results.StatusCode(TooManyRequestsStatusCode);
+
+    public static IResult InternalServerErrorResult() =>
+        Results.StatusCode(InternalServerErrorStatusCode);
+
+    public static IResult ServiceUnavailableResult() =>
+        Results.StatusCode(ServiceUnavailableStatusCode);
+
+    public static IResult HtmlContent(string html) =>
+        Results.Content(html, "text/html");
+
+    public static IResult ViewerLimitExceededResult() =>
+        Results.Json(
+            new { error = AppText.Get("Program_ViewerLimit_Full_Error") },
+            statusCode: ViewerLimitExceededStatusCode);
+
+    public static Task WriteViewerLimitExceededAsync(HttpContext context) =>
+        ViewerLimitExceededResult().ExecuteAsync(context);
 }

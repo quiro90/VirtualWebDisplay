@@ -10,22 +10,11 @@ using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.UI.TrayIcon;
 
 // ── Modo UAC: solo escribe modos custom al registro y sale ───────────────────
-if (args.Length >= 2 && args[0] == "--set-custom-modes")
+if (TryGetCustomModesArgument(args, out var customModesArg))
 {
     try
     {
-        var modes = args[1]
-            .Split(';', StringSplitOptions.RemoveEmptyEntries)
-            .Select(entry =>
-            {
-                var atIdx = entry.IndexOf('@');
-                var xIdx  = entry.IndexOf('x');
-                var w  = int.Parse(entry[..xIdx]);
-                var h  = int.Parse(entry[(xIdx + 1)..atIdx]);
-                var hz = int.Parse(entry[(atIdx + 1)..]);
-                return new VddCustomModesStore.CustomMode(w, h, hz);
-            })
-            .ToList();
+        var modes = ParseCustomModesArgument(customModesArg);
         VddCustomModesStore.Write(modes);
     }
     catch (Exception ex)
@@ -107,3 +96,29 @@ await ApplicationBootstrapper.RunAsync(
 
 serviceLifecycleManager.Dispose();
 Environment.Exit(0);
+
+static bool TryGetCustomModesArgument(string[] args, out string modesArg)
+{
+    if (args.Length >= 2 && args[0] == "--set-custom-modes")
+    {
+        modesArg = args[1];
+        return true;
+    }
+
+    modesArg = string.Empty;
+    return false;
+}
+
+static List<VddCustomModesStore.CustomMode> ParseCustomModesArgument(string modesArg) =>
+    modesArg
+        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+        .Select(entry =>
+        {
+            var atIdx = entry.IndexOf('@');
+            var xIdx  = entry.IndexOf('x');
+            var w  = int.Parse(entry[..xIdx]);
+            var h  = int.Parse(entry[(xIdx + 1)..atIdx]);
+            var hz = int.Parse(entry[(atIdx + 1)..]);
+            return new VddCustomModesStore.CustomMode(w, h, hz);
+        })
+        .ToList();

@@ -79,9 +79,12 @@ internal static class ApplicationBootstrapper
                     linkActiveColor: palette.LinkActive);
             });
         }
-        catch
+        catch (Exception ex)
         {
             // Fail silently — update check must never crash the app.
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine($"[ApplicationBootstrapper] Background update check failed: {ex.Message}");
+#endif
         }
     }
 }

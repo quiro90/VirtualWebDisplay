@@ -105,6 +105,4 @@ internal static class ApplicationLifecycleManager
         }
     }
 
-    /// <summary>
-    /// Runs the update check in the background after a short delay so as not to
 }
