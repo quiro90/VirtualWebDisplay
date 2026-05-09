@@ -179,18 +179,16 @@ public sealed class VirtualDisplayManager : IDisposable
                     if (ParsecVddDriverApi.IsValidHandle(_handle))
                         ParsecVddDriverApi.Update(_handle);
 
-                    await Task.Delay(100, token);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
+                    if (token.WaitHandle.WaitOne(100))
+                        break;
                 }
                 catch (Exception ex)
                 {
 #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[VirtualDisplayManager] KeepAlive update failed: {ex.Message}");
 #endif
-                    await Task.Delay(250, token);
+                    if (token.WaitHandle.WaitOne(250))
+                        break;
                 }
             }
         }, token);

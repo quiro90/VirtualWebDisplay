@@ -131,9 +131,9 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
   - Archivo: VirtualWebDisplay_Parsec/Web/Handlers/InputHandler.cs
   - Accion aplicada: eliminados campos static de request (_runtime, _virtualX, _virtualY) y migrado a estado local por request.
 
-- [ ] Eliminar bloqueos sincronicos sobre tareas async en UI/lifecycle.
+- [x] Eliminar bloqueos sincronicos sobre tareas async en UI/lifecycle.
   - Archivos: VirtualWebDisplay_Parsec/UI/TrayIcon/VirtualDisplayTrayController.cs, VirtualWebDisplay_Parsec/Parsec/VirtualDisplayManager.cs, VirtualWebDisplay_Parsec/Infrastructure/Hosting/SingleInstanceManager.cs
-  - Accion propuesta: reemplazar Wait/GetResult por espera asincronica o patrones no bloqueantes.
+  - Accion aplicada: reemplazado GetAwaiter().GetResult en ShowStartupConfiguration por flujo asincronico (ShowStartupConfigurationAsync + await en Program), migrados loops de listener/keepalive para no depender de Task async + Task.Delay y eliminado _ready.Wait() en inicializacion del tray mediante TaskCompletionSource de readiness.
 
 - [x] Cerrar hueco detectado en tests de copia de configuracion.
   - Archivo: VirtualWebDisplay.Tests/Configuration/VirtualScreenConfigCopyTests.cs

@@ -71,11 +71,13 @@ using var tray = new VirtualDisplayTrayController(
     appearanceStore,
     localIp);
 
+await tray.WaitUntilReadyAsync();
+
 // Chequear actualizaciones en background apenas inicia la app visual.
 _ = ApplicationBootstrapper.CheckForUpdateInBackgroundAsync(tray, appearanceStore);
 
 var autoStart = args.Contains("--autostart", StringComparer.OrdinalIgnoreCase);
-if (!autoStart && !tray.ShowStartupConfiguration())
+if (!autoStart && !await tray.ShowStartupConfigurationAsync())
     return;
 
 settings.EnsureValid();

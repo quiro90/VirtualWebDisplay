@@ -21,7 +21,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private readonly SingleInstanceActivator _singleInstanceActivator;
     private readonly ServiceStateManager _serviceState;
     private readonly Thread _uiThread;
-    private readonly ManualResetEventSlim _ready = new(false);
+    private readonly TaskCompletionSource<bool> _readyTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private ApplicationContext? _context;
     private Control? _invoker;
@@ -64,15 +64,16 @@ public sealed class VirtualDisplayTrayController : IDisposable
         };
         _uiThread.SetApartmentState(ApartmentState.STA);
         _uiThread.Start();
-        _ready.Wait();
     }
 
-    public bool ShowStartupConfiguration()
+    public Task WaitUntilReadyAsync() => _readyTcs.Task;
+
+    public Task<bool> ShowStartupConfigurationAsync()
     {
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         _cancelStartupCompletion = () => completion.TrySetResult(false);
 
-        _invoker.InvokeSafely(() =>
+        RunWhenReady(() =>
         {
             _formPresenter.OpenStartupForm(
                 onConfirmed: () =>
@@ -82,7 +83,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
                 });
         });
 
-        return completion.Task.GetAwaiter().GetResult();
+        return completion.Task;
     }
 
     public void ConfigureRuntimeActions(Action exitRequested, Action stopRequested, IReadOnlyList<ScreenRuntimeContext> screenRuntimes)
@@ -107,7 +108,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     public void UpdateStatus(string status)
     {
-        _invoker.InvokeSafely(() =>
+        RunWhenReady(() =>
         {
             if (_notifyIcon is null)
                 return;
@@ -118,34 +119,42 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
     private void RunUiThread()
     {
-        Application.EnableVisualStyles();
-        Application.SetCompatibleTextRenderingDefault(false);
-
-        _context = new ApplicationContext();
-        _invoker = new Control();
-        _invoker.CreateControl();
-
-        _appIcon      = LoadAppIcon();
-        _contextMenu  = BuildContextMenu();
-        _notifyIcon   = new NotifyIcon
+        try
         {
-            Icon             = _appIcon,
-            Text             = TrimTrayText(AppText.Get("Common_AppName")),
-            Visible          = true,
-            ContextMenuStrip = _contextMenu,
-        };
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
-        _notifyIcon.MouseClick += OnNotifyIconClick;
-        _notifyIcon.DoubleClick += OnNotifyIconClick;
-        _ready.Set();
+            _context = new ApplicationContext();
+            _invoker = new Control();
+            _invoker.CreateControl();
 
-        Application.Run(_context);
+            _appIcon      = LoadAppIcon();
+            _contextMenu  = BuildContextMenu();
+            _notifyIcon   = new NotifyIcon
+            {
+                Icon             = _appIcon,
+                Text             = TrimTrayText(AppText.Get("Common_AppName")),
+                Visible          = true,
+                ContextMenuStrip = _contextMenu,
+            };
 
-        _notifyIcon.Visible = false;
-        _notifyIcon.Dispose();
-        _contextMenu?.Dispose();
-        _appIcon?.Dispose();
-        _invoker.Dispose();
+            _notifyIcon.MouseClick += OnNotifyIconClick;
+            _notifyIcon.DoubleClick += OnNotifyIconClick;
+            _readyTcs.TrySetResult(true);
+
+            Application.Run(_context);
+
+            _notifyIcon.Visible = false;
+            _notifyIcon.Dispose();
+            _contextMenu?.Dispose();
+            _appIcon?.Dispose();
+            _invoker.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _readyTcs.TrySetException(ex);
+            throw;
+        }
     }
 
     private ContextMenuStrip BuildContextMenu() =>
@@ -161,7 +170,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private void OnShowApplicationRequested()
     {
         // This is called from a background thread, so we must invoke it on the UI thread.
-        _invoker.InvokeSafely(ShowConfigurationDialog);
+        RunWhenReady(ShowConfigurationDialog);
     }
 
     private void OnNotifyIconClick(object? sender, EventArgs e)
@@ -229,7 +238,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
     private void OnServiceStateChanged(ServiceState newState)
     {
         // Reconstruir menú cuando cambia el estado
-        _invoker.InvokeSafely(() =>
+        RunWhenReady(() =>
         {
             _contextMenu?.Dispose();
             _contextMenu = BuildContextMenu();
@@ -243,7 +252,7 @@ public sealed class VirtualDisplayTrayController : IDisposable
         var summary = string.Join(" | ", screenRuntimes.Select(r => $"{r.DisplayName}: {r.HostUrl}"));
         UpdateStatus(summary);
 
-        _invoker.InvokeSafely(() =>
+        RunWhenReady(() =>
         {
             if (_notifyIcon is null)
                 return;
@@ -275,7 +284,30 @@ public sealed class VirtualDisplayTrayController : IDisposable
     /// Marshals <paramref name="action"/> onto the tray UI thread (STA).
     /// Safe to call from any thread; no-op if the controller is already disposed.
     /// </summary>
-    public void InvokeOnUiThread(Action action) => _invoker.InvokeSafely(action);
+    public void InvokeOnUiThread(Action action) => RunWhenReady(action);
+
+    private void RunWhenReady(Action action)
+    {
+        if (_disposed)
+            return;
+
+        if (_readyTcs.Task.IsCompletedSuccessfully)
+        {
+            _invoker.InvokeSafely(action);
+            return;
+        }
+
+        _ = _readyTcs.Task.ContinueWith(
+            _ =>
+            {
+                if (_disposed)
+                    return;
+                _invoker.InvokeSafely(action);
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnRanToCompletion,
+            TaskScheduler.Default);
+    }
 
     private static string TrimTrayText(string text) =>
         text.Length <= 63 ? text : text[..63];
@@ -287,9 +319,9 @@ public sealed class VirtualDisplayTrayController : IDisposable
 
         _disposed = true;
         _singleInstanceActivator.ShowApplicationRequested -= OnShowApplicationRequested;
+        _readyTcs.TrySetResult(true);
         _invoker.InvokeSafely(() => _context?.ExitThread());
         if (!_uiThread.Join(1500))
             _uiThread.Interrupt();
-        _ready.Dispose();
     }
 }

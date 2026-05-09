@@ -83,22 +83,13 @@ public sealed class SingleInstanceManager : IDisposable
         _listenerCancellation = new CancellationTokenSource();
         var token = _listenerCancellation.Token;
 
-        _listenerTask = Task.Run(async () =>
+        _listenerTask = Task.Run(() =>
         {
             while (!token.IsCancellationRequested)
             {
                 if (_restartEvent.WaitOne(TimeSpan.FromMilliseconds(500)))
                 {
                     _shutdownAction?.Invoke();
-                    break;
-                }
-
-                try
-                {
-                    await Task.Delay(100, token);
-                }
-                catch (OperationCanceledException)
-                {
                     break;
                 }
             }
