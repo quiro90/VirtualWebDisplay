@@ -35,10 +35,11 @@ internal static class ApplicationLifecycleManager
             var builder = WebApplication.CreateBuilder(args);
             KestrelConfigurator.Configure(builder, enabledPorts, tlsCert);
 
-            var app = builder.Build();
-            var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+            using var bootstrapLoggerFactory = LoggerFactory.Create(_ => { });
+            var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, driverVerifier, bootstrapLoggerFactory);
+            builder.Services.AddSingleton<IWebEndpointOrchestrator>(new DefaultWebEndpointOrchestrator(runtimes, tlsCertDerBytes));
 
-            var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, driverVerifier, loggerFactory);
+            var app = builder.Build();
 
             singleInstance.StartShutdownListener(() => app.Lifetime.StopApplication());
             var stopRequested = false;
@@ -57,7 +58,7 @@ internal static class ApplicationLifecycleManager
                 // Habilitar archivos estáticos (JavaScript, CSS, etc.)
                 app.UseStaticFiles();
 
-                WebApiEndpoints.Map(app, runtimes, tlsCertDerBytes);
+                WebApiEndpoints.Map(app);
 
                 using var resolutionWatcher = new VirtualResolutionWatcher(runtimes, resolutionStore);
                 resolutionWatcher.RestoreOrSeedResolutions();

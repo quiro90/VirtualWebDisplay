@@ -159,14 +159,22 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
 
 ## Arquitectura y calidad (mediano plazo)
 
-- [ ] Introducir DI para handlers y quitar estado static mutable en capa Web.
+- [~] Introducir DI para handlers y quitar estado static mutable en capa Web.
   - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/*.cs, VirtualWebDisplay_Parsec/Web/Api/WebApiEndpoints.cs
+  - Avance aplicado: introducido IWebEndpointOrchestrator + DefaultWebEndpointOrchestrator, registrado en contenedor DI y resuelto desde WebApiEndpoints.Map.
+  - Pendiente: avanzar en sustitución de handlers estáticos por servicios inyectables y reducir estado static mutable restante.
 
 - [~] Definir pruebas de integracion para endpoints criticos.
   - Cobertura actual: 1 archivo de pruebas, 4 tests, enfocados solo en copia de configuracion.
   - Avance aplicado: agregada bateria de tests de comportamiento para InputHandler, AuthHandler, WebRtcHandler, ConfigHandler, KeepaliveHandler y CaptureHandler.
   - Archivos: VirtualWebDisplay.Tests/Web/Handlers/InputHandlerTests.cs, VirtualWebDisplay.Tests/Web/Handlers/AuthHandlerTests.cs, VirtualWebDisplay.Tests/Web/Handlers/WebRtcHandlerTests.cs, VirtualWebDisplay.Tests/Web/Handlers/ConfigAndKeepaliveHandlerTests.cs, VirtualWebDisplay.Tests/Web/Handlers/CaptureHandlerTests.cs.
-  - Pendiente: ampliar cobertura de autorizacion/limite de viewers en escenarios mas completos y cubrir exito real de captura/streaming con doubles de frame source si se decide abrir esa costura de test.
+  - Avance aplicado (bloque 1): agregadas pruebas de concurrencia para handlers criticos y robustez de ciclo de vida de estado.
+  - Archivos: VirtualWebDisplay.Tests/Web/Handlers/HandlerConcurrencyTests.cs, VirtualWebDisplay.Tests/Infrastructure/ServiceStateManagerConcurrencyTests.cs.
+  - Avance aplicado (bloque 1): agregadas pruebas end-to-end en memoria sobre host HTTP real (TestServer) para flujo auth/config/keepalive/input.
+  - Archivos: VirtualWebDisplay.Tests/Web/Api/WebApiEndpointsIntegrationTests.cs.
+  - Avance aplicado (bloque 1): cubierto exito real de captura/streaming para /cap y /mjpeg usando doubles de frame source en tests de handler.
+  - Archivos: VirtualWebDisplay.Tests/Web/Handlers/CaptureHandlerTests.cs, VirtualWebDisplay.Tests/Web/Handlers/WebHandlerTestHelper.cs.
+  - Pendiente: escenarios multi-cliente con host real en paralelo.
 
 - [x] Revisar acoplamiento de ScreenRuntimeContext como agregador de dependencias concretas.
   - Archivo: VirtualWebDisplay_Parsec/Infrastructure/Runtime/ScreenRuntimeContext.cs

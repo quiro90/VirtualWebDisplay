@@ -12,7 +12,8 @@ internal static class WebHandlerTestHelper
     internal static ScreenRuntimeContext CreateRuntime(
         Action<VirtualScreenConfig>? configure = null,
         string id = "screen1",
-        string displayName = "Screen 1")
+        string displayName = "Screen 1",
+        IScreenRuntimeServicesFactory? servicesFactory = null)
     {
         var config = new VirtualScreenConfig
         {
@@ -31,7 +32,8 @@ internal static class WebHandlerTestHelper
             config: config,
             hostName: "localhost",
             localIp: "127.0.0.1",
-            driverVerifier: new FakeDriverVerifier());
+            driverVerifier: new FakeDriverVerifier(),
+            servicesFactory: servicesFactory);
     }
 
     internal static DefaultHttpContext CreateHttpContext(int localPort, bool isHttps = false)
