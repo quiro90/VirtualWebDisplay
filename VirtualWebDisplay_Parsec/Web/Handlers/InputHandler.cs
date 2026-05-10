@@ -1,4 +1,5 @@
 using VirtualWebDisplay.Infrastructure;
+using VirtualWebDisplay.Infrastructure.Runtime;
 using System.Windows.Forms;
 
 namespace VirtualWebDisplay.Web.Handlers;
@@ -10,6 +11,15 @@ namespace VirtualWebDisplay.Web.Handlers;
 /// Incluye rate limiting para proteger contra flooding de eventos.
 /// </summary>
 internal static class InputHandler
+{
+    internal static IResult HandleTouchInput(HttpContext ctx, TouchInputRequest request, IRuntimeAccessService runtimeAccess)
+        => new TouchInputHandler(runtimeAccess).HandleTouchInput(ctx, request);
+
+    internal static IResult HandleTouchStats(HttpContext ctx, IRuntimeAccessService runtimeAccess)
+        => new TouchInputHandler(runtimeAccess).HandleTouchStats(ctx);
+}
+
+internal sealed class TouchInputHandler
 {
     private const string ActionTap = "tap";
     private const string ActionRightClick = "rightclick";
@@ -24,29 +34,39 @@ internal static class InputHandler
     private const string LegacyTypeTouchMove = "touchmove";
     private const string LegacyTypeTouchEnd = "touchend";
 
-    // Configuraci�n de rate limiting
+    // Configuración de rate limiting
     private const int DEFAULT_MAX_EVENTS_PER_SECOND = 100;
 
     // Failsafe para evitar LEFTDOWN colgado si se pierde touchend en cliente/red.
     private const int DRAG_STALE_TIMEOUT_MS = 1200;
 
-    private static readonly RateLimiterRegistry _rateLimiterRegistry = new(DEFAULT_MAX_EVENTS_PER_SECOND);
-    private static readonly InputTelemetry _telemetry = new();
-    private static readonly DragStateTracker _dragState = new(DRAG_STALE_TIMEOUT_MS);
+    private readonly IRuntimeAccessService _runtimeAccess;
+    private readonly RateLimiterRegistry _rateLimiterRegistry;
+    private readonly InputTelemetry _telemetry;
+    private readonly DragStateTracker _dragState;
+    private readonly ActionDispatcher _actionDispatcher;
+
+    internal TouchInputHandler(IRuntimeAccessService runtimeAccess)
+    {
+        _runtimeAccess = runtimeAccess;
+        _rateLimiterRegistry = new RateLimiterRegistry(DEFAULT_MAX_EVENTS_PER_SECOND);
+        _telemetry = new InputTelemetry();
+        _dragState = new DragStateTracker(DRAG_STALE_TIMEOUT_MS);
+        _actionDispatcher = new ActionDispatcher(this);
+    }
 
     /// <summary>
     /// POST /input/touch - Recibe eventos t�ctiles y los convierte en clics de mouse.
     /// Soporta tanto WebImage como WebRTC (ambos modos de transmisi�n).
     /// </summary>
-    internal static IResult HandleTouchInput(
+    internal IResult HandleTouchInput(
         HttpContext ctx,
-        TouchInputRequest request,
-        IReadOnlyList<ScreenRuntimeContext> runtimes)
+        TouchInputRequest request)
     {
         if (!TryValidateTouchRequest(request, out var validationError))
             return validationError;
 
-        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out var runtime, out var runtimeError))
+        if (!_runtimeAccess.TryResolveAuthorizedRuntime(ctx, out var runtime, out var runtimeError))
             return runtimeError!;
 
         // Gate de touch en tiempo real: si la app lo desactiva, ignoramos eventos aunque el cliente los siga enviando.
@@ -54,7 +74,7 @@ internal static class InputHandler
             return Results.NoContent();
 
         var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, runtime);
+        var viewerKey = _runtimeAccess.ResolveViewerKey(ctx, runtime);
         if (TryRejectByRateLimit(request, nowMs, viewerKey, out var rateLimitResult))
             return rateLimitResult;
 
@@ -76,7 +96,7 @@ internal static class InputHandler
             // Las coordenadas pueden llegar nulas/incompletas cuando el dedo abandona
             // el viewport, lo que antes causaba 400 Bad Request. Ahora se toleran.
             // -----------------------------------------------------------------------
-            if (ActionDispatcher.TryHandlePreCoordinateAction(action, runtime, out var preCoordinateResult))
+if (_actionDispatcher.TryHandlePreCoordinateAction(action, runtime, out var preCoordinateResult))
                 return preCoordinateResult;
 
             if (!TryResolveDesktopCoordinates(request, runtime, out var desktopX, out var desktopY, out var coordError))
@@ -85,27 +105,27 @@ internal static class InputHandler
                 return coordError;
             }
 
-            return ActionDispatcher.ExecutePostCoordinateAction(runtime, action, request, desktopX, desktopY, nowMs);
+            return _actionDispatcher.ExecutePostCoordinateAction(runtime, action, request, desktopX, desktopY, nowMs);
         }
         catch (Exception ex)
         {
             _telemetry.RegisterError();
             System.Diagnostics.Debug.WriteLine($"[InputHandler] Error: {ex.Message}");
-            return RuntimeAccessHelper.InternalServerErrorResult();
+            return _runtimeAccess.InternalServerErrorResult();
         }
     }
 
-    private static bool TryValidateTouchRequest(TouchInputRequest request, out IResult errorResult)
+    private bool TryValidateTouchRequest(TouchInputRequest request, out IResult errorResult)
     {
         if (request == null)
         {
-            errorResult = RuntimeAccessHelper.BadRequestError("Request body required");
+            errorResult = _runtimeAccess.BadRequestError("Request body required");
             return false;
         }
 
         if (string.IsNullOrEmpty(request.Type))
         {
-            errorResult = RuntimeAccessHelper.BadRequestError("Type field required");
+            errorResult = _runtimeAccess.BadRequestError("Type field required");
             return false;
         }
 
@@ -113,7 +133,7 @@ internal static class InputHandler
         return true;
     }
 
-    private static bool TryHandleGestureEndAction(string action, ScreenRuntimeContext runtime, out IResult result)
+    private bool TryHandleGestureEndAction(string action, ScreenRuntimeContext runtime, out IResult result)
     {
         if (!IsGestureEndAction(action))
         {
@@ -130,7 +150,7 @@ internal static class InputHandler
         return true;
     }
 
-    private static bool TryResolveDesktopCoordinates(
+    private bool TryResolveDesktopCoordinates(
         TouchInputRequest request,
         ScreenRuntimeContext runtime,
         out int desktopX,
@@ -144,7 +164,7 @@ internal static class InputHandler
         // Si llegan nulas (cliente defectuoso), rechazar con 400 s�lo si no es dragend/scrollend.
         if (request.X is null || request.Y is null)
         {
-            errorResult = RuntimeAccessHelper.BadRequestError("Coordinates X and Y are required for this action.");
+            errorResult = _runtimeAccess.BadRequestError("Coordinates X and Y are required for this action.");
             return false;
         }
 
@@ -172,19 +192,19 @@ internal static class InputHandler
         return true;
     }
 
-    private static IResult HandleLegacyAction(TouchInputRequest request, int desktopX, int desktopY)
+    private IResult HandleLegacyAction(TouchInputRequest request, int desktopX, int desktopY)
     {
         // Compatibilidad backward con clientes antiguos que solo enviaban Type.
         if (!ProcessLegacyEvent(request, desktopX, desktopY))
         {
             _telemetry.RegisterError();
-            return RuntimeAccessHelper.BadRequestError($"Unknown legacy type: {request.Type}");
+            return _runtimeAccess.BadRequestError($"Unknown legacy type: {request.Type}");
         }
 
         return Results.Ok();
     }
 
-    private static IResult HandleSemanticAction(
+    private IResult HandleSemanticAction(
         ScreenRuntimeContext runtime,
         string action,
         int desktopX,
@@ -217,11 +237,11 @@ internal static class InputHandler
 
             default:
                 _telemetry.RegisterError();
-                return RuntimeAccessHelper.BadRequestError($"Unknown action: {action}");
+                return _runtimeAccess.BadRequestError($"Unknown action: {action}");
         }
     }
 
-    private static bool TryHandleDisabledSemanticAction(
+    private bool TryHandleDisabledSemanticAction(
         ScreenRuntimeContext runtime,
         string action,
         out IResult result)
@@ -242,7 +262,7 @@ internal static class InputHandler
         return false;
     }
 
-    private static void ExecutePointerAction(
+    private void ExecutePointerAction(
         MouseClickType clickType,
         ScreenRuntimeContext runtime,
         int desktopX,
@@ -254,7 +274,7 @@ internal static class InputHandler
         ExecuteClick(clickType, desktopX, desktopY, runtime.Config.TouchPreserveCursor);
     }
 
-    private static bool TryRejectByRateLimit(
+    private bool TryRejectByRateLimit(
         TouchInputRequest request,
         long nowMs,
         string viewerKey,
@@ -267,7 +287,7 @@ internal static class InputHandler
         {
             RegisterRateLimitedEvent();
             System.Diagnostics.Debug.WriteLine($"[InputHandler] Rate limit exceeded for viewer: {viewerKey}");
-            result = RuntimeAccessHelper.TooManyRequestsResult();
+            result = _runtimeAccess.TooManyRequestsResult();
             return true;
         }
 
@@ -278,9 +298,9 @@ internal static class InputHandler
     /// <summary>
     /// GET /input/stats - Devuelve estad�sticas agregadas de entrada t�ctil.
     /// </summary>
-    internal static IResult HandleTouchStats(HttpContext ctx, IReadOnlyList<ScreenRuntimeContext> runtimes)
+    internal IResult HandleTouchStats(HttpContext ctx)
     {
-        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out var runtime, out var runtimeError))
+        if (!_runtimeAccess.TryResolveAuthorizedRuntime(ctx, out var runtime, out var runtimeError))
             return runtimeError!;
 
         var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -298,7 +318,7 @@ internal static class InputHandler
         });
     }
 
-    private static TouchStatsSnapshot GetTouchStatsSnapshot(long nowMs) =>
+    private TouchStatsSnapshot GetTouchStatsSnapshot(long nowMs) =>
         _telemetry.GetSnapshot(nowMs);
 
     /// <summary>
@@ -306,7 +326,7 @@ internal static class InputHandler
     /// Usa Math.Clamp para garantizar que los valores nunca excedan los l�mites del monitor,
     /// evitando coordenadas negativas o fuera de rango que causar�an comportamiento indefinido en Windows.
     /// </summary>
-    private static (int screenX, int screenY) MapCoordinates(
+    private (int screenX, int screenY) MapCoordinates(
         double viewportX,
         double viewportY,
         double viewportWidth,
@@ -324,7 +344,7 @@ internal static class InputHandler
     /// Obtiene bounds reales del monitor virtual dentro del escritorio extendido.
     /// Si no se encuentra el monitor, usa PrimaryScreen como fallback seguro.
     /// </summary>
-    private static System.Drawing.Rectangle ResolveTargetMonitorBounds(ScreenRuntimeContext runtime)
+    private System.Drawing.Rectangle ResolveTargetMonitorBounds(ScreenRuntimeContext runtime)
     {
         var screens = Screen.AllScreens;
 
@@ -346,7 +366,7 @@ internal static class InputHandler
     /// Procesa evento touchstart:
     /// 1 dedo = click izquierdo, 2 dedos = click derecho, 3+ dedos = click central.
     /// </summary>
-    private static void ProcessTouchStart(int screenX, int screenY, int fingers)
+    private void ProcessTouchStart(int screenX, int screenY, int fingers)
     {
         if (fingers == 1)
         {
@@ -374,7 +394,7 @@ internal static class InputHandler
     /// <summary>
     /// Procesa evento touchmove: mueve el cursor sin hacer click.
     /// </summary>
-    private static void ProcessTouchMove()
+    private void ProcessTouchMove()
     {
         // Intencionalmente no movemos el cursor real del PC durante touchmove.
         // Este comportamiento prioriza no desplazar el puntero local del usuario.
@@ -383,13 +403,13 @@ internal static class InputHandler
     /// <summary>
     /// Procesa evento touchend: suelta el boton izquierdo si estaba presionado.
     /// </summary>
-    private static void ProcessTouchEnd()
+    private void ProcessTouchEnd()
     {
         EndDragIfActive();
         RestoreCursorIfNeeded(true);
     }
 
-    private static bool ProcessLegacyEvent(TouchInputRequest request, int desktopX, int desktopY)
+    private bool ProcessLegacyEvent(TouchInputRequest request, int desktopX, int desktopY)
     {
         var type = NormalizeLegacyType(request.Type);
         switch (type)
@@ -408,17 +428,17 @@ internal static class InputHandler
         }
     }
 
-    private static void MarkDragStarted(long nowMs)
+    private void MarkDragStarted(long nowMs)
     {
         _dragState.MarkStarted(nowMs);
     }
 
-    private static void MarkDragActivity(long nowMs)
+    private void MarkDragActivity(long nowMs)
     {
         _dragState.MarkActivity(nowMs);
     }
 
-    private static void EndDragIfActive()
+    private void EndDragIfActive()
     {
         if (_dragState.TryEnd())
         {
@@ -431,7 +451,7 @@ internal static class InputHandler
     /// Libera el bot�n izquierdo si el drag lleva m�s de DRAG_STALE_TIMEOUT_MS ms sin actividad.
     /// Se llama al inicio de cada request para limpiar estado inconsistente por eventos perdidos.
     /// </summary>
-    private static void ReleaseDragIfStale()
+    private void ReleaseDragIfStale()
     {
         var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         if (_dragState.TryReleaseIfStale(nowMs))
@@ -442,13 +462,13 @@ internal static class InputHandler
         }
     }
 
-    private static void SaveCursorIfNeeded(bool shouldPreserve)
+    private void SaveCursorIfNeeded(bool shouldPreserve)
     {
         if (shouldPreserve)
             MouseInputHelper.SaveCurrentCursorPosition();
     }
 
-    private static void RestoreCursorIfNeeded(bool shouldPreserve)
+    private void RestoreCursorIfNeeded(bool shouldPreserve)
     {
         if (shouldPreserve)
             MouseInputHelper.RestoreLastCursorPosition();
@@ -458,22 +478,22 @@ internal static class InputHandler
     /// Verifica si el cliente est� dentro del l�mite de eventos por segundo.
     /// Mantiene un rate limiter por cliente/sesi�n.
     /// </summary>
-    private static bool CheckRateLimit(string viewerKey)
+    private bool CheckRateLimit(string viewerKey)
     {
         return _rateLimiterRegistry.AllowRequest(viewerKey);
     }
 
-    private static void RegisterEvent(long nowMs)
+    private void RegisterEvent(long nowMs)
     {
         _telemetry.RegisterEvent(nowMs);
     }
 
-    private static void RegisterRateLimitedEvent()
+    private void RegisterRateLimitedEvent()
     {
         _telemetry.RegisterRateLimitedEvent();
     }
 
-    private static void RegisterLatency(long nowMs, long requestTimestamp)
+    private void RegisterLatency(long nowMs, long requestTimestamp)
     {
         _telemetry.RegisterLatency(nowMs, requestTimestamp);
     }
@@ -482,7 +502,7 @@ internal static class InputHandler
     /// Ejecuta un click del tipo especificado, eligiendo autom�ticamente entre
     /// el m�todo normal o el que preserva el cursor seg�n la configuraci�n.
     /// </summary>
-    private static void ExecuteClick(MouseClickType clickType, int x, int y, bool preserveCursor)
+    private void ExecuteClick(MouseClickType clickType, int x, int y, bool preserveCursor)
     {
         switch (clickType)
         {
@@ -512,7 +532,7 @@ internal static class InputHandler
     /// <summary>
     /// Ejecuta una acci�n de gesto (drag/scroll). Centraliza la l�gica repetitiva.
     /// </summary>
-    private static IResult ExecuteGestureAction(
+    private IResult ExecuteGestureAction(
         ScreenRuntimeContext runtime,
         string action,
         int desktopX,
@@ -546,7 +566,7 @@ internal static class InputHandler
         return Results.Ok();
     }
 
-    private static void ExecuteDragStart(ScreenRuntimeContext runtime, int desktopX, int desktopY, long nowMs)
+    private void ExecuteDragStart(ScreenRuntimeContext runtime, int desktopX, int desktopY, long nowMs)
     {
         // FIX: antes de iniciar un nuevo drag, liberar cualquier drag previo
         EndDragIfActive();
@@ -555,20 +575,20 @@ internal static class InputHandler
         MarkDragStarted(nowMs);
     }
 
-    private static void ExecuteDragMove(ScreenRuntimeContext runtime, int desktopX, int desktopY, long nowMs)
+    private void ExecuteDragMove(ScreenRuntimeContext runtime, int desktopX, int desktopY, long nowMs)
     {
         SaveCursorIfNeeded(runtime.Config.TouchPreserveCursor);
         MouseInputHelper.MoveMouse(desktopX, desktopY);
         MarkDragActivity(nowMs);
     }
 
-    private static void ExecuteDragEnd(ScreenRuntimeContext runtime)
+    private void ExecuteDragEnd(ScreenRuntimeContext runtime)
     {
         EndDragIfActive();
         RestoreCursorIfNeeded(runtime.Config.TouchPreserveCursor);
     }
 
-    private static void ExecuteScrollMove(ScreenRuntimeContext runtime, int desktopX, int desktopY, TouchInputRequest request)
+    private void ExecuteScrollMove(ScreenRuntimeContext runtime, int desktopX, int desktopY, TouchInputRequest request)
     {
         SaveCursorIfNeeded(runtime.Config.TouchPreserveCursor);
         MouseInputHelper.MoveMouse(desktopX, desktopY);
@@ -578,13 +598,13 @@ internal static class InputHandler
         MouseInputHelper.Scroll(dy, dx);
     }
 
-    private static void ExecuteScrollEnd(ScreenRuntimeContext runtime)
+    private void ExecuteScrollEnd(ScreenRuntimeContext runtime)
     {
         EndDragIfActive();
         RestoreCursorIfNeeded(runtime.Config.TouchPreserveCursor);
     }
 
-    private readonly record struct TouchStatsSnapshot(
+    internal readonly record struct TouchStatsSnapshot(
         long TotalEvents,
         long TotalErrors,
         long RateLimitedEvents,
@@ -592,7 +612,7 @@ internal static class InputHandler
         double AverageLatencyMs,
         long LastInputAgoMs);
 
-    private sealed class RateLimiterRegistry
+    internal sealed class RateLimiterRegistry
     {
         private readonly int _maxEventsPerSecond;
         private readonly Dictionary<string, RateLimiter> _rateLimiters = new();
@@ -621,7 +641,7 @@ internal static class InputHandler
         }
     }
 
-    private sealed class InputTelemetry
+    internal sealed class InputTelemetry
     {
         private long _totalEvents;
         private long _totalErrors;
@@ -705,7 +725,7 @@ internal static class InputHandler
         }
     }
 
-    private sealed class DragStateTracker
+    internal sealed class DragStateTracker
     {
         private readonly int _staleTimeoutMs;
         private readonly object _lock = new();
@@ -761,15 +781,22 @@ internal static class InputHandler
         }
     }
 
-    private static class ActionDispatcher
+    private sealed class ActionDispatcher
     {
-        internal static bool TryHandlePreCoordinateAction(
+        private readonly TouchInputHandler _owner;
+
+        internal ActionDispatcher(TouchInputHandler owner)
+        {
+            _owner = owner;
+        }
+
+        internal bool TryHandlePreCoordinateAction(
             string action,
             ScreenRuntimeContext runtime,
             out IResult result) =>
-            TryHandleGestureEndAction(action, runtime, out result);
+            _owner.TryHandleGestureEndAction(action, runtime, out result);
 
-        internal static IResult ExecutePostCoordinateAction(
+        internal IResult ExecutePostCoordinateAction(
             ScreenRuntimeContext runtime,
             string action,
             TouchInputRequest request,
@@ -777,28 +804,28 @@ internal static class InputHandler
             int desktopY,
             long nowMs)
         {
-            if (TryHandleDisabledSemanticAction(runtime, action, out var disabledActionResult))
+            if (_owner.TryHandleDisabledSemanticAction(runtime, action, out var disabledActionResult))
                 return disabledActionResult;
 
             return string.IsNullOrEmpty(action)
-                ? HandleLegacyAction(request, desktopX, desktopY)
-                : HandleSemanticAction(runtime, action, desktopX, desktopY, nowMs, request);
+                ? _owner.HandleLegacyAction(request, desktopX, desktopY)
+                : _owner.HandleSemanticAction(runtime, action, desktopX, desktopY, nowMs, request);
         }
     }
 
-    private static string NormalizeAction(string? action) =>
+    private string NormalizeAction(string? action) =>
         (action ?? string.Empty).ToLowerInvariant();
 
-    private static string NormalizeLegacyType(string? type) =>
+    private string NormalizeLegacyType(string? type) =>
         (type ?? string.Empty).ToLowerInvariant();
 
-    private static bool IsDragAction(string action) =>
+    private bool IsDragAction(string action) =>
         action is ActionDragStart or ActionDragMove or ActionDragEnd;
 
-    private static bool IsScrollAction(string action) =>
+    private bool IsScrollAction(string action) =>
         action is ActionScrollMove or ActionScrollEnd;
 
-    private static bool IsGestureEndAction(string action) =>
+    private bool IsGestureEndAction(string action) =>
         action is ActionDragEnd or ActionScrollEnd;
 
     /// <summary>

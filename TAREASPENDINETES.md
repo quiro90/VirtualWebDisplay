@@ -160,9 +160,9 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
 ## Arquitectura y calidad (mediano plazo)
 
 - [~] Introducir DI para handlers y quitar estado static mutable en capa Web.
-  - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/*.cs, VirtualWebDisplay_Parsec/Web/Api/WebApiEndpoints.cs
-  - Avance aplicado: introducido IWebEndpointOrchestrator + DefaultWebEndpointOrchestrator, registrado en contenedor DI y resuelto desde WebApiEndpoints.Map.
-  - Pendiente: avanzar en sustitución de handlers estáticos por servicios inyectables y reducir estado static mutable restante.
+  - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/*.cs, VirtualWebDisplay_Parsec/Web/Api/WebApiEndpoints.cs, VirtualWebDisplay_Parsec/Web/Services/WebEndpointServices.cs
+  - Avance aplicado: extraídos IAuthService/IConfigService/IKeepaliveService/ICaptureService/IWebRtcOfferService y usados desde DefaultWebEndpointOrchestrator; registrados en DI y mapeados desde WebApiEndpoints.
+  - Avance aplicado: migrado InputHandler a IInputService inyectable y registrado en DI; WebApiEndpoints ahora usa servicio de input en lugar de llamar directamente al handler estático.
 
 - [~] Definir pruebas de integracion para endpoints criticos.
   - Cobertura actual: 1 archivo de pruebas, 4 tests, enfocados solo en copia de configuracion.
@@ -174,7 +174,8 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
   - Archivos: VirtualWebDisplay.Tests/Web/Api/WebApiEndpointsIntegrationTests.cs.
   - Avance aplicado (bloque 1): cubierto exito real de captura/streaming para /cap y /mjpeg usando doubles de frame source en tests de handler.
   - Archivos: VirtualWebDisplay.Tests/Web/Handlers/CaptureHandlerTests.cs, VirtualWebDisplay.Tests/Web/Handlers/WebHandlerTestHelper.cs.
-  - Pendiente: escenarios multi-cliente con host real en paralelo.
+  - Avance adicional: prueba multi-cliente con host HTTP en memoria válida en paralelo.
+  - Archivos: VirtualWebDisplay.Tests/Web/Api/WebApiEndpointsIntegrationTests.cs.
 
 - [x] Revisar acoplamiento de ScreenRuntimeContext como agregador de dependencias concretas.
   - Archivo: VirtualWebDisplay_Parsec/Infrastructure/Runtime/ScreenRuntimeContext.cs

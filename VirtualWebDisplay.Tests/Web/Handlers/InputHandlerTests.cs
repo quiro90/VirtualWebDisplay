@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using VirtualWebDisplay.Infrastructure.Runtime;
 using VirtualWebDisplay.Web.Api;
 using VirtualWebDisplay.Web.Handlers;
 
@@ -12,7 +13,7 @@ public sealed class InputHandlerTests
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
         var request = new TouchInputRequest { Type = string.Empty };
 
-        var result = InputHandler.HandleTouchInput(context, request, []);
+        var result = InputHandler.HandleTouchInput(context, request, new RuntimeAccessService(Array.Empty<ScreenRuntimeContext>()));
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status400BadRequest, response.StatusCode);
