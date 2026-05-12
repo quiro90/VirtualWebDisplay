@@ -149,9 +149,17 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
   - Archivo sospechoso: VirtualWebDisplay_Parsec/Infrastructure/SingleInstanceManager.cs
   - Accion aplicada: confirmado no uso en código activo y eliminada clase legacy.
 
-- [ ] Reducir complejidad ciclomática de InputHandler.
+- [~] Reducir complejidad ciclomática de InputHandler.
   - Archivo: VirtualWebDisplay_Parsec/Web/Handlers/InputHandler.cs
   - Accion propuesta: separar en componentes por responsabilidad (routing de acciones, mapeo de coordenadas, estado de gestos, telemetria).
+  - Avance aplicado: extraido TouchInputActions para centralizar normalizacion y clasificacion de acciones/tipos tactiles, con cobertura unitaria dedicada.
+  - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/TouchInputActions.cs, VirtualWebDisplay.Tests/Web/Handlers/TouchInputActionsTests.cs.
+  - Avance aplicado: extraido TouchInputCoordinateResolver para aislar mapeo de coordenadas y resolucion de monitor, con prueba de validacion de coordenadas requeridas.
+  - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/TouchInputCoordinateResolver.cs, VirtualWebDisplay.Tests/Web/Handlers/TouchInputCoordinateResolverTests.cs.
+  - Avance aplicado: extraido TouchInputRequestValidator para separar validacion pura del armado de respuestas HTTP, con cobertura unitaria dedicada.
+  - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/TouchInputRequestValidator.cs, VirtualWebDisplay.Tests/Web/Handlers/TouchInputRequestValidatorTests.cs.
+  - Avance aplicado: movidos RateLimiterRegistry, InputTelemetry, DragStateTracker y TouchStatsSnapshot a archivos propios para desacoplar estado interno del handler.
+  - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/RateLimiterRegistry.cs, VirtualWebDisplay_Parsec/Web/Handlers/InputTelemetry.cs, VirtualWebDisplay_Parsec/Web/Handlers/DragStateTracker.cs, VirtualWebDisplay_Parsec/Web/Handlers/TouchStatsSnapshot.cs.
 
 - [x] Completar/limpiar ApplicationLifecycleManager.
   - Archivo: VirtualWebDisplay_Parsec/Infrastructure/Hosting/ApplicationLifecycleManager.cs

@@ -1,6 +1,5 @@
 using VirtualWebDisplay.Infrastructure;
 using VirtualWebDisplay.Infrastructure.Runtime;
-using System.Windows.Forms;
 
 namespace VirtualWebDisplay.Web.Handlers;
 
@@ -12,19 +11,6 @@ namespace VirtualWebDisplay.Web.Handlers;
 /// </summary>
 internal sealed class TouchInputHandler
 {
-    private const string ActionTap = "tap";
-    private const string ActionRightClick = "rightclick";
-    private const string ActionMiddleClick = "middleclick";
-    private const string ActionDragStart = "dragstart";
-    private const string ActionDragMove = "dragmove";
-    private const string ActionDragEnd = "dragend";
-    private const string ActionScrollMove = "scrollmove";
-    private const string ActionScrollEnd = "scrollend";
-
-    private const string LegacyTypeTouchStart = "touchstart";
-    private const string LegacyTypeTouchMove = "touchmove";
-    private const string LegacyTypeTouchEnd = "touchend";
-
     // Configuración de rate limiting
     private const int DEFAULT_MAX_EVENTS_PER_SECOND = 100;
 
@@ -36,6 +22,7 @@ internal sealed class TouchInputHandler
     private readonly InputTelemetry _telemetry;
     private readonly DragStateTracker _dragState;
     private readonly ActionDispatcher _actionDispatcher;
+    private readonly TouchInputCoordinateResolver _coordinateResolver;
 
     internal TouchInputHandler(IRuntimeAccessService runtimeAccess)
     {
@@ -44,6 +31,7 @@ internal sealed class TouchInputHandler
         _telemetry = new InputTelemetry();
         _dragState = new DragStateTracker(DRAG_STALE_TIMEOUT_MS);
         _actionDispatcher = new ActionDispatcher(this);
+        _coordinateResolver = new TouchInputCoordinateResolver();
     }
 
     /// <summary>
@@ -54,8 +42,8 @@ internal sealed class TouchInputHandler
         HttpContext ctx,
         TouchInputRequest request)
     {
-        if (!TryValidateTouchRequest(request, out var validationError))
-            return validationError;
+        if (!TouchInputRequestValidator.TryValidate(request, out var validationError))
+            return _runtimeAccess.BadRequestError(validationError);
 
         if (!_runtimeAccess.TryResolveAuthorizedRuntime(ctx, out var runtime, out var runtimeError))
             return runtimeError!;
@@ -79,7 +67,7 @@ internal sealed class TouchInputHandler
         try
         {
             // Determinar acci�n sem�ntica temprano para aplicar l�gica diferenciada.
-            var action = NormalizeAction(request.Action);
+            var action = TouchInputActions.NormalizeAction(request.Action);
 
             // -----------------------------------------------------------------------
             // MANEJO ESPECIAL DE FIN DE GESTOS (DRAGEND / SCROLLEND):
@@ -90,10 +78,10 @@ internal sealed class TouchInputHandler
             if (_actionDispatcher.TryHandlePreCoordinateAction(action, runtime, out var preCoordinateResult))
                 return preCoordinateResult;
 
-            if (!TryResolveDesktopCoordinates(request, runtime, out var desktopX, out var desktopY, out var coordError))
+            if (!_coordinateResolver.TryResolveDesktopCoordinates(request, runtime, out var desktopX, out var desktopY, out var coordError))
             {
                 _telemetry.RegisterError();
-                return coordError;
+                return _runtimeAccess.BadRequestError(coordError);
             }
 
             return _actionDispatcher.ExecutePostCoordinateAction(runtime, action, request, desktopX, desktopY, nowMs);
@@ -106,27 +94,9 @@ internal sealed class TouchInputHandler
         }
     }
 
-    private bool TryValidateTouchRequest(TouchInputRequest request, out IResult errorResult)
-    {
-        if (request == null)
-        {
-            errorResult = _runtimeAccess.BadRequestError("Request body required");
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(request.Type))
-        {
-            errorResult = _runtimeAccess.BadRequestError("Type field required");
-            return false;
-        }
-
-        errorResult = Results.Empty;
-        return true;
-    }
-
     private bool TryHandleGestureEndAction(string action, ScreenRuntimeContext runtime, out IResult result)
     {
-        if (!IsGestureEndAction(action))
+        if (!TouchInputActions.IsGestureEndAction(action))
         {
             result = Results.Empty;
             return false;
@@ -138,48 +108,6 @@ internal sealed class TouchInputHandler
 
         System.Diagnostics.Debug.WriteLine($"[InputHandler] {action}: finalizado (coordenadas opcionales ignoradas).");
         result = Results.Ok();
-        return true;
-    }
-
-    private bool TryResolveDesktopCoordinates(
-        TouchInputRequest request,
-        ScreenRuntimeContext runtime,
-        out int desktopX,
-        out int desktopY,
-        out IResult errorResult)
-    {
-        desktopX = 0;
-        desktopY = 0;
-
-        // Para el resto de acciones, las coordenadas son necesarias.
-        // Si llegan nulas (cliente defectuoso), rechazar con 400 s�lo si no es dragend/scrollend.
-        if (request.X is null || request.Y is null)
-        {
-            errorResult = _runtimeAccess.BadRequestError("Coordinates X and Y are required for this action.");
-            return false;
-        }
-
-        var targetBounds = ResolveTargetMonitorBounds(runtime);
-
-        // Mapear coordenadas viewport ? pantalla virtual (considerando rotaci�n).
-        // Usamos los valores con fallback seguro para ViewportWidth/Height.
-        var (screenX, screenY) = MapCoordinates(
-            request.X.Value,
-            request.Y.Value,
-            request.ViewportWidth ?? 1.0,
-            request.ViewportHeight ?? 1.0,
-            targetBounds.Width,
-            targetBounds.Height);
-
-        // Convertir coordenadas relativas del monitor virtual a coordenadas absolutas del escritorio.
-        desktopX = targetBounds.Left + screenX;
-        desktopY = targetBounds.Top + screenY;
-
-        System.Diagnostics.Debug.WriteLine(
-            $"[InputHandler] Bounds({targetBounds.Left},{targetBounds.Top},{targetBounds.Width}x{targetBounds.Height}) " +
-            $"Config({runtime.Config.Width}x{runtime.Config.Height}) -> desktop({desktopX},{desktopY})");
-
-        errorResult = Results.Empty;
         return true;
     }
 
@@ -205,25 +133,25 @@ internal sealed class TouchInputHandler
     {
         switch (action)
         {
-            case ActionTap:
+            case TouchInputActions.Tap:
                 ExecutePointerAction(MouseClickType.Left, runtime, desktopX, desktopY);
                 return Results.Ok();
 
-            case ActionRightClick:
+            case TouchInputActions.RightClick:
                 ExecutePointerAction(MouseClickType.Right, runtime, desktopX, desktopY);
                 return Results.Ok();
 
-            case ActionMiddleClick:
+            case TouchInputActions.MiddleClick:
                 ExecutePointerAction(MouseClickType.Middle, runtime, desktopX, desktopY);
                 return Results.Ok();
 
-            case ActionDragStart:
-            case ActionDragMove:
-            case ActionDragEnd:
+            case TouchInputActions.DragStart:
+            case TouchInputActions.DragMove:
+            case TouchInputActions.DragEnd:
                 return ExecuteGestureAction(runtime, action, desktopX, desktopY, nowMs, request);
 
-            case ActionScrollMove:
-            case ActionScrollEnd:
+            case TouchInputActions.ScrollMove:
+            case TouchInputActions.ScrollEnd:
                 return ExecuteGestureAction(runtime, action, desktopX, desktopY, nowMs, request);
 
             default:
@@ -237,13 +165,13 @@ internal sealed class TouchInputHandler
         string action,
         out IResult result)
     {
-        if (IsDragAction(action) && !runtime.Config.TouchHoldEnabled)
+        if (TouchInputActions.IsDragAction(action) && !runtime.Config.TouchHoldEnabled)
         {
             result = Results.NoContent();
             return true;
         }
 
-        if (IsScrollAction(action) && !runtime.Config.TouchScrollEnabled)
+        if (TouchInputActions.IsScrollAction(action) && !runtime.Config.TouchScrollEnabled)
         {
             result = Results.NoContent();
             return true;
@@ -313,47 +241,6 @@ internal sealed class TouchInputHandler
         _telemetry.GetSnapshot(nowMs);
 
     /// <summary>
-    /// Mapea coordenadas del viewport del navegador a coordenadas locales del monitor objetivo.
-    /// Usa Math.Clamp para garantizar que los valores nunca excedan los l�mites del monitor,
-    /// evitando coordenadas negativas o fuera de rango que causar�an comportamiento indefinido en Windows.
-    /// </summary>
-    private (int screenX, int screenY) MapCoordinates(
-        double viewportX,
-        double viewportY,
-        double viewportWidth,
-        double viewportHeight,
-        int screenWidth,
-        int screenHeight)
-    {
-        var result = InputCoordinateMapper.Map(viewportX, viewportY, viewportWidth, viewportHeight, screenWidth, screenHeight);
-        System.Diagnostics.Debug.WriteLine(
-            $"[InputHandler] MapCoordinates: viewport({viewportX:F1},{viewportY:F1}) -> localScreen({result.screenX},{result.screenY})");
-        return result;
-    }
-
-    /// <summary>
-    /// Obtiene bounds reales del monitor virtual dentro del escritorio extendido.
-    /// Si no se encuentra el monitor, usa PrimaryScreen como fallback seguro.
-    /// </summary>
-    private System.Drawing.Rectangle ResolveTargetMonitorBounds(ScreenRuntimeContext runtime)
-    {
-        var screens = Screen.AllScreens;
-
-        if (!string.IsNullOrWhiteSpace(runtime.DisplayManager.WindowsDeviceName))
-        {
-            var matchByName = screens.FirstOrDefault(s =>
-                string.Equals(s.DeviceName, runtime.DisplayManager.WindowsDeviceName, StringComparison.OrdinalIgnoreCase));
-            if (matchByName is not null)
-                return matchByName.Bounds;
-        }
-
-        if (runtime.Config.MonitorIndex >= 0 && runtime.Config.MonitorIndex < screens.Length)
-            return screens[runtime.Config.MonitorIndex].Bounds;
-
-        return Screen.PrimaryScreen?.Bounds ?? new System.Drawing.Rectangle(0, 0, runtime.Config.Width, runtime.Config.Height);
-    }
-
-    /// <summary>
     /// Procesa evento touchstart:
     /// 1 dedo = click izquierdo, 2 dedos = click derecho, 3+ dedos = click central.
     /// </summary>
@@ -402,16 +289,16 @@ internal sealed class TouchInputHandler
 
     private bool ProcessLegacyEvent(TouchInputRequest request, int desktopX, int desktopY)
     {
-        var type = NormalizeLegacyType(request.Type);
+        var type = TouchInputActions.NormalizeLegacyType(request.Type);
         switch (type)
         {
-            case LegacyTypeTouchStart:
+            case TouchInputActions.LegacyTouchStart:
                 ProcessTouchStart(desktopX, desktopY, request.Fingers);
                 return true;
-            case LegacyTypeTouchMove:
+            case TouchInputActions.LegacyTouchMove:
                 ProcessTouchMove();
                 return true;
-            case LegacyTypeTouchEnd:
+            case TouchInputActions.LegacyTouchEnd:
                 ProcessTouchEnd();
                 return true;
             default:
@@ -533,23 +420,23 @@ internal sealed class TouchInputHandler
     {
         switch (action)
         {
-            case ActionDragStart:
+            case TouchInputActions.DragStart:
                 ExecuteDragStart(runtime, desktopX, desktopY, nowMs);
                 break;
 
-            case ActionDragMove:
+            case TouchInputActions.DragMove:
                 ExecuteDragMove(runtime, desktopX, desktopY, nowMs);
                 break;
 
-            case ActionDragEnd:
+            case TouchInputActions.DragEnd:
                 ExecuteDragEnd(runtime);
                 break;
 
-            case ActionScrollMove:
+            case TouchInputActions.ScrollMove:
                 ExecuteScrollMove(runtime, desktopX, desktopY, request);
                 break;
 
-            case ActionScrollEnd:
+            case TouchInputActions.ScrollEnd:
                 ExecuteScrollEnd(runtime);
                 break;
         }
@@ -595,183 +482,6 @@ internal sealed class TouchInputHandler
         RestoreCursorIfNeeded(runtime.Config.TouchPreserveCursor);
     }
 
-    internal readonly record struct TouchStatsSnapshot(
-        long TotalEvents,
-        long TotalErrors,
-        long RateLimitedEvents,
-        int EventsPerSecond,
-        double AverageLatencyMs,
-        long LastInputAgoMs);
-
-    internal sealed class RateLimiterRegistry
-    {
-        private readonly int _maxEventsPerSecond;
-        private readonly Dictionary<string, RateLimiter> _rateLimiters = new();
-        private readonly object _lock = new();
-
-        internal RateLimiterRegistry(int maxEventsPerSecond)
-        {
-            _maxEventsPerSecond = maxEventsPerSecond;
-        }
-
-        internal bool AllowRequest(string viewerKey)
-        {
-            if (string.IsNullOrEmpty(viewerKey))
-                viewerKey = "default";
-
-            lock (_lock)
-            {
-                if (!_rateLimiters.TryGetValue(viewerKey, out var limiter))
-                {
-                    limiter = new RateLimiter(_maxEventsPerSecond);
-                    _rateLimiters[viewerKey] = limiter;
-                }
-
-                return limiter.AllowRequest();
-            }
-        }
-    }
-
-    internal sealed class InputTelemetry
-    {
-        private long _totalEvents;
-        private long _totalErrors;
-        private long _rateLimitedEvents;
-        private long _totalLatencyMs;
-        private long _latencySamples;
-        private long _lastInputUnixMs;
-        private readonly Queue<long> _eventsWindowMs = new();
-        private readonly object _statsLock = new();
-
-        internal void RegisterEvent(long nowMs)
-        {
-            Interlocked.Increment(ref _totalEvents);
-            Interlocked.Exchange(ref _lastInputUnixMs, nowMs);
-
-            lock (_statsLock)
-            {
-                _eventsWindowMs.Enqueue(nowMs);
-                PruneWindowLocked(nowMs);
-            }
-        }
-
-        internal void RegisterError() => Interlocked.Increment(ref _totalErrors);
-
-        internal void RegisterRateLimitedEvent() => Interlocked.Increment(ref _rateLimitedEvents);
-
-        internal void RegisterLatency(long nowMs, long requestTimestamp)
-        {
-            if (requestTimestamp <= 0)
-                return;
-
-            var latency = nowMs - requestTimestamp;
-            if (latency < 0 || latency > 60_000)
-                return;
-
-            Interlocked.Add(ref _totalLatencyMs, latency);
-            Interlocked.Increment(ref _latencySamples);
-        }
-
-        internal TouchStatsSnapshot GetSnapshot(long nowMs) => new(
-            TotalEvents: Interlocked.Read(ref _totalEvents),
-            TotalErrors: Interlocked.Read(ref _totalErrors),
-            RateLimitedEvents: Interlocked.Read(ref _rateLimitedEvents),
-            EventsPerSecond: GetEventsPerSecond(nowMs),
-            AverageLatencyMs: GetAverageLatencyMs(),
-            LastInputAgoMs: GetLastInputAgoMs(nowMs));
-
-        private int GetEventsPerSecond(long nowMs)
-        {
-            lock (_statsLock)
-            {
-                PruneWindowLocked(nowMs);
-                return _eventsWindowMs.Count;
-            }
-        }
-
-        private void PruneWindowLocked(long nowMs)
-        {
-            while (_eventsWindowMs.Count > 0 && nowMs - _eventsWindowMs.Peek() > 1000)
-                _eventsWindowMs.Dequeue();
-        }
-
-        private double GetAverageLatencyMs()
-        {
-            var samples = Interlocked.Read(ref _latencySamples);
-            if (samples <= 0)
-                return 0;
-
-            var totalLatency = Interlocked.Read(ref _totalLatencyMs);
-            return Math.Round((double)totalLatency / samples, 1);
-        }
-
-        private long GetLastInputAgoMs(long nowMs)
-        {
-            var lastInput = Interlocked.Read(ref _lastInputUnixMs);
-            if (lastInput <= 0)
-                return -1;
-
-            var delta = nowMs - lastInput;
-            return delta < 0 ? 0 : delta;
-        }
-    }
-
-    internal sealed class DragStateTracker
-    {
-        private readonly int _staleTimeoutMs;
-        private readonly object _lock = new();
-        private bool _isActive;
-        private long _lastActivityUnixMs;
-
-        internal DragStateTracker(int staleTimeoutMs)
-        {
-            _staleTimeoutMs = staleTimeoutMs;
-        }
-
-        internal void MarkStarted(long nowMs)
-        {
-            lock (_lock)
-            {
-                _isActive = true;
-                _lastActivityUnixMs = nowMs;
-            }
-        }
-
-        internal void MarkActivity(long nowMs)
-        {
-            lock (_lock)
-            {
-                if (_isActive)
-                    _lastActivityUnixMs = nowMs;
-            }
-        }
-
-        internal bool TryEnd()
-        {
-            lock (_lock)
-            {
-                var shouldRelease = _isActive;
-                _isActive = false;
-                _lastActivityUnixMs = 0;
-                return shouldRelease;
-            }
-        }
-
-        internal bool TryReleaseIfStale(long nowMs)
-        {
-            lock (_lock)
-            {
-                var shouldRelease = _isActive && (nowMs - _lastActivityUnixMs) >= _staleTimeoutMs;
-                if (!shouldRelease)
-                    return false;
-
-                _isActive = false;
-                _lastActivityUnixMs = 0;
-                return true;
-            }
-        }
-    }
-
     private sealed class ActionDispatcher
     {
         private readonly TouchInputHandler _owner;
@@ -803,21 +513,6 @@ internal sealed class TouchInputHandler
                 : _owner.HandleSemanticAction(runtime, action, desktopX, desktopY, nowMs, request);
         }
     }
-
-    private string NormalizeAction(string? action) =>
-        (action ?? string.Empty).ToLowerInvariant();
-
-    private string NormalizeLegacyType(string? type) =>
-        (type ?? string.Empty).ToLowerInvariant();
-
-    private bool IsDragAction(string action) =>
-        action is ActionDragStart or ActionDragMove or ActionDragEnd;
-
-    private bool IsScrollAction(string action) =>
-        action is ActionScrollMove or ActionScrollEnd;
-
-    private bool IsGestureEndAction(string action) =>
-        action is ActionDragEnd or ActionScrollEnd;
 
     /// <summary>
     /// Enum para identificar el tipo de click de mouse.
