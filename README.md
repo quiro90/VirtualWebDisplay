@@ -289,7 +289,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🚀 Roadmap (POSSIBLE)
 
-- [ ] H.264 hardware encoding support (lower latency, lower CPU)  
+- ✅ H.264 hardware encoding support (lower latency, lower CPU)  
 - [ ] Audio streaming  
 - [ ] Support for 3+ virtual displays  
 
