@@ -6,7 +6,7 @@ using VirtualWebDisplay.Infrastructure.Runtime;
 using VirtualWebDisplay.Parsec;
 using VirtualWebDisplay.Streaming;
 using VirtualWebDisplay.Streaming.Models;
-using VirtualWebDisplay.Web.Handlers;
+using VirtualWebDisplay.Web.Services;
 
 namespace VirtualWebDisplay.Tests.Web.Handlers;
 
@@ -28,7 +28,7 @@ public sealed class CaptureHandlerTests
         }, servicesFactory: factory);
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = CaptureHandler.HandleCapture(context, runtime.CapToken, [runtime]);
+        var result = CreateCaptureService(runtime).HandleCapture(context, runtime.CapToken);
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status200OK, response.StatusCode);
@@ -48,7 +48,7 @@ public sealed class CaptureHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = CaptureHandler.HandleCapture(context, token: "invalid-token", [runtime]);
+        var result = CreateCaptureService(runtime).HandleCapture(context, token: "invalid-token");
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status404NotFound, response.StatusCode);
@@ -64,7 +64,7 @@ public sealed class CaptureHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = CaptureHandler.HandleCapture(context, runtime.CapToken, [runtime]);
+        var result = CreateCaptureService(runtime).HandleCapture(context, runtime.CapToken);
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status401Unauthorized, response.StatusCode);
@@ -82,7 +82,7 @@ public sealed class CaptureHandlerTests
         runtime.ViewerLimiter.GetWebRtcCount = () => 1;
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = CaptureHandler.HandleCapture(context, runtime.CapToken, [runtime]);
+        var result = CreateCaptureService(runtime).HandleCapture(context, runtime.CapToken);
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status429TooManyRequests, response.StatusCode);
@@ -99,7 +99,7 @@ public sealed class CaptureHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        await CaptureHandler.HandleMjpeg(context, [runtime]);
+        await CreateCaptureService(runtime).HandleMjpeg(context);
 
         var response = await ReadHttpResponseAsync(context);
         Assert.Equal(StatusCodes.Status401Unauthorized, response.StatusCode);
@@ -118,7 +118,7 @@ public sealed class CaptureHandlerTests
         runtime.ViewerLimiter.GetWebRtcCount = () => 1;
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        await CaptureHandler.HandleMjpeg(context, [runtime]);
+        await CreateCaptureService(runtime).HandleMjpeg(context);
 
         var response = await ReadHttpResponseAsync(context);
         Assert.Equal(StatusCodes.Status429TooManyRequests, response.StatusCode);
@@ -146,7 +146,7 @@ public sealed class CaptureHandlerTests
         context.RequestAborted = cts.Token;
 
         await Assert.ThrowsAsync<TaskCanceledException>(
-            () => CaptureHandler.HandleMjpeg(context, [runtime]));
+            () => CreateCaptureService(runtime).HandleMjpeg(context));
 
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
         Assert.Equal("multipart/x-mixed-replace; boundary=frame", context.Response.ContentType);
@@ -160,6 +160,9 @@ public sealed class CaptureHandlerTests
         using var reader = new StreamReader(context.Response.Body);
         return (context.Response.StatusCode, await reader.ReadToEndAsync());
     }
+
+    private static CaptureService CreateCaptureService(ScreenRuntimeContext runtime) =>
+        new(new RuntimeAccessService([runtime]));
 
     private sealed class FakeRuntimeServicesFactory : IScreenRuntimeServicesFactory
     {

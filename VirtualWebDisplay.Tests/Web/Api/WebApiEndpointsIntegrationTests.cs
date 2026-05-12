@@ -183,31 +183,7 @@ public sealed class WebApiEndpointsIntegrationTests
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
 
-        var runtimeList = new[] { runtime };
-        var runtimeAccessService = new RuntimeAccessService(runtimeList);
-        var authService = new AuthService(runtimeList, runtimeAccessService);
-        var configService = new ConfigService(runtimeList, runtimeAccessService);
-        var keepaliveService = new KeepaliveService(runtimeList, runtimeAccessService);
-        var inputService = new InputService(runtimeList, runtimeAccessService);
-        var captureService = new CaptureService(runtimeList, runtimeAccessService);
-        var webRtcOfferService = new WebRtcOfferService(runtimeList, runtimeAccessService);
-        builder.Services.AddSingleton<IRuntimeAccessService>(runtimeAccessService);
-        builder.Services.AddSingleton<IAuthService>(authService);
-        builder.Services.AddSingleton<IConfigService>(configService);
-        builder.Services.AddSingleton<IKeepaliveService>(keepaliveService);
-        builder.Services.AddSingleton<IInputService>(inputService);
-        builder.Services.AddSingleton<ICaptureService>(captureService);
-        builder.Services.AddSingleton<IWebRtcOfferService>(webRtcOfferService);
-        builder.Services.AddSingleton<IWebEndpointOrchestrator>(provider =>
-            new DefaultWebEndpointOrchestrator(
-                provider.GetRequiredService<IAuthService>(),
-                provider.GetRequiredService<IConfigService>(),
-                provider.GetRequiredService<IKeepaliveService>(),
-                provider.GetRequiredService<ICaptureService>(),
-                provider.GetRequiredService<IWebRtcOfferService>(),
-                provider.GetRequiredService<IInputService>(),
-                runtimeList,
-                new byte[] { 1, 2, 3 }));
+        builder.Services.AddWebEndpointServices([runtime], [1, 2, 3]);
 
         var app = builder.Build();
         WebApiEndpoints.Map(app);

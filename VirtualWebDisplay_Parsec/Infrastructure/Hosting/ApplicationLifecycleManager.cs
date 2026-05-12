@@ -39,23 +39,7 @@ internal static class ApplicationLifecycleManager
 
             using var bootstrapLoggerFactory = LoggerFactory.Create(_ => { });
             var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, driverVerifier, bootstrapLoggerFactory);
-            builder.Services.AddSingleton<IRuntimeAccessService>(new RuntimeAccessService(runtimes));
-            builder.Services.AddSingleton<IAuthService>(provider => new AuthService(runtimes, provider.GetRequiredService<IRuntimeAccessService>()));
-            builder.Services.AddSingleton<IConfigService>(provider => new ConfigService(runtimes, provider.GetRequiredService<IRuntimeAccessService>()));
-            builder.Services.AddSingleton<IKeepaliveService>(provider => new KeepaliveService(runtimes, provider.GetRequiredService<IRuntimeAccessService>()));
-            builder.Services.AddSingleton<IInputService>(provider => new InputService(runtimes, provider.GetRequiredService<IRuntimeAccessService>()));
-            builder.Services.AddSingleton<ICaptureService>(provider => new CaptureService(runtimes, provider.GetRequiredService<IRuntimeAccessService>()));
-            builder.Services.AddSingleton<IWebRtcOfferService>(provider => new WebRtcOfferService(runtimes, provider.GetRequiredService<IRuntimeAccessService>()));
-            builder.Services.AddSingleton<IWebEndpointOrchestrator>(provider =>
-                new DefaultWebEndpointOrchestrator(
-                    provider.GetRequiredService<IAuthService>(),
-                    provider.GetRequiredService<IConfigService>(),
-                    provider.GetRequiredService<IKeepaliveService>(),
-                    provider.GetRequiredService<ICaptureService>(),
-                    provider.GetRequiredService<IWebRtcOfferService>(),
-                    provider.GetRequiredService<IInputService>(),
-                    runtimes,
-                    tlsCertDerBytes));
+            builder.Services.AddWebEndpointServices(runtimes, tlsCertDerBytes);
 
             var app = builder.Build();
 

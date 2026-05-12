@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using VirtualWebDisplay.Configuration;
-using VirtualWebDisplay.Web.Handlers;
+using VirtualWebDisplay.Infrastructure.Runtime;
 using VirtualWebDisplay.Web.HtmlTemplates;
+using VirtualWebDisplay.Web.Services;
 
 namespace VirtualWebDisplay.Tests.Web.Handlers;
 
@@ -20,13 +21,7 @@ public sealed class IndexHandlerTests
 
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = IndexHandler.HandleIndex(
-            context,
-            [runtime],
-            new WebImagePageTemplate(),
-            new RtcPageTemplate(),
-            new SecurityPageTemplate(),
-            new ViewerLimitPageTemplate());
+        var result = CreateIndexPageService(runtime).HandleIndex(context);
 
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
@@ -48,13 +43,7 @@ public sealed class IndexHandlerTests
 
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = IndexHandler.HandleIndex(
-            context,
-            [runtime],
-            new WebImagePageTemplate(),
-            new RtcPageTemplate(),
-            new SecurityPageTemplate(),
-            new ViewerLimitPageTemplate());
+        var result = CreateIndexPageService(runtime).HandleIndex(context);
 
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
@@ -75,13 +64,7 @@ public sealed class IndexHandlerTests
 
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = IndexHandler.HandleIndex(
-            context,
-            [runtime],
-            new WebImagePageTemplate(),
-            new RtcPageTemplate(),
-            new SecurityPageTemplate(),
-            new ViewerLimitPageTemplate());
+        var result = CreateIndexPageService(runtime).HandleIndex(context);
 
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
@@ -102,17 +85,19 @@ public sealed class IndexHandlerTests
 
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = IndexHandler.HandleIndex(
-            context,
-            [runtime],
-            new WebImagePageTemplate(),
-            new RtcPageTemplate(),
-            new SecurityPageTemplate(),
-            new ViewerLimitPageTemplate());
+        var result = CreateIndexPageService(runtime).HandleIndex(context);
 
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status200OK, response.StatusCode);
         Assert.Contains("WebRTC H.264", response.Body, StringComparison.Ordinal);
     }
+
+    private static IndexPageService CreateIndexPageService(ScreenRuntimeContext runtime) =>
+        new(
+            new RuntimeAccessService([runtime]),
+            new WebImagePageTemplate(),
+            new RtcPageTemplate(),
+            new SecurityPageTemplate(),
+            new ViewerLimitPageTemplate());
 }

@@ -10,15 +10,6 @@ namespace VirtualWebDisplay.Web.Handlers;
 /// Usa mapeo directo de viewport al monitor virtual detectado.
 /// Incluye rate limiting para proteger contra flooding de eventos.
 /// </summary>
-internal static class InputHandler
-{
-    internal static IResult HandleTouchInput(HttpContext ctx, TouchInputRequest request, IRuntimeAccessService runtimeAccess)
-        => new TouchInputHandler(runtimeAccess).HandleTouchInput(ctx, request);
-
-    internal static IResult HandleTouchStats(HttpContext ctx, IRuntimeAccessService runtimeAccess)
-        => new TouchInputHandler(runtimeAccess).HandleTouchStats(ctx);
-}
-
 internal sealed class TouchInputHandler
 {
     private const string ActionTap = "tap";
@@ -96,7 +87,7 @@ internal sealed class TouchInputHandler
             // Las coordenadas pueden llegar nulas/incompletas cuando el dedo abandona
             // el viewport, lo que antes causaba 400 Bad Request. Ahora se toleran.
             // -----------------------------------------------------------------------
-if (_actionDispatcher.TryHandlePreCoordinateAction(action, runtime, out var preCoordinateResult))
+            if (_actionDispatcher.TryHandlePreCoordinateAction(action, runtime, out var preCoordinateResult))
                 return preCoordinateResult;
 
             if (!TryResolveDesktopCoordinates(request, runtime, out var desktopX, out var desktopY, out var coordError))

@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using VirtualWebDisplay.Configuration;
+using VirtualWebDisplay.Infrastructure.Runtime;
 using VirtualWebDisplay.Streaming.Models;
-using VirtualWebDisplay.Web.Handlers;
+using VirtualWebDisplay.Web.Services;
 
 namespace VirtualWebDisplay.Tests.Web.Handlers;
 
@@ -17,10 +18,9 @@ public sealed class WebRtcHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = await WebRtcHandler.HandleOffer(
+        var result = await CreateWebRtcOfferService(runtime).HandleOffer(
             context,
             new WebRtcSessionOffer("fake-sdp", "offer"),
-            [runtime],
             CancellationToken.None);
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
@@ -39,10 +39,9 @@ public sealed class WebRtcHandlerTests
         runtime.ViewerLimiter.GetWebRtcCount = () => 1;
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = await WebRtcHandler.HandleOffer(
+        var result = await CreateWebRtcOfferService(runtime).HandleOffer(
             context,
             new WebRtcSessionOffer("fake-sdp", "offer"),
-            [runtime],
             CancellationToken.None);
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
@@ -59,13 +58,15 @@ public sealed class WebRtcHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = await WebRtcHandler.HandleOffer(
+        var result = await CreateWebRtcOfferService(runtime).HandleOffer(
             context,
             new WebRtcSessionOffer("", "answer"),
-            [runtime],
             CancellationToken.None);
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status400BadRequest, response.StatusCode);
     }
+
+    private static WebRtcOfferService CreateWebRtcOfferService(ScreenRuntimeContext runtime) =>
+        new(new RuntimeAccessService([runtime]));
 }

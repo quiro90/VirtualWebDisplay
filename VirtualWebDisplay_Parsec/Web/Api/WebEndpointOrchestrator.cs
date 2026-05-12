@@ -21,35 +21,31 @@ internal interface IWebEndpointOrchestrator
 internal sealed class DefaultWebEndpointOrchestrator : IWebEndpointOrchestrator
 {
     private readonly IAuthService _authService;
+    private readonly IIndexPageService _indexPageService;
     private readonly IConfigService _configService;
     private readonly IKeepaliveService _keepaliveService;
     private readonly ICaptureService _captureService;
     private readonly IWebRtcOfferService _webRtcOfferService;
     private readonly IInputService _inputService;
-    private readonly IReadOnlyList<ScreenRuntimeContext> _runtimes;
     private readonly byte[] _tlsCertDerBytes;
-    private readonly WebImagePageTemplate _webImageTemplate = new();
-    private readonly RtcPageTemplate _rtcTemplate = new();
-    private readonly SecurityPageTemplate _securityPageTemplate = new();
-    private readonly ViewerLimitPageTemplate _viewerLimitPageTemplate = new();
 
     public DefaultWebEndpointOrchestrator(
         IAuthService authService,
+        IIndexPageService indexPageService,
         IConfigService configService,
         IKeepaliveService keepaliveService,
         ICaptureService captureService,
         IWebRtcOfferService webRtcOfferService,
         IInputService inputService,
-        IReadOnlyList<ScreenRuntimeContext> runtimes,
         byte[] tlsCertDerBytes)
     {
         _authService = authService;
+        _indexPageService = indexPageService;
         _configService = configService;
         _keepaliveService = keepaliveService;
         _captureService = captureService;
         _webRtcOfferService = webRtcOfferService;
         _inputService = inputService;
-        _runtimes = runtimes;
         _tlsCertDerBytes = tlsCertDerBytes;
     }
 
@@ -57,7 +53,7 @@ internal sealed class DefaultWebEndpointOrchestrator : IWebEndpointOrchestrator
         _authService.HandleLogin(ctx, request);
 
     public IResult HandleIndex(HttpContext ctx) =>
-        IndexHandler.HandleIndex(ctx, _runtimes, _webImageTemplate, _rtcTemplate, _securityPageTemplate, _viewerLimitPageTemplate);
+        _indexPageService.HandleIndex(ctx);
 
     public IResult HandleCapture(HttpContext ctx, string token) =>
         _captureService.HandleCapture(ctx, token);

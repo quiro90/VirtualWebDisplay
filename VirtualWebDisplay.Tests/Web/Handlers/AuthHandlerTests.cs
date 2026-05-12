@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
+using VirtualWebDisplay.Infrastructure.Runtime;
 using VirtualWebDisplay.Web.Api;
-using VirtualWebDisplay.Web.Handlers;
+using VirtualWebDisplay.Web.Services;
 
 namespace VirtualWebDisplay.Tests.Web.Handlers;
 
@@ -16,7 +17,7 @@ public sealed class AuthHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = AuthHandler.HandleLogin(context, new SecurityLoginRequest("ignored"), [runtime]);
+        var result = CreateAuthService(runtime).HandleLogin(context, new SecurityLoginRequest("ignored"));
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status200OK, response.StatusCode);
@@ -33,7 +34,7 @@ public sealed class AuthHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
 
-        var result = AuthHandler.HandleLogin(context, new SecurityLoginRequest("BAD999"), [runtime]);
+        var result = CreateAuthService(runtime).HandleLogin(context, new SecurityLoginRequest("BAD999"));
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status401Unauthorized, response.StatusCode);
@@ -50,11 +51,14 @@ public sealed class AuthHandlerTests
         });
         var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000, isHttps: true);
 
-        var result = AuthHandler.HandleLogin(context, new SecurityLoginRequest(runtime.SecurityGate.AccessCode), [runtime]);
+        var result = CreateAuthService(runtime).HandleLogin(context, new SecurityLoginRequest(runtime.SecurityGate.AccessCode));
         var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
 
         Assert.Equal(StatusCodes.Status200OK, response.StatusCode);
         Assert.Contains("authorized", response.Body, StringComparison.Ordinal);
         Assert.True(response.Headers.ContainsKey("Set-Cookie"));
     }
+
+    private static AuthService CreateAuthService(ScreenRuntimeContext runtime) =>
+        new(new RuntimeAccessService([runtime]));
 }

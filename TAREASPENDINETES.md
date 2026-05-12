@@ -159,10 +159,15 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
 
 ## Arquitectura y calidad (mediano plazo)
 
-- [~] Introducir DI para handlers y quitar estado static mutable en capa Web.
+- [x] Introducir DI para handlers y quitar estado static mutable en capa Web.
   - Archivos: VirtualWebDisplay_Parsec/Web/Handlers/*.cs, VirtualWebDisplay_Parsec/Web/Api/WebApiEndpoints.cs, VirtualWebDisplay_Parsec/Web/Services/WebEndpointServices.cs
   - Avance aplicado: extraídos IAuthService/IConfigService/IKeepaliveService/ICaptureService/IWebRtcOfferService y usados desde DefaultWebEndpointOrchestrator; registrados en DI y mapeados desde WebApiEndpoints.
   - Avance aplicado: migrado InputHandler a IInputService inyectable y registrado en DI; WebApiEndpoints ahora usa servicio de input en lugar de llamar directamente al handler estático.
+  - Avance aplicado: InputService ahora mantiene una instancia de TouchInputHandler por ciclo DI, preservando rate-limit, telemetria y estado de drag entre requests.
+  - Avance aplicado: extraido IIndexPageService/IndexPageService para resolver la pagina principal desde DI; templates HTML registrados como singletons.
+  - Avance aplicado: centralizada la composicion web en AddWebEndpointServices para produccion y tests de integracion.
+  - Avance aplicado: migrados tests desde handlers estaticos hacia servicios inyectables y retirados AuthHandler/ConfigHandler/KeepaliveHandler/CaptureHandler/WebRtcHandler/IndexHandler legacy.
+  - Avance aplicado: WebEndpointServices.cs reducido a contratos y servicios separados por responsabilidad en archivos propios.
 
 - [~] Definir pruebas de integracion para endpoints criticos.
   - Cobertura actual: 1 archivo de pruebas, 4 tests, enfocados solo en copia de configuracion.
@@ -184,6 +189,9 @@ Estado: borrador inicial basado en revision tecnica del codigo actual.
 ## Validaciones recomendadas al cerrar cambios
 
 - [ ] dotnet build .\VirtualWebDisplay_Parsec.slnx -v minimal
-- [ ] dotnet test .\VirtualWebDisplay.Tests\VirtualWebDisplay.Tests.csproj -v minimal
+  - Nota: devuelve "ERROR al compilar" sin errores listados; los csproj individuales compilan correctamente.
+- [x] dotnet build .\VirtualWebDisplay_Parsec\VirtualWebDisplay.csproj -v minimal
+- [x] dotnet build .\VirtualWebDisplay.Tests\VirtualWebDisplay.Tests.csproj -v minimal
+- [x] dotnet test .\VirtualWebDisplay.Tests\VirtualWebDisplay.Tests.csproj -v minimal
 - [ ] Prueba manual multi-pantalla con input concurrente (dos clientes simultaneos)
 - [ ] Prueba de parada/inicio de servicio desde tray sin congelamientos

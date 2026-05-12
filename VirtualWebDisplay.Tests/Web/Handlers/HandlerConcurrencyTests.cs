@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using VirtualWebDisplay.Infrastructure.Runtime;
 using VirtualWebDisplay.Web.Api;
 using VirtualWebDisplay.Web.Handlers;
+using VirtualWebDisplay.Web.Services;
 
 namespace VirtualWebDisplay.Tests.Web.Handlers;
 
@@ -30,7 +32,8 @@ public sealed class HandlerConcurrencyTests
                 ViewportHeight = 100,
             };
 
-            var result = InputHandler.HandleTouchInput(context, request, [runtime]);
+            var handler = new TouchInputHandler(new RuntimeAccessService([runtime]));
+            var result = handler.HandleTouchInput(context, request);
             var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
             return response.StatusCode;
         });
@@ -53,7 +56,7 @@ public sealed class HandlerConcurrencyTests
         var tasks = Enumerable.Range(0, requests).Select(async _ =>
         {
             var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
-            var result = KeepaliveHandler.HandleKeepalive(context, [runtime]);
+            var result = new KeepaliveService(new RuntimeAccessService([runtime])).HandleKeepalive(context);
             var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
             return response.StatusCode;
         });
@@ -76,7 +79,7 @@ public sealed class HandlerConcurrencyTests
         var tasks = Enumerable.Range(0, requests).Select(async _ =>
         {
             var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
-            var result = ConfigHandler.HandleConfig(context, [runtime]);
+            var result = new ConfigService(new RuntimeAccessService([runtime])).HandleConfig(context);
             var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
             return (response.StatusCode, response.Body);
         });
@@ -103,7 +106,8 @@ public sealed class HandlerConcurrencyTests
         var tasks = Enumerable.Range(0, requests).Select(async _ =>
         {
             var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000, isHttps: true);
-            var result = AuthHandler.HandleLogin(context, new SecurityLoginRequest(runtime.SecurityGate.AccessCode), [runtime]);
+            var result = new AuthService(new RuntimeAccessService([runtime]))
+                .HandleLogin(context, new SecurityLoginRequest(runtime.SecurityGate.AccessCode));
             var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
             return response;
         });
@@ -130,7 +134,8 @@ public sealed class HandlerConcurrencyTests
         var tasks = Enumerable.Range(0, requests).Select(async _ =>
         {
             var context = WebHandlerTestHelper.CreateHttpContext(localPort: 8000);
-            var result = AuthHandler.HandleLogin(context, new SecurityLoginRequest("BAD999"), [runtime]);
+            var result = new AuthService(new RuntimeAccessService([runtime]))
+                .HandleLogin(context, new SecurityLoginRequest("BAD999"));
             var response = await WebHandlerTestHelper.ExecuteResultAsync(result, context);
             return response.StatusCode;
         });

@@ -1,42 +1,45 @@
-using VirtualWebDisplay.Infrastructure;
+using VirtualWebDisplay.Infrastructure.Runtime;
 
-namespace VirtualWebDisplay.Web.Handlers;
+namespace VirtualWebDisplay.Web.Services;
 
-/// <summary>
-/// Maneja la captura de pantalla como imagen estática (GET /cap)
-/// y como stream MJPEG continuo (GET /mjpeg).
-/// </summary>
-internal static class CaptureHandler
+internal sealed class CaptureService : ICaptureService
 {
-    internal static IResult HandleCapture(HttpContext ctx, string token, IReadOnlyList<ScreenRuntimeContext> runtimes)
+    private readonly IRuntimeAccessService _runtimeAccess;
+
+    public CaptureService(IRuntimeAccessService runtimeAccess)
     {
-        var runtime = RuntimeAccessHelper.ResolveRuntime(ctx, runtimes);
+        _runtimeAccess = runtimeAccess;
+    }
+
+    public IResult HandleCapture(HttpContext ctx, string token)
+    {
+        var runtime = _runtimeAccess.ResolveRuntime(ctx);
 
         if (!string.Equals(token, runtime.CapToken, StringComparison.Ordinal))
-            return RuntimeAccessHelper.NotFoundResult();
+            return _runtimeAccess.NotFoundResult();
 
-        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out runtime, out var runtimeError))
+        if (!_runtimeAccess.TryResolveAuthorizedRuntime(ctx, out runtime, out var runtimeError))
             return runtimeError!;
 
         if (!runtime.ViewerLimiter.IsUnlimited)
         {
-            var viewerKey = RuntimeAccessHelper.ResolveViewerKey(ctx, runtime);
+            var viewerKey = _runtimeAccess.ResolveViewerKey(ctx, runtime);
             if (!runtime.ViewerLimiter.TryRegisterPolling(viewerKey))
-                return RuntimeAccessHelper.ViewerLimitExceededResult();
+                return _runtimeAccess.ViewerLimitExceededResult();
         }
 
         runtime.FrameSource.NotifyJpegDemand();
         var frame = runtime.FrameSource.GetCurrentJpegFrame();
         if (frame.Length == 0)
-            return RuntimeAccessHelper.ServiceUnavailableResult();
+            return _runtimeAccess.ServiceUnavailableResult();
 
         ctx.Response.Headers.CacheControl = "no-store, no-cache";
         return Results.Bytes(frame, "image/jpeg");
     }
 
-    internal static async Task HandleMjpeg(HttpContext ctx, IReadOnlyList<ScreenRuntimeContext> runtimes)
+    public async Task HandleMjpeg(HttpContext ctx)
     {
-        if (!RuntimeAccessHelper.TryResolveAuthorizedRuntime(ctx, runtimes, out var runtime, out var runtimeError))
+        if (!_runtimeAccess.TryResolveAuthorizedRuntime(ctx, out var runtime, out var runtimeError))
         {
             await runtimeError!.ExecuteAsync(ctx);
             return;
@@ -44,7 +47,7 @@ internal static class CaptureHandler
 
         if (!runtime.ViewerLimiter.TryEnterMjpeg())
         {
-            await RuntimeAccessHelper.WriteViewerLimitExceededAsync(ctx);
+            await _runtimeAccess.WriteViewerLimitExceededAsync(ctx);
             return;
         }
 
@@ -52,11 +55,11 @@ internal static class CaptureHandler
 
         try
         {
-            ctx.Response.StatusCode  = StatusCodes.Status200OK;
+            ctx.Response.StatusCode = StatusCodes.Status200OK;
             ctx.Response.ContentType = "multipart/x-mixed-replace; boundary=frame";
             ctx.Response.Headers.CacheControl = "no-store, no-cache";
-            ctx.Response.Headers.Pragma       = "no-cache";
-            ctx.Response.Headers.Connection   = "keep-alive";
+            ctx.Response.Headers.Pragma = "no-cache";
+            ctx.Response.Headers.Connection = "keep-alive";
 
             byte[]? lastFrame = null;
             var token = ctx.RequestAborted;
@@ -71,11 +74,11 @@ internal static class CaptureHandler
                 }
 
                 lastFrame = frame;
-                await ctx.Response.WriteAsync("--frame\r\n",                             token);
-                await ctx.Response.WriteAsync("Content-Type: image/jpeg\r\n",            token);
+                await ctx.Response.WriteAsync("--frame\r\n", token);
+                await ctx.Response.WriteAsync("Content-Type: image/jpeg\r\n", token);
                 await ctx.Response.WriteAsync($"Content-Length: {frame.Length}\r\n\r\n", token);
-                await ctx.Response.Body.WriteAsync(frame,                                token);
-                await ctx.Response.WriteAsync("\r\n",                                    token);
+                await ctx.Response.Body.WriteAsync(frame, token);
+                await ctx.Response.WriteAsync("\r\n", token);
                 await ctx.Response.Body.FlushAsync(token);
             }
         }
