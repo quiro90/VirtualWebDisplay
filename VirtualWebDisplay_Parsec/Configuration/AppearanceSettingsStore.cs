@@ -19,7 +19,10 @@ public sealed class AppearanceSettingsStore
 
     public AppearanceSettings Load()
     {
-        var settings = UserProfileFileHelper.TryDeserialize<AppearanceSettings>(_filePath);
+        var settings = UserProfileFileHelper.TryDeserialize(
+            _filePath,
+            AppJsonSerializerContext.Default.AppearanceSettings);
+
         if (settings is not null)
         {
             settings.EnsureValid();

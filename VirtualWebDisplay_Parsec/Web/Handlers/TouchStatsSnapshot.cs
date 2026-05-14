@@ -1,6 +1,6 @@
 namespace VirtualWebDisplay.Web.Handlers;
 
-internal readonly record struct TouchStatsSnapshot(
+public readonly record struct TouchStatsSnapshot(
     long TotalEvents,
     long TotalErrors,
     long RateLimitedEvents,

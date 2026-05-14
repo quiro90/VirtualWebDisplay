@@ -20,7 +20,9 @@ public sealed class VirtualScreenSettingsStore
 
     public VirtualWebDisplaySettings Load()
     {
-        var settings = UserProfileFileHelper.TryDeserialize<VirtualWebDisplaySettings>(_filePath);
+        var settings = UserProfileFileHelper.TryDeserialize(
+            _filePath,
+            AppJsonSerializerContext.Default.VirtualWebDisplaySettings);
         if (settings is not null)
         {
             ApplyLegacyTouchGestureHoldDelayMigration(settings);
@@ -28,7 +30,9 @@ public sealed class VirtualScreenSettingsStore
             return settings;
         }
 
-        var legacy = UserProfileFileHelper.TryDeserialize<Dictionary<string, VirtualScreenConfig>>(_filePath);
+        var legacy = UserProfileFileHelper.TryDeserialize(
+            _filePath,
+            AppJsonSerializerContext.Default.DictionaryStringVirtualScreenConfig);
         if (legacy is not null && legacy.TryGetValue(LegacySectionName, out var legacyConfig) && legacyConfig is not null)
         {
             var migrated = new VirtualWebDisplaySettings

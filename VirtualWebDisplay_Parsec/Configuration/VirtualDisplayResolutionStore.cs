@@ -20,7 +20,9 @@ public sealed class VirtualDisplayResolutionStore
     /// <summary>Carga el mapa de resoluciones. Clave: id del runtime ("screen1", "screen2").</summary>
     public Dictionary<string, (int Width, int Height, int X, int Y)> Load()
     {
-        var raw = UserProfileFileHelper.TryDeserialize<Dictionary<string, ResolutionEntry>>(_filePath);
+        var raw = UserProfileFileHelper.TryDeserialize(
+            _filePath,
+            AppJsonSerializerContext.Default.DictionaryStringResolutionEntry);
         if (raw is null)
             return new();
 
@@ -40,7 +42,7 @@ public sealed class VirtualDisplayResolutionStore
         UserProfileFileHelper.WriteAtomic(_filePath, json);
     }
 
-    private sealed class ResolutionEntry
+    public sealed class ResolutionEntry
     {
         public int Width { get; set; }
         public int Height { get; set; }

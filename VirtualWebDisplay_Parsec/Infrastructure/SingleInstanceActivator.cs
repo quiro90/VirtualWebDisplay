@@ -73,9 +73,19 @@ public sealed class SingleInstanceActivator : IDisposable
     {
         _registeredWaitHandle?.Unregister(null);
         _eventWaitHandle.Dispose();
+
+        // Solo liberamos el mutex si realmente lo adquirimos
         if (_isFirstInstance)
         {
-            _mutex.ReleaseMutex();
+            try
+            {
+                _mutex.ReleaseMutex();
+            }
+            catch (ApplicationException)
+            {
+                // Si el mutex ya fue liberado o no pertenece a este hilo, lo ignoramos
+                // Esto puede ocurrir en escenarios async donde el hilo cambia
+            }
         }
         _mutex.Dispose();
     }

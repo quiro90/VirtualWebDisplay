@@ -37,6 +37,12 @@ internal static class ApplicationLifecycleManager
             var builder = WebApplication.CreateBuilder(args);
             KestrelConfigurator.Configure(builder, enabledPorts, tlsCert);
 
+            builder.Services.ConfigureHttpJsonOptions(options =>
+            {
+                options.SerializerOptions.TypeInfoResolverChain.Insert(0, Web.Api.WebApiJsonSerializerContext.Default);
+                options.SerializerOptions.TypeInfoResolverChain.Insert(0, Configuration.AppJsonSerializerContext.Default);
+            });
+
             using var bootstrapLoggerFactory = LoggerFactory.Create(_ => { });
             var runtimes = RuntimeFactory.TryCreate(settings, hostName, localIp, driverVerifier, bootstrapLoggerFactory);
             builder.Services.AddWebEndpointServices(runtimes, tlsCertDerBytes);

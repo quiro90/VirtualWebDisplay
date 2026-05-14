@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace VirtualWebDisplay.Configuration;
 
@@ -8,7 +10,15 @@ namespace VirtualWebDisplay.Configuration;
 internal static class UserProfileFileHelper
 {
     /// <summary>Opciones de serialización JSON compartidas por todos los stores.</summary>
-    internal static readonly JsonSerializerOptions JsonWriteOptions = new() { WriteIndented = true };
+    internal static readonly JsonSerializerOptions JsonWriteOptions =
+        new(AppJsonSerializerContext.Default.Options)
+        {
+            WriteIndented = true
+        };
+
+    /// <summary>Opciones de serialización JSON para lectura (deserialización).</summary>
+    internal static readonly JsonSerializerOptions JsonReadOptions =
+        AppJsonSerializerContext.Default.Options;
 
     /// <summary>
     /// Devuelve la ruta completa de un fichero de configuración dentro del directorio de perfil
@@ -24,17 +34,25 @@ internal static class UserProfileFileHelper
     /// Lee y deserializa <typeparamref name="T"/> desde <paramref name="filePath"/>.
     /// Devuelve <c>null</c> si el fichero no existe o si ocurre cualquier error de I/O o JSON.
     /// </summary>
-    internal static T? TryDeserialize<T>(string filePath) where T : class
+    internal static T? TryDeserialize<T>(
+        string filePath,
+        JsonTypeInfo<T> typeInfo) where T : class
     {
         if (!File.Exists(filePath))
             return null;
 
         try
         {
-            var json = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<T>(json);
+            string json = File.ReadAllText(filePath);
+
+            return JsonSerializer.Deserialize(
+                json,
+                typeInfo);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (
+            ex is IOException or
+            UnauthorizedAccessException or
+            JsonException)
         {
             return null;
         }
@@ -47,6 +65,7 @@ internal static class UserProfileFileHelper
     internal static void WriteAtomic(string filePath, string content)
     {
         var directory = Path.GetDirectoryName(filePath);
+
         if (!string.IsNullOrWhiteSpace(directory))
             EnsureHiddenDirectory(directory);
 
@@ -57,7 +76,9 @@ internal static class UserProfileFileHelper
         try
         {
             PrepareWritableFile(filePath);
+
             File.WriteAllText(tempFilePath, content);
+
             ReplaceFile(tempFilePath, filePath);
         }
         finally
@@ -75,12 +96,20 @@ internal static class UserProfileFileHelper
             return;
 
         var attributes = File.GetAttributes(filePath);
-        var normalized = attributes & ~FileAttributes.ReadOnly & ~FileAttributes.Hidden & ~FileAttributes.System;
+
+        var normalized =
+            attributes &
+            ~FileAttributes.ReadOnly &
+            ~FileAttributes.Hidden &
+            ~FileAttributes.System;
+
         if (normalized != attributes)
             File.SetAttributes(filePath, normalized);
     }
 
-    private static void ReplaceFile(string tempFilePath, string destinationFilePath)
+    private static void ReplaceFile(
+        string tempFilePath,
+        string destinationFilePath)
     {
         if (!File.Exists(destinationFilePath))
         {
@@ -90,23 +119,34 @@ internal static class UserProfileFileHelper
 
         try
         {
-            File.Replace(tempFilePath, destinationFilePath, destinationBackupFileName: null, ignoreMetadataErrors: true);
+            File.Replace(
+                tempFilePath,
+                destinationFilePath,
+                destinationBackupFileName: null,
+                ignoreMetadataErrors: true);
         }
         catch (IOException)
         {
-            File.Copy(tempFilePath, destinationFilePath, overwrite: true);
+            File.Copy(
+                tempFilePath,
+                destinationFilePath,
+                overwrite: true);
         }
     }
 
     private static void EnsureHiddenDirectory(string directory)
     {
         Directory.CreateDirectory(directory);
+
         if (!OperatingSystem.IsWindows())
             return;
 
         var attributes = File.GetAttributes(directory);
+
         if ((attributes & FileAttributes.Hidden) == 0)
-            File.SetAttributes(directory, attributes | FileAttributes.Hidden);
+            File.SetAttributes(
+                directory,
+                attributes | FileAttributes.Hidden);
     }
 
     private static void EnsureHiddenFile(string filePath)
@@ -115,7 +155,10 @@ internal static class UserProfileFileHelper
             return;
 
         var attributes = File.GetAttributes(filePath);
+
         if ((attributes & FileAttributes.Hidden) == 0)
-            File.SetAttributes(filePath, attributes | FileAttributes.Hidden);
+            File.SetAttributes(
+                filePath,
+                attributes | FileAttributes.Hidden);
     }
 }
