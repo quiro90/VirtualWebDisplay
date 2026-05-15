@@ -1,8 +1,4 @@
 <Solution>
-  <Project Path="VirtualWebDisplay.Tests/VirtualWebDisplay.Tests.csproj">
-    <BuildType Project="Debug" />
-  </Project>
-  <Project Path="VirtualWebDisplay_Parsec/VirtualWebDisplay.csproj">
-    <BuildType Project="Debug" />
-  </Project>
+  <Project Path="VirtualWebDisplay.Tests/VirtualWebDisplay.Tests.csproj" />
+  <Project Path="VirtualWebDisplay_Parsec/VirtualWebDisplay.csproj" />
 </Solution>
