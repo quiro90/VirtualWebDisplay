@@ -411,7 +411,7 @@ internal sealed class H264EncoderService : BackgroundService, IH264EncoderServic
         // QSV initialisation fails, enc.Open() triggers a native SEH crash (0xC0000005)
         // that cannot be caught by C# — it kills the process before GDI capture starts.
         // libx264 (bundled via Sdcb.FFmpeg.runtime) is always safe and sufficient.
-        string[] candidates = ["h264_nvenc", "h264_amf", "libx264"];
+        string[] candidates = new[] { "h264_nvenc", "h264_amf", "libx264" };
         foreach (var candidate in candidates)
         {
             // Pre-check: verify the hardware runtime DLL is loadable before letting
