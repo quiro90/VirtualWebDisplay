@@ -11,10 +11,14 @@
             "id": "f29e53382298b05f",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Vista gráfica"
+              "type": "markdown",
+              "state": {
+                "file": "Índice para IA.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Índice para IA"
             }
           }
         ]
@@ -181,13 +185,13 @@
   },
   "active": "f29e53382298b05f",
   "lastOpenFiles": [
+    "README.md",
+    "Índice para IA.md",
     "Arquitectura/ApplicationLifecycleManager.md",
     "Stack Tecnológico.md",
     "RuntimeFactory.md",
     "KestrelConfigurator.md",
     "TrayIcon.md",
-    "Índice para IA.md",
-    "README.md",
     "02 - Stack Tecnológico.md",
     "RuntimeStartupHelper.md"
   ]
