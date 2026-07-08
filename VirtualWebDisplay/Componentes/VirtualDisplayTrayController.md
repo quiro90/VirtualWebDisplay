@@ -21,7 +21,7 @@ Gestiona el icono de la bandeja del sistema y el menú contextual.
 - Gestión del ciclo de vida de `ResolutionConfigurationForm`.
 - **Delegación de estado**: usa [[ServiceStateManager]] (no booleanos sueltos).
 - Suscrito a `StateChanged`/`ServiceStarted`/`ServiceStopped` (reactivo).
-- Coordinación vía `ConfigurationFormPresenter`.
+- Coordinación vía `ConfigurationFormPresenter` ([[TrayIcon]]).
 
 ## Flujo de configuración
 

@@ -18,11 +18,9 @@ App .NET 10 (WinForms tray + ASP.NET Core Minimal API) que crea hasta **2 pantal
 - Entry: [[Program (Entry Point)]] → [[ApplicationLifecycleManager]].
 - Estado: [[ServiceStateManager]] (single source of truth, Stopped/Starting/Started/Stopping).
 - Startup de runtimes: [[RuntimeStartupHelper]] (crea displays + resuelve MonitorIndex + arranca servicios).
-- Factoría: [[RuntimeFactory]] (construye runtimes + verifica driver, `GetEnabledPorts`).
-- Kestrel: [[KestrelConfigurator]] (HTTP/HTTPS = Port+1 por runtime).
 - Por pantalla: [[ScreenRuntimeContext]] agrega VirtualDisplayManager + DxgiCaptureService + H264EncoderService + WebRtcStreamService + ScreenSecurityGate + ViewerLimiter.
 - Capas y namespaces: [[Arquitectura por Capas]].
-- Diagramas: [[Diagramas del Sistema]].
+- Diagramas: [[Diagrams del Sistema]].
 - DI: `Web/Services/` (interfaces `IXxxService`) + `Web/handlers/`.
 
 ## Componentes clave

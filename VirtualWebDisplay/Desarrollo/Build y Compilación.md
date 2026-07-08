@@ -31,7 +31,7 @@ El proyecto tiene `PublishAot=true` → ver [[Native AOT]].
 
 ## Dependencias clave
 
-Ver [[02 - Stack Tecnológico]].
+Ver [[Stack Tecnológico]] y [[02 - Stack Tecnológico]].
 
 ## Enlaces
 

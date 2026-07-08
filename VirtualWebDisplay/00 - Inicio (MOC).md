@@ -29,8 +29,6 @@ updated: 2026-07-08
 - [[ScreenRuntimeContext]] (unidad por pantalla)
 - [[ApplicationLifecycleManager]] (bucle de servicio)
 - [[RuntimeStartupHelper]] (arranque de runtimes por pantalla)
-- [[RuntimeFactory]] (construye runtimes + verifica driver)
-- [[KestrelConfigurator]] (puertos HTTP/HTTPS = Port+1)
 - [[IDriverVerifier (Abstracción)]]
 
 ## 🧩 Componentes clave
