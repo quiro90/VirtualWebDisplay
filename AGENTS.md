@@ -4,6 +4,30 @@
 
 ---
 
+## 📚 DOCUMENTACIÓN OBLIGATORIA (vault/)
+
+> [!IMPORTANT] Regla por defecto para cualquier IA que opere en este repo
+> **Antes de cualquier tarea**, revisa la documentación en `vault/` (Obsidian-compatible). Es la fuente de verdad fragmentada y accesible para IA y humanos.
+>
+> **Entradas recomendadas:**
+> - `vault/Índice para IA.md` — referencia rápida densa para LLMs.
+> - `vault/00 - Inicio (MOC).md` — Map of Content para navegación humana.
+>
+> **Responsabilidad de mantenimiento de documentación:**
+> Ante **cualquier** cambio de código —mínimo, de funcionalidad o reingeniería— debes **actualizar la documentación pertinente** en `vault/` (o **crearla** si no existe la nota atómica correspondiente). Esto es obligatorio y parte de la definición de "tarea completa".
+>
+> **Cómo cumplir:**
+> 1. Identifica qué notas de `vault/` describen el componente/flujo/config cambiado (usa los `aliases` y `tags` del frontmatter YAML).
+> 2. Actualiza esas notas para reflejar el nuevo comportamiento (campos, endpoints, flujos, gotchas).
+> 3. Si el cambio introduce un concepto/componente nuevo sin nota, **créala** siguiendo la convención del vault (frontmatter YAML con `tags`/`aliases`/`type`/`updated`, wikilinks `[[...]]`, callouts `> [!...]`, diagramas Mermaid cuando aplique).
+> 4. Si el cambio afecta el índice rápido, actualiza también `vault/Índice para IA.md` y `vault/00 - Inicio (MOC).md`.
+> 5. Los `docs/` legacy y `NATIVE_AOT_BUILD.md` (raíz) se mantienen por compatibilidad, pero **la fuente viviente es `vault/`**.
+
+> [!NOTE] Convención de notas del vault
+> Cada nota es **atómica** (un concepto por archivo), en español, con frontmatter YAML: `tags`, `aliases`, `type` (referencia/flujo/guia/indice), `updated` (YYYY-MM-DD). Usa `[[wikilinks]]` para cruzar notas y callouts Obsidian (`> [!info]`, `> [!warning]`, etc.).
+
+---
+
 ## 📋 RESUMEN EJECUTIVO
 
 ### ¿Qué es VirtualWebDisplay?
@@ -494,6 +518,11 @@ public sealed class DxgiCaptureService : BackgroundService
 public sealed class DxgiCaptureService : BackgroundService
 ```
 
+### 7. Documentación del vault — OBLIGATORIO tras cualquier cambio
+
+> [!IMPORTANT]
+> Ante **cualquier** cambio de código —mínimo, de funcionalidad o reingeniería— **actualiza la nota(s) pertinente(s) en `vault/`**, o **créala** si no existe. Ver la sección **📚 DOCUMENTACIÓN OBLIGATORIA (vault/)** al inicio de este archivo para el procedimiento completo. Una tarea **no se considera completa** si la documentación del vault no refleja el cambio.
+
 ---
 
 ## ⚙️ CONFIGURACIÓN
@@ -974,12 +1003,14 @@ dotnet run
 ## 🔗 REFERENCIAS
 
 - **Repositorio**: https://github.com/quiro90/VirtualWebDisplay
-- **Documentación**:
+- **Documentación viviente (prioridad)**: `vault/` — Obsidian vault, fuente de verdad fragmentada. Empezar por `vault/Índice para IA.md` o `vault/00 - Inicio (MOC).md`.
+- **Documentación legacy**:
   - `README.md` - Overview del proyecto
   - `docs/ARCHITECTURE.md` - Diseño detallado
   - `docs/DEVELOPMENT.md` - Guía de desarrollo
   - `docs/FEATURES.md` - Funcionalidades
   - `docs/CONFIGURATION.md` - Configuración avanzada
+  - `NATIVE_AOT_BUILD.md` - Compilación Native AOT (raíz; reflejado en `vault/Desarrollo/Native AOT.md`)
 
 ---
 
