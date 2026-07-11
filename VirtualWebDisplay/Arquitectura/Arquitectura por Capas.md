@@ -24,31 +24,37 @@ VirtualWebDisplay sigue un **diseño por capas** con separación clara de respon
 
 ```
 VirtualWebDisplay                        (raíz — solo Program.cs)
-├── VirtualWebDisplay.UI.TrayIcon
 ├── VirtualWebDisplay.UI.Forms
-├── VirtualWebDisplay.UI.HtmlTemplates
+├── VirtualWebDisplay.UI.Helpers
+├── VirtualWebDisplay.UI.Messaging
 ├── VirtualWebDisplay.UI.Theme
+├── VirtualWebDisplay.UI.TrayIcon
 ├── VirtualWebDisplay.Web.Api
 ├── VirtualWebDisplay.Web.Handlers
-├── VirtualWebDisplay.Web.Services
-├── VirtualWebDisplay.Web.Security
 ├── VirtualWebDisplay.Web.Hosting
+├── VirtualWebDisplay.Web.HtmlTemplates
+├── VirtualWebDisplay.Web.Security
+├── VirtualWebDisplay.Web.Services
 ├── VirtualWebDisplay.Configuration
 ├── VirtualWebDisplay.Configuration.Models
 ├── VirtualWebDisplay.Parsec
 ├── VirtualWebDisplay.Streaming
 ├── VirtualWebDisplay.Streaming.Models
-└── VirtualWebDisplay.Infrastructure.*
+├── VirtualWebDisplay.Infrastructure.Drivers
+├── VirtualWebDisplay.Infrastructure.Hosting
+├── VirtualWebDisplay.Infrastructure.Runtime
+├── VirtualWebDisplay.Infrastructure.Tasks
+└── VirtualWebDisplay.Infrastructure.Updates
 ```
 
 ## Componentes por capa
 
-- **UI**: `VirtualDisplayTrayController`, `ResolutionConfigurationForm`, `ScreenTabControls`, `CustomModesDialog`, `FormThemeApplicator`, templates HTML (`WebImagePageTemplate`, `RtcPageTemplate`).
-- **Web**: `Program.cs`, `WebApiEndpoints`, handlers en `Web/Handlers/`, servicios en `Web/Services/`.
-- **Configuration**: `VirtualWebDisplaySettings`, `VirtualScreenSettingsStore`, `VirtualScreenConfig`, `TransmissionModeOptions`, `VirtualDisplayPlacementOptions`, `TouchInputConstants`.
-- **Streaming**: `DxgiCaptureService`, `H264EncoderService`, `WebRtcStreamService`, `IFrameSource`, `JpegFallbackEncoder`.
-- **Parsec**: `VirtualDisplayManager`, `ParsecVddDriverApi`, `VddCustomModesStore`, `VirtualResolutionWatcher`.
-- **Infrastructure**: ⭐ `ServiceStateManager`, `ApplicationLifecycleManager`, `ScreenRuntimeContext`, `RuntimeFactory`, `NetworkAddressHelper`, `LocalCertificateProvider`, `SingleInstanceManager`, `UpdateCheckService`.
+- **UI**: `VirtualDisplayTrayController`, `ResolutionConfigurationForm`, `ScreenTabControls`, `CustomModesDialog`, `FormThemeApplicator`, helpers (`ShellHelper`, `UiDispatcherHelper`, `WindowDragHelper`).
+- **Web**: `Program.cs` (host), `WebApiEndpoints`, handlers en `Web/Handlers/`, servicios en `Web/Services/` (interfaces `IXxxService`), templates HTML en `Web/HtmlTemplates/` (`WebImagePageTemplate`, `RtcPageTemplate`, `SecurityPageTemplate`, `ViewerLimitPageTemplate`), `KestrelConfigurator`, `LocalCertificateProvider` ([[Certificado SSL (HTTPS)]]), `NetworkAddressHelper`, `ScreenSecurityGate`, `RateLimiter`/`RateLimiterRegistry`.
+- **Configuration**: `VirtualWebDisplaySettings`, `VirtualScreenSettingsStore`, `VirtualScreenConfig`, `TransmissionModeOptions`, `VirtualDisplayPlacementOptions`, `TouchInputConstants`, `VirtualDisplayResolutionStore`, `VirtualResolutionWatcher`.
+- **Streaming**: `DxgiCaptureService`, `H264EncoderService`, `WebRtcStreamService`, `IFrameSource`/`IFrameCaptureService`, `JpegFallbackEncoder`.
+- **Parsec**: `VirtualDisplayManager`, `ParsecVddDriverApi`, `VddCustomModesStore`.
+- **Infrastructure**: ⭐ `ServiceStateManager`, `ApplicationLifecycleManager`, `ApplicationBootstrapper`, `ScreenRuntimeContext`, `RuntimeFactory`, `RuntimeStartupHelper`, `RuntimeCleanupHelper`, `PollingHelper`, `SingleInstanceManager`, `UpdateCheckService`, `IDriverVerifier`/`ParsecVddDriverVerifier`.
 
 ## Patrones utilizados
 

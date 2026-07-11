@@ -13,27 +13,31 @@ Secuencia desde `Main` hasta servir HTTP.
 
 ```mermaid
 flowchart TD
-    A[Program.Main] --> B[ApplicationLifecycleManager.RunAsync]
-    B --> C[Load Config<br/>VirtualScreenSettingsStore]
-    C --> D[DI Container build<br/>Web/Services + Handlers]
-    D --> E[Create ScreenRuntimeContext per screen]
-    E --> F[VirtualDisplayManager.AttachDisplay per screen]
-    F --> G[Start Kestrel<br/>HTTP + HTTPS Port+1]
-    G --> H[Tray UI WinForms]
-    H --> I[ServiceStateManager = Started]
+    A[Program.Main] --> B[ApplicationBootstrapper.RunAsync]
+    B --> C[ParsecVddDriverVerifier + RuntimeFactory.GetEnabledPorts]
+    C --> D[ApplicationLifecycleManager.RunServiceLoopAsync]
+    D --> E[Load Config<br/>VirtualScreenSettingsStore]
+    E --> F[WebApplication.CreateBuilder/Build<br/>DI: Web/Services + Web/Handlers]
+    F --> G[RuntimeFactory.TryCreate per screen<br/>ScreenRuntimeContext]
+    G --> H[VirtualDisplayManager.AttachDisplay per screen]
+    H --> I[KestrelConfigurator.Configure<br/>HTTP + HTTPS Port+1]
+    I --> J[WebApiEndpoints.Map + app.RunAsync]
+    J --> K[Tray UI WinForms]
+    K --> L[ServiceStateManager = Started]
 ```
 
 ## Pasos
 
-1. **[[Program (Entry Point)|Program.Main]]** — punto de entrada, llama `RunAsync`.
-2. **[[ApplicationLifecycleManager]]** — orquesta el ciclo de vida.
-3. **[[Configuración de Usuario|Config load]]** — `VirtualScreenSettingsStore` lee `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`.
-4. **DI Container** — registra servicios (`Web/Services/`) y handlers (`Web/handlers/`).
-5. **[[ScreenRuntimeContext]]** por pantalla — agrega `VirtualDisplayManager` + `DxgiCaptureService` + `H264EncoderService` + `WebRtcStreamService` + `ScreenSecurityGate` + `ViewerLimiter`.
-6. **[[VirtualDisplayManager]]** — adjunta displays Parsec VDD.
-7. **Kestrel** — arranca HTTP en `HttpPort` y HTTPS en `HttpPort+1` ([[Certificado SSL (HTTPS)]]).
-8. **[[VirtualDisplayTrayController|Tray UI]]** — icono en bandeja, menú contextual.
-9. **[[ServiceStateManager]]** — transición `Starting → Started`.
+1. **[[Program (Entry Point)|Program.Main]]** — punto de entrada. Lanza `ApplicationBootstrapper.CheckForUpdateInBackgroundAsync` (fire-and-forget) y llama `ApplicationBootstrapper.RunAsync`.
+2. **[[ApplicationBootstrapper]]** — crea el `ParsecVddDriverVerifier`, llama `RuntimeFactory.GetEnabledPorts` para verificar el driver, y delega a `ApplicationLifecycleManager.RunServiceLoopAsync`.
+3. **[[ApplicationLifecycleManager]]** — orquesta el ciclo de vida del servicio.
+4. **[[Configuración de Usuario|Config load]]** — `VirtualScreenSettingsStore` lee `%USERPROFILE%\.virtualwebdisplay\virtualscreen.user.json`.
+5. **DI Container** — `WebApplication.CreateBuilder/Build` registra servicios (`Web/Services/`) y handlers (`Web/Handlers/`).
+6. **[[ScreenRuntimeContext]]** por pantalla (vía `RuntimeFactory.TryCreate`) — agrega `VirtualDisplayManager` + `DxgiCaptureService` + `H264EncoderService` + `WebRtcStreamService` + `ScreenSecurityGate` + `ViewerLimiter`.
+7. **[[VirtualDisplayManager]]** — adjunta displays Parsec VDD ([[RuntimeStartupHelper]] inicia los runtimes).
+8. **Kestrel** — arranca HTTP en `Port` y HTTPS en `Port+1` ([[Certificado SSL (HTTPS)]], [[KestrelConfigurator]]).
+9. **[[VirtualDisplayTrayController|Tray UI]]** — icono en bandeja, menú contextual.
+10. **[[ServiceStateManager]]** — transición `Starting → Started`.
 
 ## Apagado
 
@@ -41,6 +45,7 @@ flowchart TD
 
 ## Enlaces
 
+- [[ApplicationBootstrapper]]
 - [[ApplicationLifecycleManager]]
 - [[Program (Entry Point)]]
 - [[ServiceStateManager]]

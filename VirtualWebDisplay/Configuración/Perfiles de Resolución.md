@@ -7,33 +7,21 @@ updated: 2026-07-08
 
 # Perfiles de Resolución
 
-Definidos en `VirtualDisplayProfiles.All`. Todos en **portrait**; se rotan si `Landscape=true`.
+> [!warning] No hay lista fija de perfiles
+> **No existe** `VirtualDisplayProfiles.All` ni ninguna lista hardcoded de resoluciones en el código. La resolución la define el usuario. El campo `Profile` en `VirtualScreenConfig` es solo un **id/label de UI** (`string`, default `""`, **`[JsonIgnore]`**) — no enumera nada.
 
-## Perfiles conocidos
+## Cómo se define la resolución
 
-| Id | Resolución |
-|---|---|
-| `1200x1920` | 1200 × 1920 |
-| `1200x1800` | 1200 × 1800 |
-| `1200x1600` | 1200 × 1600 |
-| `1152x2048` | 1152 × 2048 |
-| `1080x3840` | 1080 × 3840 |
-| `1080x2560` | 1080 × 2560 |
-| `1080x1920` | 1080 × 1920 **(recomendada)** |
-| `1050x1680` | 1050 × 1680 |
-| `900x1600` | 900 × 1600 |
-| `900x1440` | 900 × 1440 |
-| `800x1280` | 800 × 1280 |
-| `768x1366` | 768 × 1366 |
-| `720x1280` | 720 × 1280 |
-| `Custom` | Personalizado (usa `CustomWidth`/`CustomHeight`) |
+1. **Estado en memoria** (`VirtualScreenConfig`): `Width`/`Height` (default 1080×1920), `CustomWidth`/`CustomHeight`, `Profile`, `Landscape` — todos **`[JsonIgnore]`** (no se persisten en `virtualscreen.user.json`).
+2. **Persistencia real** → `VirtualDisplayResolutionStore` (`virtualscreen.display.json`): guarda la resolución + posición X/Y activas en Windows. Lo vigilan `VirtualResolutionWatcher` + el runtime.
+3. **Resoluciones custom del driver** → `VddCustomModesStore` (registro `HKLM\SOFTWARE\Parsec\vdd\{0..4}`, hasta **5 slots** `width`/`height`/`hz`) — ver [[Resoluciones Personalizadas VDD]] y `CustomModesDialog`.
 
-## Resoluciones personalizadas del driver
+## Default
 
-Hasta **5 slots** configurables en el registro Windows — ver [[Resoluciones Personalizadas VDD]].
+`Width = 1080`, `Height = 1920` (portrait). Es el único valor fijo; el resto es user-driven.
 
 > [!note] Rotación removida
-> La **rotación de stream** fue eliminada del flujo activo para simplificar el mapeo de coordenadas táctiles. La orientación depende del monitor/resolución + `BrowserImageFit`.
+> La **rotación de stream** (`StreamRotationDegrees`) fue eliminada del flujo activo para simplificar el mapeo de coordenadas táctiles. La orientación depende del monitor/resolución + `BrowserImageFit`. El flag `Landscape` solo afecta cómo la UI prepara el `Width`/`Height` antes de crear el display.
 
 ## Enlaces
 

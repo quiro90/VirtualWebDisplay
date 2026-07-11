@@ -12,13 +12,13 @@ updated: 2026-07-08
 ## Responsabilidades
 
 1. `SingleInstanceActivator` (UI, basada en hash del ejecutable) + `SingleInstanceManager` (servicio). Si hay instancia previa, señala la ventana existente y sale.
-2. Carga settings con [[VirtualScreenSettingsStore]] `.Load()`.
+2. Carga settings con [[VirtualScreenSettingsStore]] `.Load()` y stores asociados (`AppearanceSettingsStore`, `VirtualDisplayResolutionStore`).
 3. Crea `VirtualDisplayTrayController` (hilo STA en background; crea internamente [[ServiceStateManager]] en `Stopped`).
-4. `RuntimeFactory.GetEnabledPorts(settings)` verifica el driver ([[IDriverVerifier (Abstracción)]]).
+4. Lanza `ApplicationBootstrapper.CheckForUpdateInBackgroundAsync` (fire-and-forget, antes de bloquear UI).
 5. Muestra formulario inicial (`tray.ShowStartupConfiguration()`).
-6. `WebApplication.CreateBuilder` + `Build()`.
-7. `RuntimeFactory.TryCreate(...)` → 1–2 [[ScreenRuntimeContext]].
-8. Delega el ciclo a [[ApplicationLifecycleManager]].
+6. Delega **todo el arranque del servicio** a [[ApplicationBootstrapper]].`RunAsync(...)`:
+   - `ApplicationBootstrapper` crea el `ParsecVddDriverVerifier` y llama `RuntimeFactory.GetEnabledPorts(settings, driverVerifier)` para verificar el driver.
+   - Delega el bucle a [[ApplicationLifecycleManager]].`RunServiceLoopAsync(...)` (que hace `WebApplication.CreateBuilder/Build`, `RuntimeFactory.TryCreate` → 1–2 [[ScreenRuntimeContext]], configura Kestrel, mapea endpoints y ejecuta `app.RunAsync`).
 
 > [!info] Check de updates
 > `ApplicationBootstrapper.CheckForUpdateInBackgroundAsync` se dispara **una sola vez** al inicio, antes de `ShowStartupConfiguration`, con 5s de delay. Ignora prereleases. Falla silenciosamente. Ver [[UpdateCheckService]].

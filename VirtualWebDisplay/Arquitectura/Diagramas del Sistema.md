@@ -46,6 +46,8 @@ sequenceDiagram
     participant SingleInstanceManager
     participant Store
     participant Tray
+    participant Bootstrapper as ApplicationBootstrapper
+    participant Lifecycle as ApplicationLifecycleManager
     participant Runtime
     participant Kestrel
 
@@ -56,12 +58,16 @@ sequenceDiagram
     else Primera instancia
         Program->>Store: LoadSettings()
         Program->>Tray: new(settings)
-        Program->>Runtime: TryCreate(Screen1)
+        Program->>Bootstrapper: CheckForUpdateInBackgroundAsync (fire & forget)
+        Program->>Bootstrapper: RunAsync()
+        Bootstrapper->>Bootstrapper: new ParsecVddDriverVerifier + Verify
+        Bootstrapper->>Lifecycle: RunServiceLoopAsync(driverVerifier, enabledPorts)
+        Lifecycle->>Runtime: RuntimeFactory.TryCreate(Screen1)
         opt Screen2 habilitada
-            Program->>Runtime: TryCreate(Screen2)
+            Lifecycle->>Runtime: TryCreate(Screen2)
         end
-        Program->>Kestrel: Configure + MapEndpoints
-        Program->>Kestrel: RunAsync()
+        Lifecycle->>Kestrel: KestrelConfigurator.Configure + WebApiEndpoints.Map
+        Lifecycle->>Kestrel: app.RunAsync()
         Kestrel-->>User: App lista (tray visible)
     end
 ```

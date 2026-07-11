@@ -32,7 +32,8 @@ Sabe leer un formato **legado** con sección `VirtualScreen` y migrarlo a:
 | `virtualscreen.user.json` | Preferencias de usuario (config) |
 | `virtualscreen.display.json` | Estado dinámico del hardware (resolución + posición X/Y en Windows), vigilado por `VirtualResolutionWatcher` |
 | `ui-preferences.user.json` | UI e idioma |
-| `localhost.pfx` | Cert SSL — ver [[Certificado SSL (HTTPS)]] |
+| `localca.pfx` | Cert SSL (PKCS#12 con clave) — ver [[Certificado SSL (HTTPS)]] |
+| `localca.crt` | Cert SSL público (DER/PEM descargable vía `GET /cert`) — ver [[Certificado SSL (HTTPS)]] |
 
 > [!important] Separación de estado
 > Preferencias de usuario → `virtualscreen.user.json`. Estado del hardware → `virtualscreen.display.json`. No mezclar.

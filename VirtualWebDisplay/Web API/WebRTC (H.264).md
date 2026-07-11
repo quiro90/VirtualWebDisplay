@@ -22,13 +22,17 @@ Streaming en tiempo real con `RTCPeerConnection` + `VideoTrack` H.264 (RTP). Lat
 
 ## Negociación (cliente)
 
+El backend exige el record `WebRtcSessionOffer { Sdp, Type }` — **ambos campos obligatorios**. Envía `Content-Type: application/json`.
+
 ```javascript
 const pc = new RTCPeerConnection();
 pc.addTransceiver('video', { direction: 'recvonly' });
 const offer = await pc.createOffer();
 await pc.setLocalDescription(offer);
 const res = await fetch('/webrtc/offer', {
-    method: 'POST', body: JSON.stringify({ sdp: offer.sdp })
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sdp: pc.localDescription.sdp, type: pc.localDescription.type })
 });
 const answer = await res.json();
 await pc.setRemoteDescription({ type: 'answer', sdp: answer.sdp });

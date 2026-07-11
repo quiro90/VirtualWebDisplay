@@ -18,7 +18,8 @@ updated: 2026-07-08
 | `virtualscreen.user.json` | Config raíz (Screen1, Screen2, UI) | [[VirtualScreenSettingsStore]] |
 | `virtualscreen.display.json` | Estado hardware (resolución + posición X/Y) | `VirtualDisplayResolutionStore` + `VirtualResolutionWatcher` |
 | `ui-preferences.user.json` | UI e idioma | `AppearanceSettingsStore` |
-| `localhost.pfx` | Cert SSL | [[Certificado SSL (HTTPS)]] |
+| `localca.pfx` | Cert SSL (PKCS#12 con clave) | [[Certificado SSL (HTTPS)]] |
+| `localca.crt` | Cert SSL público (descargable vía `GET /cert`) | [[Certificado SSL (HTTPS)]] |
 
 ## Objeto raíz
 
@@ -45,7 +46,7 @@ HTTPS = `Port + 1`.
 
 ## Compatibilidad legacy
 
-`VirtualScreenSettingsStore` migra formato antiguo (`VirtualScreen` sección) → `Screen1` + `Screen2`. Nombres legacy: `HttpPort`, `TransmissionMode`, `CaptureIntervalMs`, `Rotation` (rotación **removida**).
+`VirtualScreenSettingsStore` migra el formato antiguo (sección `VirtualScreen` suelta) → `Screen1` + `Screen2` (con `Screen2 = CreateScreen2Defaults()`). También migra el `TouchGestureHoldDelay` global legacy al `TouchHoldDelayMs` de cada pantalla. La **rotación de stream** fue removida del flujo activo (no existe `StreamRotationDegrees`).
 
 ## Enlaces
 

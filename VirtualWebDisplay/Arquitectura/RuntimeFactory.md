@@ -33,13 +33,13 @@ flowchart TD
 
 ## Uso
 
-- Llamado por [[Program (Entry Point)]] (`GetEnabledPorts`) y [[ApplicationLifecycleManager]] (`TryCreate`).
+- Llamado por [[ApplicationBootstrapper]] (`GetEnabledPorts`, antes de construir el DI container) y por [[ApplicationLifecycleManager]] (`TryCreate`, dentro del bucle de servicio).
 - La verificación de driver se delega a [[IDriverVerifier (Abstracción)]] → `RuntimeFactory.GetEnabledPorts(driverVerifier)`.
 - Los runtimes luego los arranca [[RuntimeStartupHelper]].
 
 ## Relacionados
 
-- [[Program (Entry Point)]] — invoca `GetEnabledPorts`.
+- [[ApplicationBootstrapper]] — invoca `GetEnabledPorts` (punto único de instanciación del `IDriverVerifier`).
 - [[ApplicationLifecycleManager]] — invoca `TryCreate`.
 - [[ScreenRuntimeContext]] — producto de la factoría.
 - [[IDriverVerifier (Abstracción)]] — verificación de driver.

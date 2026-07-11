@@ -7,7 +7,7 @@ updated: 2026-07-08
 
 # ServiceStateManager ⭐
 
-**Namespace**: `VirtualWebDisplay.Infrastructure`
+**Namespace**: `VirtualWebDisplay.Infrastructure.Runtime`
 **Archivo**: `Infrastructure/Runtime/ServiceStateManager.cs`
 
 > [!important] Single Source of Truth

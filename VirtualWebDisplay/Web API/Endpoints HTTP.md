@@ -17,11 +17,12 @@ updated: 2026-07-08
 | `/auth/login` | POST | Login por clave de 6 caracteres | — |
 | `/cap/{token}` | GET | Frame JPEG actual | si seguridad activa |
 | `/mjpeg` | GET | Stream MJPEG continuo | si seguridad activa |
+| `/keepalive` | GET | Mantener viva la sesión/cookie de auth | si seguridad activa |
 | `/webrtc/offer` | POST | Negociación SDP (offer → answer) | si seguridad activa |
 | `/input/touch` | POST | Entrada táctil remota | — (gate backend) |
 | `/input/stats` | GET | Métricas de touch/rate-limit | — |
 | `/config` | GET | Metadata de runtime en JSON | si seguridad activa |
-| `/cert` | GET | Descarga certificado SSL (.cer) | — |
+| `/cert` | GET | Descarga certificado SSL (`localca.crt`) | — |
 
 ## Detalle de respuestas
 

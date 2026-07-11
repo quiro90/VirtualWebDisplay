@@ -17,19 +17,19 @@ updated: 2026-07-08
 wwwroot/
 └── js/
     ├── common/
-    │   ├── logger.js          (~140 líneas) logging 5 niveles
-    │   └── keepalive.js       (~90 líneas)  keep-alive de sesión
+    │   ├── logger.js          (~160 líneas) logging 5 niveles
+    │   └── keepalive.js       (~190 líneas)  keep-alive de sesión
     ├── touch/
-    │   └── touch-input.js     (~580 líneas) entrada táctil
+    │   └── touch-input.js     (~630 líneas) entrada táctil
     ├── webimage/
     │   └── webimage-client.js (~160 líneas) cliente JPEG polling
     └── webrtc/
-        └── webrtc-client.js   (~300 líneas) cliente WebRTC
+        └── webrtc-client.js   (~235 líneas) cliente WebRTC
 ```
 
 ## Cache busting
 
-Los `<script>` se sirven con `?v={AppVersion}` (de `TemplateVersionHelper` / `.csproj` `Version=1.0.4`). Ver [[ESLint y Versionado]].
+Los `<script>` se sirven con `?v={AppVersion}` (de `TemplateVersionHelper` / `.csproj` `Version=1.0.5`). Ver [[ESLint y Versionado]].
 
 ## Logger configurable
 

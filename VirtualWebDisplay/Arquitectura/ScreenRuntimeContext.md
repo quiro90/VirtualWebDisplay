@@ -7,7 +7,7 @@ updated: 2026-07-08
 
 # ScreenRuntimeContext
 
-**Namespace**: `VirtualWebDisplay.Infrastructure`
+**Namespace**: `VirtualWebDisplay.Infrastructure.Runtime`
 **Archivo**: `Infrastructure/Runtime/ScreenRuntimeContext.cs`
 
 > [!summary] Unidad operativa por pantalla
@@ -15,14 +15,16 @@ updated: 2026-07-08
 
 ## Agrega (Facade)
 
-| Servicio | Rol |
-|---|---|
-| [[VirtualDisplayManager]] | Crear/destruir monitor virtual |
-| [[DxgiCaptureService]] | Captura DXGI/GDI + JPEG bajo demanda |
-| [[H264EncoderService]] | Codificación H.264 |
-| [[WebRtcStreamService]] | WebRTC VideoTrack RTP |
-| `ScreenSecurityGate` | Login/rate-limit por pantalla — ver [[Seguridad por Pantalla]] |
-| `ViewerLimiter` | Cupo de viewers — ver [[Límite de Viewers]] |
+Los servicios se obtienen vía `IScreenRuntimeServicesFactory` (DI) y se exponen como **interfaces**, no como tipos concretos:
+
+| Servicio | Interfaz | Rol |
+|---|---|---|
+| [[VirtualDisplayManager]] | (concreto, `IDriverVerifier` inyectado) | Crear/destruir monitor virtual |
+| [[DxgiCaptureService]] | `IFrameCaptureService` / `IFrameSource` | Captura DXGI/GDI + JPEG bajo demanda |
+| [[H264EncoderService]] | `IH264EncoderService` | Codificación H.264 |
+| [[WebRtcStreamService]] | `IWebRtcStreamService` | WebRTC VideoTrack RTP |
+| `ScreenSecurityGate` | (concreto) | Login/rate-limit por pantalla — ver [[Seguridad por Pantalla]] |
+| `ViewerLimiter` | (concreto) | Cupo de viewers — ver [[Límite de Viewers]] |
 
 ## CapToken
 

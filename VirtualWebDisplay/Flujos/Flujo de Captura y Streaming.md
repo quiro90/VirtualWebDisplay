@@ -28,11 +28,11 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    Browser->>+Endpoint: POST /input/rtc (SDP offer)
-    Endpoint->>+WebRtcStreamService: StartOfferAsync(sdp)
+    Browser->>+Endpoint: POST /webrtc/offer (WebRtcSessionOffer: sdp+type)
+    Endpoint->>+WebRtcStreamService: CreateAnswerAsync(offer)
     WebRtcStreamService->>H264EncoderService: RequestKeyframe()
     H264EncoderService->>DxgiCaptureService: CaptureFrame()
-    H264EncoderService->>H264EncoderService: FFmpeg x264 encode
+    H264EncoderService->>H264EncoderService: FFmpeg H.264 encode
     H264EncoderService->>WebRtcStreamService: H.264 NALUs
     WebRtcStreamService->>WebRtcStreamService: RTP packetize
     WebRtcStreamService-->>-Browser: SDP answer + RTP stream

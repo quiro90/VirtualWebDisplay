@@ -14,7 +14,7 @@ Consume `RawFrameAvailable` de [[DxgiCaptureService]] y codifica H.264, publican
 
 ## Encoder
 
-- Selección automática: **NVENC → AMF → libx264** (primero disponible).
+- Selección automática: **NVENC → AMD AMF → Intel QSV → libx264** (primero disponible). Usa `Sdcb.FFmpeg`.
 - Frames BGRA → H.264.
 - Emite `NalUnitReady` consumido por [[WebRtcStreamService]].
 

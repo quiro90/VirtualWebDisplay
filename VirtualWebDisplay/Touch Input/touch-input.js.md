@@ -7,7 +7,7 @@ updated: 2026-07-08
 
 # touch-input.js
 
-**Archivo**: `wwwroot/js/touch/touch-input.js` (~580 líneas) · `window.TouchInput`.
+**Archivo**: `wwwroot/js/touch/touch-input.js` (~630 líneas) · `window.TouchInput`.
 
 Script touch **compartido** por ambos modos ([[WebImage (JPEG Polling)|WebImage]] y [[WebRTC (H.264)|WebRTC]]).
 
@@ -16,9 +16,13 @@ Script touch **compartido** por ambos modos ([[WebImage (JPEG Polling)|WebImage]
 ```javascript
 TouchInput.init({
     elementId: 'screen',
-    throttleMs: 50,
-    holdDelayMs: 300,
-    // + parámetros granulares inyectados server-side
+    throttleMs: 50,            // mínimo 10ms (TouchInputConstants.MinThrottleMs)
+    touchZoomEnabled: true,
+    touchHoldEnabled: true,
+    touchHoldDelayMs: 250,
+    touchScrollEnabled: true,
+    touchScrollDelayMs: 250,
+    // + preserveCursor / parámetros granulares inyectados server-side
 });
 TouchInput.getStats();
 ```

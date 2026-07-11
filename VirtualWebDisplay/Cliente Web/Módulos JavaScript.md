@@ -23,7 +23,10 @@ JS modular servido desde `wwwroot/js/` (ver [[Cliente Web (wwwroot)]]). Migrado 
 ### `webimage/webimage-client.js` — `window.WebImageClient`
 ```javascript
 WebImageClient.init({
-    elementId: 'screen', intervalMs: 250, imageFit: 'cover'
+    elementId: 'screen',   // requerido
+    capToken: '<token>',    // requerido: token 16-hex de /cap/{token}
+    intervalMs: 250,
+    imageFit: 'cover'       // fill/cover/contain
 });
 ```
 - Polling a `/cap/{token}`. Preload de imágenes, retry con backoff 4x, tracking de viewport para iOS Safari.

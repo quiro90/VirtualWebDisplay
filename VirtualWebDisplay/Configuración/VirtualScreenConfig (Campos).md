@@ -14,13 +14,13 @@ updated: 2026-07-08
 | Campo | Default | Descripción |
 |---|---|---|
 | `Enabled` | true | Si se crea esta pantalla |
-| `Profile` | "" | Id del perfil ([[Perfiles de Resolución]]) |
-| `Landscape` | false | Rota el perfil a landscape |
-| `CustomWidth` / `CustomHeight` | 800/1280 | Tamaño cuando `Profile = Custom` |
-| `Width` / `Height` | 800/1280 | Tamaño efectivo final (calculado) |
+| `Profile` | "" | Id del perfil UI (**`[JsonIgnore]`**, no se persiste) |
+| `Landscape` | false | Rota el perfil a landscape (**`[JsonIgnore]`**) |
+| `CustomWidth` / `CustomHeight` | 1080/1920 | Tamaño cuando `Profile = Custom` (**`[JsonIgnore]`**) |
+| `Width` / `Height` | 1080/1920 | Tamaño efectivo final (calculado, **`[JsonIgnore]`** — lo gestiona `VirtualDisplayResolutionStore`) |
 | `Port` | 8000 | Puerto HTTP (HTTPS = `Port + 1`) |
 | `TransmissionMethod` | "Rtc" | `WebImage` o `Rtc` |
-| `CaptureIntervalSeconds` | 0.25 | Ritmo de captura/emisión (ambos modos) |
+| `CaptureIntervalSeconds` | 0.004 | Ritmo de captura/emisión en segundos (ambos modos) |
 | `JpegQuality` | 40 | 10–100 (validada) |
 | `MaxViewers` | 1 | Máx viewers simultáneos (`0` = sin límite) |
 | `TouchInputEnabled` | false | Touch remoto por pantalla (en caliente) |
@@ -32,13 +32,15 @@ updated: 2026-07-08
 | `TouchScrollEnabled` | true | Scroll 2 dedos (en caliente) |
 | `TouchScrollDelayMs` | 250 | ms de presión para scroll (en caliente) |
 | `MonitorIndex` | -1 | -1=auto, 0=primario, 1+=otros |
-| `VirtualDisplayPlacement` | "right" | right/left/top/bottom/**duplicate** |
+| `VirtualDisplayPlacement` | "windows_managed" | `right`/`left`/`top`/`bottom`/`duplicate`/`windows_managed` |
 | `BrowserImageFit` | "contain" | fill/cover/contain |
 | `ScreenSecurityEnabled` | false | Clave de 6 chars para esa pantalla |
-| `NetworkMode` | "WiFi" | WiFi estándar / USB tethering (máx 1 viewer, sin seguridad) |
-| `H264Framerate` | — | FPS H.264 (modo RTC) |
-| `H264BitrateKbps` | — | Bitrate H.264 (modo RTC) |
-| `SavedPositionX` / `SavedPositionY` | — | Posición Windows persistida |
+| `H264Framerate` | 30 | FPS H.264 (modo RTC, `0` = default) |
+| `H264BitrateKbps` | 2000 | Bitrate H.264 (modo RTC, `0` = default) |
+| `SavedPositionX` / `SavedPositionY` | null | Posición Windows persistida (**`[JsonIgnore]`**, la guarda el runtime al detener) |
+
+> [!info] Campos `[JsonIgnore]`
+> `Width`, `Height`, `Profile`, `Landscape`, `CustomWidth`, `CustomHeight`, `SavedPositionX`, `SavedPositionY` **no se persisten** en `virtualscreen.user.json`: son estado de UI/runtime. La resolución activa la gestiona `VirtualDisplayResolutionStore` (`virtualscreen.display.json`). Ver [[Configuración de Usuario]].
 
 ## `BrowserImageFit`
 

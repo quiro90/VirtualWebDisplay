@@ -26,11 +26,6 @@ updated: 2026-07-08
 
 Expiración de viewers por polling inactivo.
 
-## NetworkMode USB
-
-> [!note]
-> `NetworkMode = "USB"` → máx 1 viewer, sin seguridad. Ver [[VirtualScreenConfig (Campos)]].
-
 ## Tests
 
 `VirtualWebDisplay.Tests/Web/Security/ViewerLimiterTests.cs` — capacidad y conteos.

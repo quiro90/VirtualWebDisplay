@@ -7,7 +7,7 @@ updated: 2026-07-08
 
 # ApplicationLifecycleManager
 
-**Namespace**: `VirtualWebDisplay.Infrastructure`
+**Namespace**: `VirtualWebDisplay.Infrastructure.Hosting`
 **Archivo**: `Infrastructure/Hosting/ApplicationLifecycleManager.cs`
 
 Bucle principal de **arranque/parada/restart** del servicio. Coordina con el tray icon y limpia recursos al salir.

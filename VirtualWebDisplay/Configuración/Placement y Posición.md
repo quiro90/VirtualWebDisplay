@@ -23,22 +23,17 @@ updated: 2026-07-08
        └─────────────┘
 ```
 
-Valores: `right`, `left`, `top`/`above`, `bottom`/`below`, **`duplicate`**.
+Valores: `right`, `left`, `top`/`up`, `bottom`/`down`, **`duplicate`**, **`windows_managed`**.
 
 > [!important] duplicate
 > Cuando `VirtualDisplayPlacement = "duplicate"`, **no se crea ningún monitor virtual**. Se captura el monitor primario existente a su resolución actual. Útil para transmitir la pantalla principal sin crear hardware virtual.
 
-## Offsets personalizados
-
-- `OffsetX` / `OffsetY` (píxeles, pueden ser negativos) — desplazamiento respecto a la posición calculada.
-
-```json
-{ "Placement": "Right", "OffsetX": 100, "OffsetY": -50 }
-```
+> [!important] windows_managed
+> Cuando `VirtualDisplayPlacement = "windows_managed"` (default del campo en `VirtualScreenConfig`), la app **no fuerza una posición** y deja que Windows ubique el monitor virtual. `VirtualDisplayPlacementOptions.Normalize` no reconoce este valor (cae al default `right`), por eso el modo `windows_managed` se detecta **antes** de llamar a `Normalize` (en `VirtualDisplayManager`) para saltar el cálculo de posición.
 
 ## Normalización
 
-`VirtualDisplayPlacementOptions` acepta **español e inglés** y normaliza. Expone etiqueta visible + cálculo de posición Win32.
+`VirtualDisplayPlacementOptions.Normalize` acepta **solo inglés**: `left`, `top`/`up`, `bottom`/`down`, `duplicate`. Cualquier otro valor (incluido `windows_managed`) cae al default `right`. **No acepta español** (los textos localizados se manejan en la UI vía `GetLocalizationKey`, no en `Normalize`). Expone etiqueta visible + cálculo de posición Win32 (`GetPosition`).
 
 ## Dónde tocar
 
