@@ -333,6 +333,28 @@ Console.WriteLine($"Bounds: X={bounds.X}, Y={bounds.Y}, Width={bounds.Width}, He
 
 ---
 
+### La Imagen Web Sale Negra (Pantalla Virtual Creada)
+
+**Síntoma**: Al iniciar la transmisión, la página web carga pero la imagen mostrada es completamente negra.
+
+**Causa**: DXGI Desktop Duplication no soporta adaptadores de pantalla indirectos como Parsec VDD. DXGI puede crear la duplicación exitosamente y entregar frames, pero estos son buffers negros. `DxgiCaptureService` detecta los frames negros y debe caer al fallback GDI (`Graphics.CopyFromScreen`), que sí funciona con adaptadores indirectos.
+
+**Diagnóstico**:
+
+1. Verificar que la pantalla virtual está activa en Windows (Configuración → Pantallas).
+2. Mover una ventana a la pantalla virtual y confirmar que se ve en el monitor físico.
+3. Si la pantalla virtual muestra contenido en Windows pero la web sigue negra, el fallback a GDI no está activando a tiempo.
+
+**Solución**:
+
+El código detecta frames negros de DXGI y conmuta a GDI automáticamente. Antes el umbral era muy alto (90 frames × 3 reintentos ≈ 27 segundos de pantalla negra antes del fallback). Ahora el umbral se redujo a 10 frames y el fallback a GDI es inmediato al detectar frames negros (sin reintentar DXGI). Si la imagen sigue negra:
+
+1. Esperar 1-2 segundos tras iniciar el servicio para que el fallback GDI active.
+2. Verificar que `MonitorIndex` = `-1` (auto) en configuración para capturar la pantalla virtual correcta.
+3. Si la pantalla virtual está vacía (sin ventanas), mostrará el fondo de escritorio. Arrastrar una ventana a la pantalla virtual para verificar.
+
+---
+
 ### Pantalla Virtual No Recuerda su Posición o Resolución
 
 **Síntoma**: Al iniciar el servicio, la pantalla virtual no se ubica donde se dejó la última vez o su resolución vuelve a valores por defecto.

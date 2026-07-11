@@ -112,6 +112,9 @@
             // Adjuntar event listeners
             this._attachListeners();
 
+            // Iniciar sincronización en tiempo real (Hot-Reload)
+            this._startConfigPolling();
+
             log.info('Initialized (absolute pointer enabled)', {
                 elementId: config.elementId,
                 throttleMs: this._touchThrottle,
@@ -137,6 +140,30 @@
                 localEventsPerSecond: this._recentLocalEvents.length,
                 avgLocalLatencyMs: this._avg(this._recentLatencies)
             };
+        },
+
+        /**
+         * Inicia el polling para actualizar la configuración táctil en tiempo real (Hot-Reload).
+         * Consulta /config cada 2s y sincroniza los gestos habilitados sin recargar la página.
+         * @private
+         */
+        _startConfigPolling() {
+            if (this._configPollingTimer) {
+                clearInterval(this._configPollingTimer);
+            }
+            this._configPollingTimer = setInterval(() => {
+                fetch('/config')
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (!data) return;
+                        const cfg = data.config || data;
+                        if (typeof cfg.touchZoomEnabled !== 'undefined') this._touchZoomEnabled = cfg.touchZoomEnabled;
+                        if (typeof cfg.touchHoldEnabled !== 'undefined') this._touchHoldEnabled = cfg.touchHoldEnabled;
+                        if (typeof cfg.touchHoldDelayMs !== 'undefined') this._touchHoldDelayMs = cfg.touchHoldDelayMs;
+                        if (typeof cfg.touchScrollEnabled !== 'undefined') this._touchScrollEnabled = cfg.touchScrollEnabled;
+                        if (typeof cfg.touchScrollDelayMs !== 'undefined') this._touchScrollDelayMs = cfg.touchScrollDelayMs;
+                    }).catch(() => {});
+            }, 2000);
         },
 
         /**

@@ -90,6 +90,25 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
     // so after this many retries we give up on DXGI for this session.
     private const int MaxNoFrameAttempts = 3;
 
+    /// <summary>
+    /// Result of a DXGI capture session, used by the outer loop to decide whether to
+    /// retry DXGI, fall back to GDI immediately, or continue normally.
+    /// </summary>
+    private enum CaptureSessionResult
+    {
+        /// <summary>At least one non-black frame was captured — DXGI works for this output.</summary>
+        Healthy,
+
+        /// <summary>DXGI never delivered a frame (WAIT_TIMEOUT). Retry DXGI up to MaxNoFrameAttempts.</summary>
+        NoFrames,
+
+        /// <summary>Frames were delivered but all black — indirect adapter (e.g. Parsec VDD). Fall back to GDI immediately.</summary>
+        BlackFrames,
+
+        /// <summary>Monitor topology changed mid-session. Reinitialize DXGI (not a failure).</summary>
+        TopologyChanged,
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var desiredBounds = ResolveCaptureBounds();
@@ -140,10 +159,35 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
                 desiredBounds = ResolveCaptureBounds();
                 preferredDeviceName = GetPreferredDeviceName();
                 using var session = DxgiSession.Create(desiredBounds, _config.MonitorIndex, preferredDeviceName, _logger);
-                bool anyFrame = RunCaptureLoop(session, stoppingToken);
-                // A session that acquired at least one frame is healthy; reset failure counter.
-                if (anyFrame) noFrameAttempts = 0;
-                else          noFrameAttempts++;
+                var result = RunCaptureLoop(session, stoppingToken);
+
+                switch (result)
+                {
+                    case CaptureSessionResult.Healthy:
+                        noFrameAttempts = 0;
+                        break;
+
+                    case CaptureSessionResult.BlackFrames:
+                        // DXGI delivered frames but they were all black — the adapter is an
+                        // indirect/virtual display that doesn't support Desktop Duplication.
+                        // Fall back to GDI immediately; retrying DXGI would just produce more black.
+#if DEBUG
+                        _logger.LogWarning(
+                            "DXGI delivered only black frames on monitor {MonitorIndex} " +
+                            "(indirect/virtual display adapter). Falling back to GDI capture immediately.",
+                            _config.MonitorIndex);
+#endif
+                        await RunGdiCaptureLoopAsync(stoppingToken);
+                        return;
+
+                    case CaptureSessionResult.NoFrames:
+                        noFrameAttempts++;
+                        break;
+
+                    case CaptureSessionResult.TopologyChanged:
+                        // Not a failure — just reinitialize the DXGI session on the next iteration.
+                        break;
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -175,17 +219,19 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
     // Some indirect/virtual adapters can report successful AcquireNextFrame calls but
     // return uniform black buffers. If this persists from startup, treat DXGI as unusable
     // for this monitor and fall back to the GDI path.
-    private const int MaxInitialBlackFrames = 90;
+    // 10 frames at ~100ms each ≈ 1 second — fast enough that the user sees GDI content
+    // almost immediately instead of staring at a black screen for ~9 seconds.
+    private const int MaxInitialBlackFrames = 10;
 
     // Check monitor topology periodically to adapt live to position changes.
     private const double TopologyCheckIntervalSeconds = 0.5;
 
     /// <summary>
-    /// Runs the DXGI capture loop. Returns <c>true</c> if at least one frame was captured
-    /// (indicating the adapter supports duplication), <c>false</c> if the session died
-    /// immediately without delivering any frame.
+    /// Runs the DXGI capture loop. Returns a <see cref="CaptureSessionResult"/> indicating
+    /// whether the session was healthy, produced no frames, produced only black frames,
+    /// or was interrupted by a topology change.
     /// </summary>
-    private bool RunCaptureLoop(DxgiSession session, CancellationToken ct)
+    private CaptureSessionResult RunCaptureLoop(DxgiSession session, CancellationToken ct)
     {
         var jpegQuality = TransmissionModeOptions.GetEffectiveJpegQuality(_config);
         var captureBounds = ResolveCaptureBounds();
@@ -208,7 +254,7 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
                         captureBounds.Left, captureBounds.Top, captureBounds.Width, captureBounds.Height,
                         latestBounds.Left, latestBounds.Top, latestBounds.Width, latestBounds.Height);
 #endif
-                    return false;
+                    return CaptureSessionResult.TopologyChanged;
                 }
             }
 
@@ -217,7 +263,7 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
                 // If DXGI has never delivered a frame and the deadline expired, exit.
                 // This breaks the infinite WAIT_TIMEOUT spin on indirect display adapters.
                 if (!anyFrame && sw.Elapsed.TotalSeconds > FirstFrameTimeoutSeconds)
-                    return false;
+                    return CaptureSessionResult.NoFrames;
                 continue;
             }
 
@@ -236,7 +282,7 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
                         consecutiveBlackFrames,
                         _config.MonitorIndex);
 #endif
-                    return false;
+                    return CaptureSessionResult.BlackFrames;
                 }
             }
             else
@@ -255,7 +301,7 @@ internal sealed class DxgiCaptureService : BackgroundService, IFrameCaptureServi
             }
         }
 
-        return anyFrame;
+        return anyFrame ? CaptureSessionResult.Healthy : CaptureSessionResult.NoFrames;
     }
 
     private Rectangle ResolveCaptureBounds()

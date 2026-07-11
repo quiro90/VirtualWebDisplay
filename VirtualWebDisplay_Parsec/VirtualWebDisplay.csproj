@@ -12,9 +12,9 @@
     <RootNamespace>VirtualWebDisplay</RootNamespace>
 
     <!-- Versión de la aplicación (usado para cache busting de archivos estáticos) -->
-    <Version>1.0.4</Version>
-    <AssemblyVersion>1.0.4</AssemblyVersion>
-    <FileVersion>1.0.4</FileVersion>
+    <Version>1.0.5</Version>
+    <AssemblyVersion>1.0.5</AssemblyVersion>
+    <FileVersion>1.0.5</FileVersion>
 
     <!-- Native AOT Configuration -->
     <PublishAot>true</PublishAot>
