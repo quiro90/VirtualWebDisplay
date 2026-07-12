@@ -27,7 +27,7 @@ El proyecto tiene `PublishAot=true` → ver [[Native AOT]].
 - `AllowUnsafeBlocks`: `true` (P/Invoke VDD)
 - `UseWindowsForms`: `true`
 - `PublishAot`: `true`
-- `Version`: `1.0.4`
+- `Version`: `1.0.5`
 
 ## Dependencias clave
 

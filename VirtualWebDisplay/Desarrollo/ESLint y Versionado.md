@@ -9,7 +9,7 @@ updated: 2026-07-08
 
 ## ESLint (JavaScript)
 
-- Config en `package.json` + `.eslintrc` en raíz.
+- Config en `package.json` + `.eslintrc.json` en raíz del repo.
 - Aplica a `wwwroot/js/**/*.js`.
 - Reglas: no-unused-vars, no-undef, prefer-const, etc.
 - Validar: `npm run lint` (ver `package.json`).
@@ -17,7 +17,7 @@ updated: 2026-07-08
 ## Versionado de assets (cache busting)
 
 - `TemplateVersionHelper` genera `?v={AppVersion}` para `<script>` y `<link>`.
-- `AppVersion` viene del `.csproj` (`Version=1.0.4`).
+- `AppVersion` viene del `.csproj` (`Version=1.0.5`) y de `package.json` (`version=1.0.5`).
 - Garantiza que el navegador no cachee JS viejo al actualizar.
 - Aplica a todos los módulos ([[Módulos JavaScript]]).
 

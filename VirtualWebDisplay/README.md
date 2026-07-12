@@ -40,7 +40,7 @@ Este `vault/` es la documentación del proyecto **reorganizada en notas atómica
 
 ## Relación con `docs/` existente
 
-La carpeta `docs/` original (y `AGENT.md`, `README*.md`, `NATIVE_AOT_BUILD.md`, `TAREASPENDINETES.md`) **no fue modificada ni eliminada**. Este vault es una **reorganización paralela** que consolida y fragmenta ese contenido. Cuando haya discrepancia, el código fuente y `docs/` son la referencia original.
+La carpeta `docs/` original (y `AGENTS.md`, `README*.md`) **no fue modificada ni eliminada**. Este vault es una **reorganización paralela** que consolida y fragmenta ese contenido. Cuando haya discrepancia, el código fuente y `docs/` son la referencia original.
 
 - [[00 - Inicio (MOC)]]
 - [[Índice para IA]]

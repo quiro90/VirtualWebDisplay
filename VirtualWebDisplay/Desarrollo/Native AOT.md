@@ -116,10 +116,6 @@ Revisar las advertencias que aparezcan durante la compilación.
 - [Documentación oficial Native AOT](https://learn.microsoft.com/dotnet/core/deploying/native-aot/)
 - [Native AOT y Windows Forms](https://learn.microsoft.com/dotnet/core/deploying/native-aot/incompatibilities)
 
-## Fuente
-
-`NATIVE_AOT_BUILD.md` (raíz del repo) — notas detalladas sobre build AOT.
-
 ## Enlaces
 
 - [[Build y Compilación]]

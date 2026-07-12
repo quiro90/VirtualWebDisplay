@@ -9,7 +9,7 @@ updated: 2026-07-08
 
 ## Proyecto
 
-`VirtualWebDisplay.Tests/` — xUnit, ~23 archivos `.cs` de tests.
+`VirtualWebDisplay.Tests/` — xUnit, ~29 archivos `.cs` de tests.
 
 ## Correr tests
 

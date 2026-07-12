@@ -15,13 +15,13 @@ App .NET 10 (WinForms tray + ASP.NET Core Minimal API) que crea hasta **2 pantal
 
 ## Arquitectura en 1 minuto
 
-- Entry: [[Program (Entry Point)]] → [[ApplicationLifecycleManager]].
+- Entry: [[Program (Entry Point)]] → [[ApplicationBootstrapper]] → [[ApplicationLifecycleManager]].
 - Estado: [[ServiceStateManager]] (single source of truth, Stopped/Starting/Started/Stopping).
 - Startup de runtimes: [[RuntimeStartupHelper]] (crea displays + resuelve MonitorIndex + arranca servicios).
 - Por pantalla: [[ScreenRuntimeContext]] agrega VirtualDisplayManager + DxgiCaptureService + H264EncoderService + WebRtcStreamService + ScreenSecurityGate + ViewerLimiter.
 - Capas y namespaces: [[Arquitectura por Capas]].
-- Diagramas: [[Diagrams del Sistema]].
-- DI: `Web/Services/` (interfaces `IXxxService`) + `Web/handlers/`.
+- Diagramas: [[Diagramas del Sistema]].
+- DI: `Web/Services/` (interfaces `IXxxService`) + `Web/Handlers/`.
 
 ## Componentes clave
 
@@ -49,15 +49,14 @@ App .NET 10 (WinForms tray + ASP.NET Core Minimal API) que crea hasta **2 pantal
 - [[Configuración de Usuario]] — `%USERPROFILE%\.virtualwebdisplay\`.
 - [[VirtualScreenConfig (Campos)]] — tabla de campos.
 - [[Perfiles de Resolución]] · [[Placement y Posición]] · [[Resoluciones Personalizadas VDD]].
-- Hot-reload: [[Cambio de Configuración en Runtime]].
-- Legacy names: `HttpPort`, `TransmissionMode`, `CaptureIntervalMs`.
+- Hot-reload: [[Cambio de Configuración en Runtime]] (vía UI WinForms, **no** por HTTP).
 
 ## Seguridad
 
 - [[Seguridad por Pantalla]] — password + CapToken (16 hex, Ordinal compare).
 - [[Rate Limiting y Brute Force]] — 429 / lockout.
 - [[Límite de Viewers]] — reject tras límite.
-- [[Certificado SSL (HTTPS)]] — `localhost.pfx`, HTTPS=Port+1.
+- [[Certificado SSL (HTTPS)]] — `localca.pfx`/`localca.crt`, HTTPS=Port+1.
 
 ## Touch
 
@@ -93,7 +92,8 @@ App .NET 10 (WinForms tray + ASP.NET Core Minimal API) que crea hasta **2 pantal
 > - **Rotation** removido del flujo activo (legacy).
 > - **AOT** → sin reflexión general, usar Source Generators.
 > - **P/Invoke unsafe** requiere Windows x64 + Parsec VDD driver instalado.
-> - **Field names legacy** `HttpPort`/`TransmissionMode`/`CaptureIntervalMs` siguen funcionando.
+> - **`/config` es GET-only**: el hot-reload se hace desde la UI WinForms, no por HTTP.
+> - **`VirtualDisplayPlacementOptions.Normalize`** solo acepta inglés; `windows_managed` se detecta antes de `Normalize`.
 
 ## Entry point del vault
 
