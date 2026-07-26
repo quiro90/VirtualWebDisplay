@@ -17,7 +17,8 @@ namespace VirtualWebDisplay.Streaming;
 /// <summary>
 /// Encodes raw BGRA32 frames (from <see cref="IFrameSource.RawFrameAvailable"/>) to
 /// H.264 NAL units using the best available encoder:
-/// NVIDIA NVENC → AMD AMF → Intel QSV → libx264 (CPU fallback).
+/// NVIDIA NVENC → AMD AMF → libx264 (CPU fallback).
+/// (h264_qsv is intentionally excluded — see <see cref="FindBestH264Encoder"/>.)
 ///
 /// Encoded NAL units are raised via <see cref="NalUnitReady"/>, consumed by
 /// <see cref="WebRtcStreamService"/> to feed the WebRTC VideoTrack.
