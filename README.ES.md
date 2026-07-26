@@ -51,8 +51,8 @@ El cliente web ha sido reconstruido con un soporte táctil nativo de primer nive
 
 ## 📸 Screenshots
 
-![Captura de Interfaz](docs/img/VirtualWebDisplay.png)
-![Captura de Interfaz](docs/img/localnet_viewer.png)
+![Captura de Interfaz](img/VirtualWebDisplay.png)
+![Captura de Interfaz](img/localnet_viewer.png)
 ---
 
 ## 🚀 Inicio Rápido
@@ -187,7 +187,7 @@ virtualscreen.display.json: Resolución y posición de pantalla a restablecer
 
 virtualscreen.user.json: configuración de usuario.
 
-Ver **docs/CONFIGURATION.md** para detalles de cada campo.
+Ver **VirtualWebDisplay.Obsidian/00 - Inicio (MOC).md** (el vault de conocimiento del proyecto) para detalles de cada campo.
 
 ---
 
@@ -218,11 +218,12 @@ Ver **docs/CONFIGURATION.md** para detalles de cada campo.
 
 ## 🛠️ Desarrollo
 
-Ver documentación detallada:
+Ver documentación detallada en el **[vault de conocimiento VirtualWebDisplay.Obsidian/](VirtualWebDisplay.Obsidian/00%20-%20Inicio%20(MOC).md)** (fuente de verdad):
 
-- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)**: Guía de desarrollo completa
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Arquitectura del sistema y diagramas
-- **[AGENT.md](AGENT.md)**: Contexto técnico para IA/asistentes
+- **[00 - Inicio (MOC)](VirtualWebDisplay.Obsidian/00%20-%20Inicio%20(MOC).md)**: Índice del vault — empezar aquí
+- **[Desarrollo/](VirtualWebDisplay.Obsidian/Desarrollo/)**: Desarrollo, build, testing, convenciones
+- **[Arquitectura/](VirtualWebDisplay.Obsidian/Arquitectura/)**: Arquitectura, capas, diagramas
+- **[AGENTS.md](AGENTS.md)**: Contexto técnico para IA/asistentes
 
 ### Stack Tecnológico
 
@@ -259,7 +260,7 @@ dotnet build VirtualWebDisplay_Parsec.csproj --configuration Release
 - Instalar certificado SSL (ver sección de uso) si se requiere un entorno seguro.
 - Verificar que el firewall no bloquea el puerto (ej. 5001).
 
-Ver **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** para la guía completa de problemas comunes.
+Ver **[VirtualWebDisplay.Obsidian/Troubleshooting/](VirtualWebDisplay.Obsidian/Troubleshooting/Gu%C3%ADa%20de%20Troubleshooting.md)** para la guía completa de problemas comunes.
 
 ---
 

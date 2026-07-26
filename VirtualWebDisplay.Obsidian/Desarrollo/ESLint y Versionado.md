@@ -23,7 +23,7 @@ updated: 2026-07-08
 
 ## Fuente
 
-`docs/ESLINT_Y_VERSIONADO.md` — guía completa.
+Esta nota (vault). Antes existía `docs/ESLINT_Y_VERSIONADO.md` (legacy, eliminado).
 
 ## Enlaces
 

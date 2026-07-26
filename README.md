@@ -52,8 +52,8 @@ The web client has been rebuilt with first-class native touch support, allowing 
 
 ## 📸 Screenshots
 
-![Interface Screenshot](docs/img/VirtualWebDisplay.png)
-![Interface Screenshot](docs/img/localnet_viewer.png)
+![Interface Screenshot](img/VirtualWebDisplay.png)
+![Interface Screenshot](img/localnet_viewer.png)
 
 ---
 
@@ -190,7 +190,7 @@ ui-preferences.user.json: UI and language
 virtualscreen.display.json: display resolution and position to restore  
 virtualscreen.user.json: user configuration  
 
-See **docs/CONFIGURATION.md** for details on each field.
+See **VirtualWebDisplay.Obsidian/00 - Inicio (MOC).md** (the project knowledge vault) for details on each field.
 
 ---
 
@@ -221,11 +221,12 @@ See **docs/CONFIGURATION.md** for details on each field.
 
 ## 🛠️ Development
 
-See detailed documentation:
+See detailed documentation in the **[VirtualWebDisplay.Obsidian/](VirtualWebDisplay.Obsidian/00%20-%20Inicio%20(MOC).md)** knowledge vault (source of truth):
 
-- **[DEVELOPMENT.md](docs/DEVELOPMENT.md)**: Complete development guide  
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: System architecture and diagrams  
-- **[AGENT.md](AGENT.md)**: Technical context for AI/assistants  
+- **[00 - Inicio (MOC)](VirtualWebDisplay.Obsidian/00%20-%20Inicio%20(MOC).md)**: Vault index — start here
+- **[Desarrollo/](VirtualWebDisplay.Obsidian/Desarrollo/)**: Development, build, testing, conventions
+- **[Arquitectura/](VirtualWebDisplay.Obsidian/Arquitectura/)**: Architecture, layers, diagrams
+- **[AGENTS.md](AGENTS.md)**: Technical context for AI/assistants
 
 ### Tech Stack
 
@@ -262,7 +263,7 @@ dotnet build VirtualWebDisplay_Parsec.csproj --configuration Release
 - Install the SSL certificate (see usage section) if a secure context is required  
 - Ensure the firewall is not blocking the port (e.g. 5001)  
 
-See **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** for the complete guide to common issues.
+See **[VirtualWebDisplay.Obsidian/Troubleshooting/](VirtualWebDisplay.Obsidian/Troubleshooting/Gu%C3%ADa%20de%20Troubleshooting.md)** for the complete guide to common issues.
 
 ---
 

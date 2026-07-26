@@ -105,7 +105,7 @@ npm run lint:fix
 - Comparación estricta (`===` en vez de `==`)
 - Llaves obligatorias en if/for/while
 
-Ver documentación completa en `/docs/ESLINT_Y_VERSIONADO.md`
+Ver documentación completa en `VirtualWebDisplay.Obsidian/Desarrollo/ESLint y Versionado.md`
 
 ### Versionado Dinámico
 

@@ -30,7 +30,7 @@ Punto de partida para diagnóstico. Deriva a notas específicas según el sínto
 
 ## Fuente
 
-`docs/TROUBLESHOOTING.md` — troubleshooting original.
+Vault de conocimiento — sección [[Troubleshooting]]. Antes existía `docs/TROUBLESHOOTING.md` (legacy, eliminado).
 
 ## Enlaces
 
