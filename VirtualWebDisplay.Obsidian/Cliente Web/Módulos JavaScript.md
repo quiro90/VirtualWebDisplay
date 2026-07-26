@@ -2,12 +2,12 @@
 tags: [cliente, js, modulos]
 aliases: [Módulos JavaScript, JS Modules, logger, keepalive, webimage-client, webrtc-client]
 type: referencia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # Módulos JavaScript
 
-JS modular servido desde `wwwroot/js/` (ver [[Cliente Web (wwwroot)]]). Migrado desde JS embebido en C# (`TouchInputScriptHelper.cs`, **eliminado**) a archivos `.js` independientes.
+JS modular servido desde `wwwroot/js/` (ver [[Cliente Web (wwwroot)]]) en archivos `.js` independientes.
 
 ## Módulos
 

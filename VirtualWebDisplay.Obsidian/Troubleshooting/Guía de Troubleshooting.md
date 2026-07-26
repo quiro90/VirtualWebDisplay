@@ -2,7 +2,7 @@
 tags: [troubleshooting, guia]
 aliases: [Guía de Troubleshooting, Troubleshooting Guide, Diagnóstico]
 type: guia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # Guía de Troubleshooting
@@ -28,12 +28,7 @@ Punto de partida para diagnóstico. Deriva a notas específicas según el sínto
 - Consola del tray / `dotnet run` output.
 - `window.Logger` en cliente (ver [[Módulos JavaScript]]).
 
-## Fuente
-
-Vault de conocimiento — sección [[Troubleshooting]]. Antes existía `docs/TROUBLESHOOTING.md` (legacy, eliminado).
-
 ## Enlaces
-
 - [[Problemas de Instalación y Driver]]
 - [[Problemas de Red y Firewall]]
 - [[Problemas de WebRTC y SSL]]

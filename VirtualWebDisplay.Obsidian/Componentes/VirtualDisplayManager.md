@@ -2,7 +2,7 @@
 tags: [componente, parsec, unsafe, driver]
 aliases: [VirtualDisplayManager, Display Manager, VDD Manager]
 type: componente
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # VirtualDisplayManager
@@ -17,7 +17,7 @@ Interfaz con el driver **Parsec VDD** para crear/destruir pantallas virtuales.
 
 ## Características
 
-- **Ya NO usa métodos estáticos** (refactorizado a DI). Constructor recibe [[IDriverVerifier (Abstracción)|IDriverVerifier]].
+- Constructor con DI: recibe [[IDriverVerifier (Abstracción)|IDriverVerifier]] (no usa métodos estáticos).
 - Usa `ParsecVddDriverApi` compartida.
 - **Keep-alive loop**: `Update()` cada 100ms para mantener la pantalla activa (sin esto, el display parpadea/desaparece).
 - Configura resolución, posición y frecuencia.

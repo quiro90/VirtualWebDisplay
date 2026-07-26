@@ -2,7 +2,7 @@
 tags: [componente, touch, input, handler]
 aliases: [InputHandler, Touch Handler, InputService]
 type: componente
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # InputHandler (Touch)
@@ -15,9 +15,9 @@ Endpoint `POST /input/touch` que traduce eventos táctiles del navegador a click
 > [!important] Gate backend
 > El gate principal es **backend** (`runtime.Config.TouchInputEnabled`) para evitar desincronización de estado con el cliente. Si está `false`, el backend ignora los eventos (`204`). Sub-gates granulares: `TouchHoldEnabled`, `TouchScrollEnabled`, etc. — ver [[Gestos Táctiles]].
 
-## Componentes extraídos (refactor por fases)
+## Componentes
 
-Para reducir complejidad ciclomática, el handler se descompuso en:
+Para reducir complejidad ciclomática, el handler se descompone en:
 - `TouchInputActions` — normalización/clasificación de acciones/tipos.
 - `TouchInputCoordinateResolver` — mapeo de coordenadas + resolución de monitor.
 - `TouchInputRequestValidator` — validación pura.
@@ -28,8 +28,8 @@ Para reducir complejidad ciclomática, el handler se descompuso en:
 - `TouchStatsSnapshot` — snapshot de stats.
 - `TouchInputRequest` (modelo en `Web/Api/`).
 
-> [!warning] Sin estado static mutable
-> Tras un bugfix crítico, se eliminaron campos `static` de request y se migró a **estado local por request** para evitar race conditions entre requests y pantallas. `InputService` mantiene una instancia por ciclo DI.
+> [!warning] Estado local por request
+> El handler usa **estado local por request** (sin campos `static` mutables) para evitar race conditions entre requests y pantallas. `InputService` mantiene una instancia por ciclo DI.
 
 ## Comportamiento
 

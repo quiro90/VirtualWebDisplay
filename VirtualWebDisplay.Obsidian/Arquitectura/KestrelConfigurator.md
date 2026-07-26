@@ -2,7 +2,7 @@
 tags: [arquitectura, web, kestrel, hosting, puertos]
 aliases: [KestrelConfigurator, Configuración Kestrel, HTTP HTTPS Ports]
 type: referencia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # KestrelConfigurator
@@ -33,7 +33,7 @@ Llamado por [[ApplicationLifecycleManager]] (paso 3 del arranque): `KestrelConfi
 ## Relacionados
 
 - [[ApplicationLifecycleManager]] — quien lo invoca.
-- [[Certificado SSL (HTTPS)]] — el `tlsCert` (`localhost.pfx`).
+- [[Certificado SSL (HTTPS)]] — el `tlsCert` (`localca.pfx`).
 - [[Resolución de Runtime por Puerto]] — resolución de runtime por `LocalPort`.
 - [[Endpoints HTTP]] — endpoints servidos sobre estos puertos.
 

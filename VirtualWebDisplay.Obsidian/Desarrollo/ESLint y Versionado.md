@@ -2,7 +2,7 @@
 tags: [desarrollo, eslint, versionado]
 aliases: [ESLint y Versionado, ESLint, Versionado, Cache Busting]
 type: guia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # ESLint y Versionado
@@ -20,10 +20,6 @@ updated: 2026-07-08
 - `AppVersion` viene del `.csproj` (`Version=1.0.5`) y de `package.json` (`version=1.0.5`).
 - Garantiza que el navegador no cachee JS viejo al actualizar.
 - Aplica a todos los módulos ([[Módulos JavaScript]]).
-
-## Fuente
-
-Esta nota (vault). Antes existía `docs/ESLINT_Y_VERSIONADO.md` (legacy, eliminado).
 
 ## Enlaces
 

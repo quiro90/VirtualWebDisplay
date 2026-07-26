@@ -2,7 +2,7 @@
 tags: [desarrollo, convenciones, codigo]
 aliases: [Convenciones de Código, Code Conventions, Naming]
 type: guia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # Convenciones de Código
@@ -20,12 +20,6 @@ updated: 2026-07-08
 - Cada módulo expone `window.XxxClient` o `window.Xxx`.
 - Sin frameworks, vanilla JS.
 - ESLint obligatorio (ver [[ESLint y Versionado]]).
-
-## Refactorización histórica
-
-- Migración a DI completada ([[IDriverVerifier (Abstracción)]] → cadena end-to-end).
-- [[InputHandler (Touch)]] descompuesto en sub-componentes.
-- JS embebido en C# migrado a archivos `.js` independientes.
 
 ## Enlaces
 

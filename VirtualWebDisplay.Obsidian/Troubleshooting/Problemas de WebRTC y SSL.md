@@ -2,7 +2,7 @@
 tags: [troubleshooting, webrtc, ssl, h264]
 aliases: [Problemas de WebRTC y SSL, WebRTC Issues, SSL Issues, H.264 Issues]
 type: guia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # Problemas de WebRTC y SSL
@@ -19,7 +19,7 @@ updated: 2026-07-08
 ### SDP negotiation falla
 
 - Verificar [[WebRtcStreamService]] logs.
-- `POST /input/rtc` → revisar `IWebRtcOfferService` (DI).
+- `POST /webrtc/offer` → revisar `IWebRtcOfferService` (DI).
 - SIPSorcery 10.0.5 (ver [[02 - Stack Tecnológico]]).
 
 ### Pantalla negra
@@ -37,7 +37,7 @@ updated: 2026-07-08
 
 ### Certificado self-signed
 
-- `localhost.pfx` generado en `%USERPROFILE%\.virtualwebdisplay\` (ver [[Certificado SSL (HTTPS)]])).
+- `localca.pfx` generado en `%USERPROFILE%\.virtualwebdisplay\` (ver [[Certificado SSL (HTTPS)]]).
 - Navegador requiere aceptar excepción de seguridad.
 - En iPad Safari: instalar perfil de certificado.
 

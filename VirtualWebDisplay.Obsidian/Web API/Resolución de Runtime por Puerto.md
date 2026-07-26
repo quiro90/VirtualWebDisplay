@@ -2,7 +2,7 @@
 tags: [web, runtime, puertos, routing]
 aliases: [Resolución de Runtime, Runtime por Puerto, ResolveRuntime]
 type: referencia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # Resolución de Runtime por Puerto
@@ -13,11 +13,11 @@ Todos los [[ScreenRuntimeContext|runtimes]] escuchan en el **mismo proceso**. Ca
 
 `RuntimeAccessHelper.ResolveRuntime(HttpContext)` (y `RuntimeAccessService` DI):
 1. Compara `context.Connection.LocalPort` con `runtime.Config.Port`.
-2. **HTTPS** = `Port + 1` (bugfix crítico: resuelve correctamente HTTP **y** HTTPS).
+2. **HTTPS** = `Port + 1` (resuelve correctamente HTTP **y** HTTPS).
 3. Si ninguno coincide → usa `runtimes[0]` como **fallback**.
 
-> [!warning] Bugfix crítico
-> `RuntimeAccessHelper` resuelve runtime correctamente para HTTP **y** HTTPS (puerto y puerto+1). Antes había duplicación mágica; ahora usa `TryResolveRuntimeByPort` + `MatchesRuntimePort`.
+> [!warning] Resolución HTTP y HTTPS
+> `RuntimeAccessHelper` resuelve el runtime correcto para HTTP **y** HTTPS (puerto y `puerto+1`) mediante `TryResolveRuntimeByPort` + `MatchesRuntimePort`.
 
 ## Helpers (`RuntimeAccessHelper`)
 

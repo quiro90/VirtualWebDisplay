@@ -2,15 +2,15 @@
 tags: [seguridad, ssl, https, certificado]
 aliases: [Certificado SSL, HTTPS, LocalCertificateProvider, Self-signed]
 type: referencia
-updated: 2026-07-08
+updated: 2026-07-26
 ---
 
 # Certificado SSL (HTTPS)
 
 **Archivo**: `Web/Hosting/LocalCertificateProvider.cs` (generación/obtención).
 
-> [!warning] Experimental / WIP
-> Generación de certificado **autofirmado**. Puede requerir setup manual o disparar warnings de seguridad del navegador.
+> [!warning] Autofirmado
+> Generación de certificado **autofirmado**. Requiere setup manual (instalar `localca.crt` en *Trusted Root*) y puede disparar warnings de seguridad del navegador hasta que se instale.
 
 ## Generación
 
