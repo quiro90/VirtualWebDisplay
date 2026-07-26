@@ -40,8 +40,8 @@ Las carpetas agrupan temas por afinidad. El orden en el índice (`00 - Inicio (M
 | `Desarrollo/` | Build, AOT, ESLint, testing, convenciones |
 | `Troubleshooting/` | Problemas comunes y soluciones |
 
-## Relación con `docs/` existente
+## Fuente de verdad
 
-La carpeta `docs/` original (y `AGENTS.md`, `README*.md`) **no fue modificada ni eliminada**. Este vault es una **reorganización paralela** que consolida y fragmenta ese contenido. Cuando haya discrepancia, el código fuente y `docs/` son la referencia original.
+El **código fuente** es la referencia original; este vault lo describe en notas atómicas. Cuando haya discrepancia, gana el código. Para planificación, tareas y trabajo pendiente, usar **OpenSpec** (no el vault).
 
 - [[00 - Inicio (MOC)]]

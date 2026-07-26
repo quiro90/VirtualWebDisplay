@@ -1,11 +1,11 @@
 ﻿# AGENTS.md
 
-> Fuente de verdad de arquitectura y código: **`VirtualWebDisplay.Obsidian/`** (vault Obsidian).
-> Este archivo es solo una guía mínima para IA. El detalle vive en el vault.
+> Guía mínima para IA. La **fuente de verdad** de arquitectura y código es el vault Obsidian: **`VirtualWebDisplay.Obsidian/`**.
+> **Punto de entrada**: `VirtualWebDisplay.Obsidian/00 - Inicio (MOC).md` (índice único). Para planificación, tareas y trabajo pendiente, usar **OpenSpec**.
 
 ## Qué es VirtualWebDisplay
 
-App Windows (.NET 10, WinForms tray + ASP.NET Core Minimal API) que crea hasta **2 pantallas virtuales** vía Parsec VDD y las retransmite por HTTP/HTTPS usando **WebRTC (H.264)** o **Web Image (JPEG polling)**, con entrada táctil remota opcional. Ver `VirtualWebDisplay.Obsidian/01 - Visión General.md` y `02 - Stack Tecnológico.md`.
+App Windows (.NET 10, WinForms tray + ASP.NET Core Minimal API) que crea hasta **2 pantallas virtuales** vía Parsec VDD y las retransmite por HTTP/HTTPS usando **WebRTC (H.264)** o **Web Image (JPEG polling)**, con entrada táctil remota opcional. Resumen rápido: ver `VirtualWebDisplay.Obsidian/01 - Visión General.md` y `02 - Stack Tecnológico.md`.
 
 ## Arquitectura (resumen)
 
@@ -16,7 +16,7 @@ App Windows (.NET 10, WinForms tray + ASP.NET Core Minimal API) que crea hasta *
 - **DI**: servicios en `Web/Services/` (interfaces `IXxxService`), handlers en `Web/Handlers/`.
 - **Driver**: `IDriverVerifier` abstrae la verificación del driver; `ParsecVddDriverVerifier` es la implementación Windows. La cadena de DI va desde `ApplicationBootstrapper` hasta `VirtualDisplayManager`.
 
-Diagramas, namespaces exactos, componentes por capa y flujos detallados: ver `VirtualWebDisplay.Obsidian/Arquitectura/Arquitectura por Capas.md` y `VirtualWebDisplay.Obsidian/00 - Inicio (MOC).md` (índice único del vault).
+Diagramas, namespaces exactos, componentes por capa y flujos detallados: ver `VirtualWebDisplay.Obsidian/Arquitectura/Arquitectura por Capas.md` y el índice `VirtualWebDisplay.Obsidian/00 - Inicio (MOC).md`.
 
 ## Ideas de código limpio (principios del proyecto)
 
@@ -38,11 +38,11 @@ Procedimiento:
 2. Actualiza esas notas (campos, endpoints, flujos, gotchas, `updated: YYYY-MM-DD`).
 3. Si el cambio introduce un concepto/componente nuevo sin nota, **créala** atómica (un concepto por archivo), en español, con frontmatter `tags`/`aliases`/`type`/`updated`, `[[wikilinks]]` y callouts Obsidian.
 4. Si el cambio afecta el índice, actualiza también `00 - Inicio (MOC).md` (índice único del vault).
-5. La fuente viviente es el vault. `docs/` legacy y `NATIVE_AOT_BUILD.md` (raíz) se mantienen por compatibilidad pero **no son la fuente**.
+5. La fuente viviente es el vault: documenta solo el **estado actual** del sistema. **No dejes** en las notas TODOs, tareas pendientes, bugs sin resolver, workarounds temporales, pasos intermedios de migración, planes de implementación ni decisiones en discusión — eso va a **OpenSpec**.
 
 ## Workflow: usar OpenSpec
 
-Para cambios de funcionalidad o reingeniería, usa **OpenSpec** (workflow de spec-driven development) para definir el cambio, validarlo y archivar el trabajo. Consulta la skill `openspec` antes de implementar cambios significativos.
+OpenSpec es la **única fuente de verdad para planificación, tareas y trabajo pendiente**. Para cambios de funcionalidad o reingeniería, usa **OpenSpec** (workflow de spec-driven development) para definir el cambio, validarlo y archivar el trabajo. Consulta la skill `openspec` antes de implementar cambios significativos. El vault describe el estado actual; OpenSpec describe lo que se va a hacer.
 
 ## Entrada al vault
 
