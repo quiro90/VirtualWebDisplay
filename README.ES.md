@@ -298,4 +298,12 @@ Este proyecto está licenciado bajo la **MIT License** - ver archivo [LICENSE](L
 
 ---
 
+## 💖 Apoyar el proyecto
+
+Si el proyecto te resulta útil, considerá hacer una donación:
+
+<a href="https://cafecito.app/juanquiroga"><img src="https://cdn.cafecito.app/imgs/buttons/button_2.png" alt="Invitame un café en cafecito.app"></a> <a href="https://www.paypal.com/ncp/payment/PJXDUSBHSE8DE"><img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal"></a>
+
+---
+
 **⭐ Si este proyecto te resulta útil, considera darle una estrella en GitHub!**
